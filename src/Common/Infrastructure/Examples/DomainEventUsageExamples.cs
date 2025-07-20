@@ -21,15 +21,11 @@ public static class DomainEventUsageExamples
     /// <summary>
     /// Example of how to configure your DbContext to support outbox events.
     /// </summary>
-    public class ExampleApplicationDbContext : ApplicationDbContext
+    public class ExampleApplicationDbContext(
+        DbContextOptions<ExampleApplicationDbContext> options,
+        ICurrentUserService currentUserService,
+        IDomainEventDispatcher domainEventDispatcher) : ApplicationDbContext<ExampleApplicationDbContext>(options, currentUserService, domainEventDispatcher)
     {
-        public ExampleApplicationDbContext(
-            DbContextOptions<ExampleApplicationDbContext> options,
-            ICurrentUserService currentUserService,
-            IDomainEventDispatcher domainEventDispatcher)
-            : base(options, currentUserService, domainEventDispatcher)
-        {
-        }
 
         // Your domain entity DbSets
         public DbSet<ExampleEntity> ExampleEntities { get; set; } = null!;

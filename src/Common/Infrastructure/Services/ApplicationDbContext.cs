@@ -7,25 +7,11 @@ using System.Linq.Expressions;
 
 namespace AQ.Common.Infrastructure.Services;
 
-public abstract class ApplicationDbContext : DbContext, IApplicationDbContext
+public abstract class ApplicationDbContext<TContext>(
+    DbContextOptions<TContext> options,
+    ICurrentUserService currentUserService,
+    IDomainEventDispatcher domainEventDispatcher) : DbContext(options), IApplicationDbContext where TContext : DbContext
 {
-    protected readonly ICurrentUserService _currentUserService;
-    protected readonly IDomainEventDispatcher? _domainEventDispatcher;
-
-    protected ApplicationDbContext(DbContextOptions options, ICurrentUserService currentUserService) : base(options)
-    {
-        _currentUserService = currentUserService;
-    }
-
-    protected ApplicationDbContext(
-        DbContextOptions options, 
-        ICurrentUserService currentUserService, 
-        IDomainEventDispatcher domainEventDispatcher) : base(options)
-    {
-        _currentUserService = currentUserService;
-        _domainEventDispatcher = domainEventDispatcher;
-    }
-
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateAuditableEntities();
@@ -42,7 +28,7 @@ public abstract class ApplicationDbContext : DbContext, IApplicationDbContext
 
     protected void UpdateAuditableEntities()
     {
-        var currentUserId = _currentUserService.GetCurrentUserId();
+        var currentUserId = currentUserService.GetCurrentUserId();
 
         // Only update audit fields if we have a current user
         if (!currentUserId.HasValue)
@@ -68,7 +54,7 @@ public abstract class ApplicationDbContext : DbContext, IApplicationDbContext
 
     protected async Task DispatchDomainEventsAsync(CancellationToken cancellationToken = default)
     {
-        if (_domainEventDispatcher == null)
+        if (domainEventDispatcher == null)
             return;
 
         // Get all entities with domain events
@@ -81,7 +67,7 @@ public abstract class ApplicationDbContext : DbContext, IApplicationDbContext
             return;
 
         // Dispatch domain events
-        await _domainEventDispatcher.DispatchEventsAsync(entitiesWithDomainEvents, cancellationToken);
+        await domainEventDispatcher.DispatchEventsAsync(entitiesWithDomainEvents, cancellationToken);
     }
 
     protected static void ConfigureConcurrencyTokens(ModelBuilder modelBuilder)
