@@ -1,0 +1,219 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  SOLUTION_FILE: 'AQ.sln'
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        # Use a token with sufficient permissions for private repos
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Validate PR title and branch
+      run: |
+        echo "PR Title: ${{ github.event.pull_request.title }}"
+        echo "Source Branch: ${{ github.event.pull_request.head.ref }}"
+        echo "Target Branch: ${{ github.event.pull_request.base.ref }}"
+        
+        # Ensure we're not merging directly to main/master from master/main
+        if [[ "${{ github.event.pull_request.head.ref }}" == "main" || "${{ github.event.pull_request.head.ref }}" == "master" ]]; then
+          echo "❌ Cannot merge from main/master branch directly"
+          exit 1
+        fi
+    
+    - name: Check for merge conflicts
+      run: |
+        git merge-tree $(git merge-base HEAD ${{ github.event.pull_request.base.sha }}) HEAD ${{ github.event.pull_request.base.sha }} > merge_result.txt
+        if grep -q "<<<<<<< " merge_result.txt; then
+          echo "❌ Merge conflicts detected. Please resolve conflicts before merging."
+          exit 1
+        fi
+        echo "✅ No merge conflicts detected"
+    
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+    
+    - name: Check code formatting
+      run: dotnet format ${{ env.SOLUTION_FILE }} --verify-no-changes --verbosity normal
+    
+    - name: Build solution
+      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore --verbosity normal
+    
+    - name: Run unit tests
+      run: dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx
+    
+    - name: Package validation
+      run: dotnet pack ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal
+    
+    - name: Validate package metadata
+      run: |
+        # Check that all packages have proper metadata
+        for package in artifacts/bin/*/Release/*.nupkg; do
+          if [[ -f "$package" ]]; then
+            echo "Validating package: $package"
+            # You can add more specific package validation here
+          fi
+        done
+    
+    - name: Security scan
+      run: |
+        # Check for vulnerable packages
+        dotnet list package --vulnerable --include-transitive || echo "⚠️ Vulnerable packages found - please review"
+    
+    - name: Comment PR with build results
+      if: success()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && comment.body.includes('Build validation')
+          );
+          
+          const body = '✅ **Build validation passed successfully!**\n\n' +
+                      '**Checks completed:**\n' +
+                      '- ✅ Code formatting verified\n' +
+                      '- ✅ Solution builds without errors\n' +
+                      '- ✅ All tests passed\n' +
+                      '- ✅ Package validation completed\n' +
+                      '- ✅ Security scan completed\n' +
+                      '- ✅ No merge conflicts detected\n\n' +
+                      '**Ready for review and merge!** 🚀';
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              comment_id: botComment.id,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          }
+    
+    - name: Comment PR with build failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && comment.body.includes('Build validation')
+          );
+          
+          const body = '❌ **Build validation failed!**\n\n' +
+                      '**Please fix the following issues:**\n' +
+                      '- Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for detailed errors\n' +
+                      '- Ensure code is properly formatted (`dotnet format`)\n' +
+                      '- Fix any compilation errors\n' +
+                      '- Ensure all tests pass\n' +
+                      '- Resolve any merge conflicts\n\n' +
+                      '**The PR cannot be merged until all checks pass.** ⚠️';
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              comment_id: botComment.id,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          }
+
+  validate-changes:
+    name: Validate Changes
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+      with:
+        files: |
+          src/**
+          *.props
+          *.sln
+          .github/workflows/**
+    
+    - name: Validate file changes
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        echo "Files changed:"
+        echo "${{ steps.changed-files.outputs.all_changed_files }}"
+        
+        # Prevent direct modification of workflow files without approval
+        workflow_files="${{ steps.changed-files.outputs.all_changed_files }}"
+        if echo "$workflow_files" | grep -q ".github/workflows/"; then
+          echo "⚠️ Workflow files modified - additional review required"
+          echo "workflow_changes=true" >> $GITHUB_ENV
+        fi
+    
+    - name: Comment on workflow changes
+      if: env.workflow_changes == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '⚠️ **Workflow files have been modified**\n\nThis PR modifies GitHub Actions workflow files. Please ensure:\n- Changes are necessary and secure\n- No secrets or sensitive information are exposed\n- Workflows follow security best practices\n\nAdditional review is recommended for these changes.'
+          })

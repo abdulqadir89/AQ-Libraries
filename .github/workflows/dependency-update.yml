@@ -1,0 +1,76 @@
+name: Dependency Update
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Run every Monday at 8 AM
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    
+    - name: Install dotnet-outdated
+      run: dotnet tool install -g dotnet-outdated-tool
+    
+    - name: Check for outdated packages
+      id: check-outdated
+      run: |
+        OUTDATED=$(dotnet outdated --include-transitive --output json)
+        echo "outdated-packages<<EOF" >> $GITHUB_OUTPUT
+        echo "$OUTDATED" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Update packages
+      if: steps.check-outdated.outputs.outdated-packages != '[]'
+      run: |
+        # Update all packages to latest versions
+        dotnet outdated --upgrade
+    
+    - name: Test after updates
+      if: steps.check-outdated.outputs.outdated-packages != '[]'
+      run: |
+        dotnet restore AQ.sln
+        dotnet build AQ.sln --configuration Release
+        dotnet test AQ.sln --configuration Release --no-build
+    
+    - name: Create Pull Request
+      if: steps.check-outdated.outputs.outdated-packages != '[]'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update NuGet packages'
+        title: 'chore: Update NuGet packages'
+        body: |
+          This PR updates outdated NuGet packages to their latest versions.
+          
+          ## Changes
+          - Updated packages in Directory.Packages.props
+          
+          ## Testing
+          - ✅ Build completed successfully
+          - ✅ All tests passed
+          
+          This PR was created automatically by the dependency update workflow.
+        branch: chore/update-dependencies
+        delete-branch: true

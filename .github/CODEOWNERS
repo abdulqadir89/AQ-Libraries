@@ -1,0 +1,19 @@
+# Global ownership
+* @abdulqadir89
+
+# Workflow files require additional scrutiny
+/.github/workflows/ @abdulqadir89
+/.github/ruleset.json @abdulqadir89
+
+# Build and configuration files
+/Directory.Build.props @abdulqadir89
+/Directory.Packages.props @abdulqadir89
+/*.sln @abdulqadir89
+
+# Documentation
+/docs/ @abdulqadir89
+/README.md @abdulqadir89
+
+# License and security
+/LICENSE @abdulqadir89
+/.gitignore @abdulqadir89

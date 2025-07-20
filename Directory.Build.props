@@ -24,6 +24,17 @@
     <Company>AQ</Company>
     <Product>AQ Clean Architecture</Product>
     <Copyright>Copyright © AQ 2025</Copyright>
+    <PackageProjectUrl>https://github.com/abdulqadir89/AQ-Libraries</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/abdulqadir89/AQ-Libraries</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>clean-architecture;domain-driven-design;cqrs;ddd;dotnet;library</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     
     <!-- Central Package Management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -34,5 +45,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
 </Project>
