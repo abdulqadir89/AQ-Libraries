@@ -8,7 +8,7 @@ I've successfully set up a comprehensive CI/CD pipeline for your .NET solution f
 ### Workflow Files (`.github/workflows/`)
 1. **`ci.yml`** - Continuous Integration
 2. **`release.yml`** - Release and NuGet Publishing 
-3. **`security.yml`** - Security Scanning & CodeQL Analysis
+3. **`security.yml`** - Security Scanning
 4. **`dependency-update.yml`** - Automated Dependency Updates
 5. **`pr-validation.yml`** - Pull Request Validation
 
@@ -40,11 +40,9 @@ I've successfully set up a comprehensive CI/CD pipeline for your .NET solution f
 - **Symbols**: Debug symbols published as .snupkg files
 
 ### 🔒 Security & Quality
-- **CodeQL Analysis**: GitHub's semantic code analysis
 - **Vulnerability Scanning**: Automatic detection of vulnerable dependencies
 - **Dependency Updates**: Weekly automated updates via PRs
 - **Code Formatting**: Enforced formatting standards
-- **Branch Protection**: No direct pushes to main/master branches
 - **Pull Request Requirements**: Mandatory code reviews and status checks
 - **Secret Scanning**: Automatic detection of exposed secrets
 

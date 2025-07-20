@@ -55,7 +55,6 @@ This is automatically provided by GitHub Actions, no setup required.
 - **Triggers**: Push to main/master, Pull requests, Weekly schedule
 - **Actions**:
   - Scan for vulnerable packages
-  - CodeQL security analysis
   - Check for outdated dependencies
 
 ### 4. `dependency-update.yml` - Dependency Management
@@ -122,7 +121,6 @@ The setup includes comprehensive security measures:
 - **Secret Scanning**: Automatically detects exposed API keys and tokens
 - **Push Protection**: Prevents commits with secrets from being pushed
 - **Dependency Alerts**: Notifies of vulnerable dependencies
-- **CodeQL Analysis**: Semantic code analysis for security vulnerabilities
 - **Branch Protection**: Prevents direct pushes to main branches
 
 ## Environments
