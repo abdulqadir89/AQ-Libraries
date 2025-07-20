@@ -11,8 +11,6 @@ I've successfully set up a comprehensive CI/CD pipeline for your .NET solution f
 3. **`security.yml`** - Security Scanning & CodeQL Analysis
 4. **`dependency-update.yml`** - Automated Dependency Updates
 5. **`pr-validation.yml`** - Pull Request Validation
-6. **`branch-protection.yml`** - Branch Protection Enforcement
-7. **`repository-setup.yml`** - Automated Repository Configuration
 
 ### Project Configuration
 - **`Directory.Build.props`** - Enhanced with NuGet package metadata, source linking, and symbols
@@ -20,10 +18,6 @@ I've successfully set up a comprehensive CI/CD pipeline for your .NET solution f
 - **`LICENSE`** - MIT License for open-source distribution
 - **`.github/ruleset.json`** - Branch protection rules configuration
 - **`.github/CODEOWNERS`** - Code ownership and review requirements
-
-### Setup Scripts
-- **`scripts/setup-repository.sh`** - Bash script for repository setup
-- **`scripts/setup-repository.ps1`** - PowerShell script for repository setup
 
 ### Documentation
 - **`docs/CI-CD-Setup.md`** - Complete setup guide with step-by-step instructions
@@ -89,23 +83,10 @@ I've successfully set up a comprehensive CI/CD pipeline for your .NET solution f
 NUGET_API_KEY - Your NuGet.org API key for publishing packages
 ```
 
-### 2. Repository Configuration (Automated)
-Run the setup script to configure branch protection:
-```bash
-# Using bash (Linux/macOS/WSL)
-chmod +x scripts/setup-repository.sh
-./scripts/setup-repository.sh
-
-# Using PowerShell (Windows)
-scripts/setup-repository.ps1
-
-# Dry run to see what would be changed
-scripts/setup-repository.ps1 -WhatIf
-```
-
-Or manually configure:
+### 2. Repository Configuration
+Manually configure branch protection and repository settings:
 - Enable branch protection for main/master branch
-- Create 'production' environment for release approvals
+- Create 'production' environment for release approvals  
 - Configure Dependabot for automated security updates
 
 ### 3. First Release

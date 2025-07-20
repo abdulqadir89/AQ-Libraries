@@ -90,23 +90,8 @@ Follow semantic versioning:
 
 ## Branch Protection and Repository Security
 
-### Automated Setup (Recommended)
-Use the provided setup scripts to automatically configure branch protection:
-
-```bash
-# Using bash (Linux/macOS/WSL)
-chmod +x scripts/setup-repository.sh
-./scripts/setup-repository.sh
-
-# Using PowerShell (Windows)
-scripts/setup-repository.ps1
-
-# Test what changes would be made (PowerShell)
-scripts/setup-repository.ps1 -WhatIf
-```
-
 ### Manual Setup
-If you prefer to set up manually or the script fails:
+To configure branch protection for your repository:
 
 1. **Branch Protection Rules**:
    - Go to Settings → Branches
