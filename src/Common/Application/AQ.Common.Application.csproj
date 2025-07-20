@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>AQ.Common.Application</PackageId>
+    <AssemblyName>AQ.Common.Application</AssemblyName>
+    <RootNamespace>AQ.Common.Application</RootNamespace>
+    <Description>Application layer containing use cases, interfaces, and application services for Clean Architecture microservices.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\AQ.Common.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

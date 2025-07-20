@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>AQ.Common.Presentation</PackageId>
+    <AssemblyName>AQ.Common.Presentation</AssemblyName>
+    <RootNamespace>AQ.Common.Presentation</RootNamespace>
+    <Description>Presentation layer containing controllers, API endpoints, and UI components for Clean Architecture microservices.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\AQ.Common.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\AQ.Common.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

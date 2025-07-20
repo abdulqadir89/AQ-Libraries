@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>AQ.Common.Infrastructure</PackageId>
+    <AssemblyName>AQ.Common.Infrastructure</AssemblyName>
+    <RootNamespace>AQ.Common.Infrastructure</RootNamespace>
+    <Description>Infrastructure layer containing data access, external services, and infrastructure concerns for Clean Architecture microservices.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\AQ.Common.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+</Project>
