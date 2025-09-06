@@ -1,4 +1,4 @@
-﻿namespace AQ.Common.Application.CQRS;
+﻿namespace AQ.CQRS.Command;
 
 /// <summary>
 /// Base command for core application commands (no return value)

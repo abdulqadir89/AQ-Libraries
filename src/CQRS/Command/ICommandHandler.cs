@@ -1,6 +1,6 @@
-﻿using AQ.Common.Domain.Results;
+﻿using AQ.Utilities.Results;
 
-namespace AQ.Common.Application.CQRS;
+namespace AQ.CQRS.Command;
 
 /// <summary>
 /// Interface for handling commands that return a result.

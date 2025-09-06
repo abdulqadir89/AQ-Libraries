@@ -1,8 +1,7 @@
-﻿using AQ.Common.Domain.Results;
-
+﻿using AQ.Utilities.Results;
 using Microsoft.Extensions.Logging;
 
-namespace AQ.Common.Application.CQRS;
+namespace AQ.CQRS.Command;
 
 /// <summary>
 /// Implementation of command dispatcher using dependency injection to resolve handlers.

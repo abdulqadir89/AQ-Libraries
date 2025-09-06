@@ -1,4 +1,4 @@
-﻿namespace AQ.Common.Application.CQRS;
+﻿namespace AQ.CQRS.Query;
 
 /// <summary>
 /// Interface for queries that return a result.

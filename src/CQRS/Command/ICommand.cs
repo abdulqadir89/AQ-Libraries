@@ -1,4 +1,4 @@
-﻿namespace AQ.Common.Application.CQRS;
+﻿namespace AQ.CQRS.Command;
 
 /// <summary>
 /// Marker interface for commands that return a result.

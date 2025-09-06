@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abstractions\AQ.Abstractions.csproj" />
+    <ProjectReference Include="..\Events\Domain\AQ.Events.Domain.csproj" />
+    <ProjectReference Include="..\Utilities\Search\AQ.Utilities.Search.csproj" />
+  </ItemGroup>
+
+</Project>

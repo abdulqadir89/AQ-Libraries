@@ -1,6 +1,6 @@
-﻿using AQ.Common.Domain.Results;
+﻿using AQ.Utilities.Results;
 
-namespace AQ.Common.Application.CQRS;
+namespace AQ.CQRS.Query;
 
 /// <summary>
 /// Provides methods for dispatching queries to their appropriate handlers.

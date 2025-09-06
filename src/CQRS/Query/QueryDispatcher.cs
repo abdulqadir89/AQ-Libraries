@@ -1,8 +1,7 @@
-﻿using AQ.Common.Domain.Results;
-
+﻿using AQ.Utilities.Results;
 using Microsoft.Extensions.Logging;
 
-namespace AQ.Common.Application.CQRS;
+namespace AQ.CQRS.Query;
 
 /// <summary>
 /// Implementation of query dispatcher using dependency injection to resolve handlers.

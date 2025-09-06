@@ -18,6 +18,12 @@
 
     <PackageVersion Include="Markdig" Version="0.41.3" />
     <PackageVersion Include="HtmlSanitizer" Version="9.0.886" />
+
+    <!-- Logging -->
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+
+    <!-- Dependency Injection -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
   </ItemGroup>
 
 </Project>

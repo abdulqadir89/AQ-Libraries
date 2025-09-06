@@ -1,6 +1,6 @@
-﻿using AQ.Common.Application.Sorting;
+﻿using AQ.Utilities.Sort;
 
-namespace AQ.Common.Application.CQRS;
+namespace AQ.CQRS.Query;
 
 /// <summary>
 /// Base query for core application queries
