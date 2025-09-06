@@ -1,8 +1,7 @@
-﻿using System.Text.Json;
-
-using AQ.Events.Domain;
+﻿using AQ.Events.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace AQ.Events.Dispatchers;
 
