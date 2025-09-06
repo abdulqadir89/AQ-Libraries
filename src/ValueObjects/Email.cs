@@ -1,7 +1,7 @@
 ﻿using AQ.ValueObjects;
 using System.Text.RegularExpressions;
 
-namespace AQ.Common.Domain.ValueObjects;
+namespace AQ.ValueObjects;
 
 /// <summary>
 /// Represents an email address value object with validation.

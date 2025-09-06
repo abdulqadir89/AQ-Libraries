@@ -5,8 +5,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Markdig"  PrivateAssets="All"/>
-    <PackageReference Include="HtmlSanitizer"  PrivateAssets="All"/>
-  </ItemGroup>
+
 </Project>
