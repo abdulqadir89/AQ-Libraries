@@ -1,4 +1,6 @@
-﻿namespace AQ.Abstractions.Extensions;
+﻿using AQ.Abstractions;
+
+namespace AQ.Extensions;
 
 public static class HasStatusExtensions
 {
