@@ -122,8 +122,8 @@ public class AvailableTransition
 {
     public Guid TriggerId { get; set; }
     public string TriggerName { get; set; } = default!;
-    public Guid ToStateId { get; set; }
-    public string ToStateName { get; set; } = default!;
+    public Guid? ToStateId { get; set; }
+    public string? ToStateName { get; set; }
     public Guid TransitionId { get; set; }
     public bool CanExecute { get; set; }
     public RequirementEvaluationSummary? RequirementEvaluation { get; set; }

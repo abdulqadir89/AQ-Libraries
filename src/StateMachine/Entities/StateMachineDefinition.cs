@@ -94,11 +94,15 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var transition in _transitions)
         {
             // Find the corresponding states and triggers in the new definition
-            var newFromState = newDefinition._states.FirstOrDefault(s => s.Name == transition.FromState.Name);
-            var newToState = newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name);
+            var newFromState = transition.FromState != null 
+                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.FromState.Name)
+                : null;
+            var newToState = transition.ToState != null 
+                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name)
+                : null;
             var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger.Name);
 
-            if (newFromState != null && newToState != null && newTrigger != null)
+            if (newTrigger != null)
             {
                 var newTransition = StateMachineTransition.Create(
                     newDefinition.Id,
@@ -158,8 +162,12 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
-            var fromStateName = SanitizeStateName(transition.FromState.Name);
-            var toStateName = SanitizeStateName(transition.ToState.Name);
+            var fromStateName = transition.FromState != null 
+                ? SanitizeStateName(transition.FromState.Name)
+                : "[*]";
+            var toStateName = transition.ToState != null 
+                ? SanitizeStateName(transition.ToState.Name)
+                : "[*]";
             var triggerName = transition.Trigger.Name;
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
@@ -274,7 +282,8 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
         foreach (var transition in _transitions)
         {
-            reachableStates.Add(transition.ToStateId);
+            if (transition.ToStateId.HasValue)
+                reachableStates.Add(transition.ToStateId.Value);
         }
 
         var orphanedStates = InitialState != null
