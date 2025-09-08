@@ -42,7 +42,6 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
     protected StateMachineDefinition(
         string initialStateName,
-        Guid createdBy,
         int version = 1)
     {
         Version = version;
@@ -115,7 +114,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public abstract StateMachineDefinition CreateNewVersion(Guid createdBy);
+    public abstract StateMachineDefinition CreateNewVersion();
 
     /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
@@ -394,9 +393,8 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     protected StateMachineDefinition(
         TEntity entity,
         string initialStateName,
-        Guid createdBy,
         int version = 1)
-        : base(initialStateName, createdBy, version)
+        : base(initialStateName, version)
     {
         Entity = entity;
         EntityId = entity.Id;
@@ -413,12 +411,12 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public override StateMachineDefinition CreateNewVersion(Guid createdBy)
+    public override StateMachineDefinition CreateNewVersion()
     {
         if (InitialState == null)
             throw new InvalidOperationException("Cannot create new version without an initial state.");
 
-        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, createdBy, Version + 1);
+        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, Version + 1);
         newDefinition.SetEntity(Entity);
 
         CopyDefinitionDataTo(newDefinition);
