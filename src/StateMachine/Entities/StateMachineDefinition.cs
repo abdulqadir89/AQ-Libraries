@@ -58,7 +58,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public abstract StateMachineDefinition CreateNewVersion();
+    public abstract StateMachineDefinition CreateNewVersion(int version);
 
     /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
@@ -305,50 +305,6 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         return errors;
     }
 
-    /// <summary>
-    /// Removes a state from the definition (if not referenced by any transitions).
-    /// </summary>
-    public void RemoveState(StateMachineState state)
-    {
-        if (state == null)
-            return;
-
-        if (InitialState?.Id == state.Id)
-            throw new InvalidOperationException("Cannot remove the initial state.");
-
-        if (_transitions.Any(t => t.FromStateId == state.Id || t.ToStateId == state.Id))
-            throw new InvalidOperationException($"Cannot remove state '{state.Name}' because it is referenced by transitions.");
-
-        _states.RemoveAll(s => s.Id == state.Id);
-    }
-
-    /// <summary>
-    /// Removes a trigger from the definition (if not referenced by any transitions).
-    /// </summary>
-    public void RemoveTrigger(StateMachineTrigger trigger)
-    {
-        if (trigger == null)
-            return;
-
-        if (_transitions.Any(t => t.TriggerId == trigger.Id))
-            throw new InvalidOperationException($"Cannot remove trigger '{trigger.Name}' because it is referenced by transitions.");
-
-        _triggers.RemoveAll(t => t.Id == trigger.Id);
-    }
-
-    /// <summary>
-    /// Removes a transition from the definition.
-    /// </summary>
-    public void RemoveTransition(StateMachineState fromState, StateMachineState toState, StateMachineTrigger trigger)
-    {
-        if (fromState == null || toState == null || trigger == null)
-            return;
-
-        _transitions.RemoveAll(t => t.FromStateId == fromState.Id &&
-                                   t.ToStateId == toState.Id &&
-                                   t.TriggerId == trigger.Id);
-    }
-
     public void SetStatus(StateMachineDefinitionStatus status)
     {
         Status = status;
@@ -385,12 +341,12 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public override StateMachineDefinition CreateNewVersion()
+    public override StateMachineDefinition CreateNewVersion(int version)
     {
         if (InitialState == null)
             throw new InvalidOperationException("Cannot create new version without an initial state.");
 
-        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, Version + 1);
+        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, version);
         newDefinition.SetEntity(Entity);
 
         CopyDefinitionDataTo(newDefinition);

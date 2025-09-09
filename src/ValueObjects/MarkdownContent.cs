@@ -85,4 +85,9 @@ public sealed class MarkdownContent : ValueObject
         yield return Value;
         yield return Html;
     }
+
+    public MarkdownContent Clone()
+    {
+        return Create(this.Value);
+    }
 }
