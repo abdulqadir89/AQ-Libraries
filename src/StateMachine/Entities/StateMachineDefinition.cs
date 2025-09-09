@@ -72,9 +72,9 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var state in _states.Where(s => s.Id != InitialState.Id))
         {
             var newState = StateMachineState.Create(
-                newDefinition.Id, 
-                state.Name, 
-                state.Description, 
+                newDefinition.Id,
+                state.Name,
+                state.Description,
                 state.Category);
             newDefinition._states.Add(newState);
         }
@@ -83,9 +83,9 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var trigger in _triggers)
         {
             var newTrigger = StateMachineTrigger.Create(
-                newDefinition.Id, 
-                trigger.Name, 
-                trigger.Description, 
+                newDefinition.Id,
+                trigger.Name,
+                trigger.Description,
                 trigger.Type);
             newDefinition._triggers.Add(newTrigger);
         }
@@ -94,10 +94,10 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var transition in _transitions)
         {
             // Find the corresponding states and triggers in the new definition
-            var newFromState = transition.FromState != null 
+            var newFromState = transition.FromState != null
                 ? newDefinition._states.FirstOrDefault(s => s.Name == transition.FromState.Name)
                 : null;
-            var newToState = transition.ToState != null 
+            var newToState = transition.ToState != null
                 ? newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name)
                 : null;
             var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger.Name);
@@ -162,10 +162,10 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
-            var fromStateName = transition.FromState != null 
+            var fromStateName = transition.FromState != null
                 ? SanitizeStateName(transition.FromState.Name)
                 : "[*]";
-            var toStateName = transition.ToState != null 
+            var toStateName = transition.ToState != null
                 ? SanitizeStateName(transition.ToState.Name)
                 : "[*]";
             var triggerName = transition.Trigger.Name;
