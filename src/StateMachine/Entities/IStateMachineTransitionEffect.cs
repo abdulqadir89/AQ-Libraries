@@ -14,11 +14,11 @@ public interface IStateMachineTransitionEffect
 /// Base abstract class for transition effects with common properties.
 /// The effect type is automatically determined by the implementing class type.
 /// </summary>
-public abstract class StateMachineTransitionEffect : IStateMachineTransitionEffect
+public abstract record StateMachineTransitionEffect : IStateMachineTransitionEffect
 {
-    public string? Description { get; set; }
-    public bool IsOptional { get; set; } = false;
-    public int ExecutionOrder { get; set; } = 0;
+    public string? Description { get; init; }
+    public bool IsOptional { get; init; } = false;
+    public int ExecutionOrder { get; init; } = 0;
 
     /// <summary>
     /// Gets the effect type name based on the actual implementation type.

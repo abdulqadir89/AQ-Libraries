@@ -1,5 +1,9 @@
-﻿namespace AQ.ValueObjects.DataCollection;
+﻿using System.Text.Json.Serialization;
 
+namespace AQ.ValueObjects.DataCollection;
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(CollectedValue), typeDiscriminator: "collectedValue")]
 public class CollectedValue : ValueObject
 {
     public DataType DataType { get; private set; }

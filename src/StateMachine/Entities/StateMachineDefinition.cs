@@ -42,7 +42,6 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
     protected StateMachineDefinition(
         string initialStateName,
-        Guid createdBy,
         int version = 1)
     {
         Version = version;
@@ -57,65 +56,9 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
 
     /// <summary>
-    /// Adds a state to the definition.
-    /// </summary>
-    public void AddState(string stateName, string? description = null, bool isFinal = false)
-    {
-        if (string.IsNullOrWhiteSpace(stateName))
-            throw new ArgumentException("State name cannot be null or empty.", nameof(stateName));
-
-        if (_states.Any(s => s.Name == stateName))
-            throw new InvalidOperationException($"State '{stateName}' already exists.");
-
-        var category = isFinal ? StateMachineStateCategory.Final : StateMachineStateCategory.Intermediate;
-        var state = StateMachineState.Create(Id, stateName, description, category);
-        _states.Add(state);
-    }
-
-    /// <summary>
-    /// Adds a trigger to the definition.
-    /// </summary>
-    public void AddTrigger(string triggerName, string? description = null, StateMachineTriggerType type = StateMachineTriggerType.Manual)
-    {
-        if (string.IsNullOrWhiteSpace(triggerName))
-            throw new ArgumentException("Trigger name cannot be null or empty.", nameof(triggerName));
-
-        if (_triggers.Any(t => t.Name == triggerName))
-            throw new InvalidOperationException($"Trigger '{triggerName}' already exists.");
-
-        var trigger = StateMachineTrigger.Create(Id, triggerName, description, type);
-        _triggers.Add(trigger);
-    }
-
-    /// <summary>
-    /// Adds a transition to the definition.
-    /// </summary>
-    public void AddTransition(StateMachineState fromState, StateMachineState toState, StateMachineTrigger trigger)
-    {
-        var transition = StateMachineTransition.Create(Id, fromState, toState, trigger);
-        _transitions.Add(transition);
-    }
-
-    /// <summary>
-    /// Adds a transition to the definition with requirements.
-    /// </summary>
-    public void AddTransition(
-        StateMachineState fromState,
-        StateMachineState toState,
-        StateMachineTrigger trigger,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
-        string? description = null)
-    {
-        var transition = StateMachineTransition.Create(Id, fromState, toState, trigger, description, requirements);
-        _transitions.Add(transition);
-    }
-
-
-
-    /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public abstract StateMachineDefinition CreateNewVersion(Guid createdBy);
+    public abstract StateMachineDefinition CreateNewVersion(int version);
 
     /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
@@ -128,24 +71,49 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         // Copy all states except the initial state (which is already created in constructor)
         foreach (var state in _states.Where(s => s.Id != InitialState.Id))
         {
-            newDefinition.AddState(state.Name, state.Description, state.Category == StateMachineStateCategory.Final);
+            var newState = StateMachineState.Create(
+                newDefinition.Id,
+                state.Name,
+                state.Description,
+                state.Category);
+            newDefinition._states.Add(newState);
         }
 
         // Copy all triggers
         foreach (var trigger in _triggers)
         {
-            newDefinition.AddTrigger(trigger.Name, trigger.Description, trigger.Type);
+            var newTrigger = StateMachineTrigger.Create(
+                newDefinition.Id,
+                trigger.Name,
+                trigger.Description,
+                trigger.Type);
+            newDefinition._triggers.Add(newTrigger);
         }
 
         // Copy all transitions with their requirements and descriptions
         foreach (var transition in _transitions)
         {
-            newDefinition.AddTransition(
-                transition.FromState,
-                transition.ToState,
-                transition.Trigger,
-                transition.Requirements,
-                transition.Description);
+            // Find the corresponding states and triggers in the new definition
+            var newFromState = transition.FromState != null
+                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.FromState.Name)
+                : null;
+            var newToState = transition.ToState != null
+                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name)
+                : null;
+            var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger.Name);
+
+            if (newTrigger != null)
+            {
+                var newTransition = StateMachineTransition.Create(
+                    newDefinition.Id,
+                    newFromState,
+                    newToState,
+                    newTrigger,
+                    transition.Description,
+                    transition.Requirements,
+                    transition.Effects);
+                newDefinition._transitions.Add(newTransition);
+            }
         }
     }
 
@@ -194,8 +162,12 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
-            var fromStateName = SanitizeStateName(transition.FromState.Name);
-            var toStateName = SanitizeStateName(transition.ToState.Name);
+            var fromStateName = transition.FromState != null
+                ? SanitizeStateName(transition.FromState.Name)
+                : "[*]";
+            var toStateName = transition.ToState != null
+                ? SanitizeStateName(transition.ToState.Name)
+                : "[*]";
             var triggerName = transition.Trigger.Name;
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
@@ -310,7 +282,8 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
         foreach (var transition in _transitions)
         {
-            reachableStates.Add(transition.ToStateId);
+            if (transition.ToStateId.HasValue)
+                reachableStates.Add(transition.ToStateId.Value);
         }
 
         var orphanedStates = InitialState != null
@@ -332,50 +305,6 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         return errors;
     }
 
-    /// <summary>
-    /// Removes a state from the definition (if not referenced by any transitions).
-    /// </summary>
-    public void RemoveState(StateMachineState state)
-    {
-        if (state == null)
-            return;
-
-        if (InitialState?.Id == state.Id)
-            throw new InvalidOperationException("Cannot remove the initial state.");
-
-        if (_transitions.Any(t => t.FromStateId == state.Id || t.ToStateId == state.Id))
-            throw new InvalidOperationException($"Cannot remove state '{state.Name}' because it is referenced by transitions.");
-
-        _states.RemoveAll(s => s.Id == state.Id);
-    }
-
-    /// <summary>
-    /// Removes a trigger from the definition (if not referenced by any transitions).
-    /// </summary>
-    public void RemoveTrigger(StateMachineTrigger trigger)
-    {
-        if (trigger == null)
-            return;
-
-        if (_transitions.Any(t => t.TriggerId == trigger.Id))
-            throw new InvalidOperationException($"Cannot remove trigger '{trigger.Name}' because it is referenced by transitions.");
-
-        _triggers.RemoveAll(t => t.Id == trigger.Id);
-    }
-
-    /// <summary>
-    /// Removes a transition from the definition.
-    /// </summary>
-    public void RemoveTransition(StateMachineState fromState, StateMachineState toState, StateMachineTrigger trigger)
-    {
-        if (fromState == null || toState == null || trigger == null)
-            return;
-
-        _transitions.RemoveAll(t => t.FromStateId == fromState.Id &&
-                                   t.ToStateId == toState.Id &&
-                                   t.TriggerId == trigger.Id);
-    }
-
     public void SetStatus(StateMachineDefinitionStatus status)
     {
         Status = status;
@@ -394,9 +323,8 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     protected StateMachineDefinition(
         TEntity entity,
         string initialStateName,
-        Guid createdBy,
         int version = 1)
-        : base(initialStateName, createdBy, version)
+        : base(initialStateName, version)
     {
         Entity = entity;
         EntityId = entity.Id;
@@ -413,12 +341,12 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
-    public override StateMachineDefinition CreateNewVersion(Guid createdBy)
+    public override StateMachineDefinition CreateNewVersion(int version)
     {
         if (InitialState == null)
             throw new InvalidOperationException("Cannot create new version without an initial state.");
 
-        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, createdBy, Version + 1);
+        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, version);
         newDefinition.SetEntity(Entity);
 
         CopyDefinitionDataTo(newDefinition);

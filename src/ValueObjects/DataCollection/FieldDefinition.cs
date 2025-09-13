@@ -1,5 +1,9 @@
-﻿namespace AQ.ValueObjects.DataCollection;
+﻿using System.Text.Json.Serialization;
 
+namespace AQ.ValueObjects.DataCollection;
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(FieldDefinition), typeDiscriminator: "fieldDefinition")]
 public class FieldDefinition : ValueObject
 {
     public string Name { get; private set; } = default!;

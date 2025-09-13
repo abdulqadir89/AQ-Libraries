@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿using AQ.StateMachineEntities;
+using System.Diagnostics;
 using System.Reflection;
-using AQ.StateMachineEntities;
 
 namespace AQ.StateMachine.Services;
 

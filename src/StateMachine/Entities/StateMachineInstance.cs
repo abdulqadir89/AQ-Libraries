@@ -51,8 +51,14 @@ public abstract class StateMachineInstance : Entity
         where TUserId : IEquatable<TUserId>
     {
         var previousState = CurrentState;
-        CurrentStateId = transition.ToStateId;
-        CurrentState = transition.ToState;
+
+        // Only change state if this is a state-changing transition
+        if (transition.ChangesState)
+        {
+            CurrentStateId = transition.ToStateId!.Value;
+            CurrentState = transition.ToState!;
+        }
+
         LastTransitionAt = DateTimeOffset.UtcNow;
 
         // Record transition history
@@ -63,7 +69,7 @@ public abstract class StateMachineInstance : Entity
             historyEntry = StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
                 Id,
                 previousState,
-                CurrentState,
+                transition.ToState ?? CurrentState,
                 reason ?? "Forced transition",
                 triggeredBy);
         }
@@ -72,7 +78,7 @@ public abstract class StateMachineInstance : Entity
             historyEntry = StateMachineStateTransitionHistory<TUser, TUserId>.Create(
                 Id,
                 previousState,
-                CurrentState,
+                transition.ToState ?? CurrentState,
                 transition.Trigger,
                 triggeredBy);
         }
@@ -80,7 +86,7 @@ public abstract class StateMachineInstance : Entity
         _transitionHistory.Add(historyEntry);
 
         // Raise domain events
-        
+
     }
 
     /// <summary>
@@ -113,7 +119,7 @@ public abstract class StateMachineInstance : Entity
         _transitionHistory.Add(historyEntry);
 
         // Raise domain event for forced transition
-        
+
     }
 
     /// <summary>

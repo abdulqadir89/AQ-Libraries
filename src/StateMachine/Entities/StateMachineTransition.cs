@@ -8,10 +8,10 @@ namespace AQ.StateMachineEntities;
 public class StateMachineTransition : Entity
 {
     public Guid StateMachineDefinitionId { get; private set; }
-    public StateMachineState FromState { get; private set; } = default!;
-    public Guid FromStateId { get; private set; }
-    public StateMachineState ToState { get; private set; } = default!;
-    public Guid ToStateId { get; private set; }
+    public StateMachineState? FromState { get; private set; }
+    public Guid? FromStateId { get; private set; }
+    public StateMachineState? ToState { get; private set; }
+    public Guid? ToStateId { get; private set; }
     public StateMachineTrigger Trigger { get; private set; } = default!;
     public Guid TriggerId { get; private set; }
     public string? Description { get; private set; }
@@ -24,18 +24,18 @@ public class StateMachineTransition : Entity
 
     private StateMachineTransition(
         Guid stateMachineDefinitionId,
-        StateMachineState fromState,
-        StateMachineState toState,
+        StateMachineState? fromState,
+        StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
         IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
         IEnumerable<IStateMachineTransitionEffect>? effects = null)
     {
         StateMachineDefinitionId = stateMachineDefinitionId;
-        FromState = fromState ?? throw new ArgumentNullException(nameof(fromState));
-        FromStateId = fromState.Id;
-        ToState = toState ?? throw new ArgumentNullException(nameof(toState));
-        ToStateId = toState.Id;
+        FromState = fromState;
+        FromStateId = fromState?.Id;
+        ToState = toState;
+        ToStateId = toState?.Id;
         Trigger = trigger ?? throw new ArgumentNullException(nameof(trigger));
         TriggerId = trigger.Id;
         Description = description?.Trim();
@@ -48,19 +48,13 @@ public class StateMachineTransition : Entity
     /// </summary>
     public static StateMachineTransition Create(
         Guid stateMachineDefinitionId,
-        StateMachineState fromState,
-        StateMachineState toState,
+        StateMachineState? fromState,
+        StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
         IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
         IEnumerable<IStateMachineTransitionEffect>? effects = null)
     {
-        if (fromState == null)
-            throw new ArgumentNullException(nameof(fromState));
-
-        if (toState == null)
-            throw new ArgumentNullException(nameof(toState));
-
         if (trigger == null)
             throw new ArgumentNullException(nameof(trigger));
 
@@ -106,6 +100,16 @@ public class StateMachineTransition : Entity
     /// Gets the count of effects for this transition.
     /// </summary>
     public int EffectCount => Effects?.Count() ?? 0;
+
+    /// <summary>
+    /// Indicates whether this transition changes state (has both from and to states).
+    /// </summary>
+    public bool ChangesState => FromState != null && ToState != null;
+
+    /// <summary>
+    /// Indicates whether this is a trigger-only transition (no state change).
+    /// </summary>
+    public bool IsTriggerOnly => FromState == null || ToState == null;
 
     /// <summary>
     /// Adds a requirement to this transition.
@@ -179,5 +183,8 @@ public class StateMachineTransition : Entity
         Effects = currentEffects.Any() ? currentEffects : null;
     }
 
-    public override string ToString() => $"{FromState.Name} -> {ToState.Name} ({Trigger.Name})";
+    public override string ToString() =>
+        ChangesState
+            ? $"{FromState!.Name} -> {ToState!.Name} ({Trigger.Name})"
+            : $"Trigger: {Trigger.Name}";
 }

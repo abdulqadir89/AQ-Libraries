@@ -31,8 +31,10 @@ public abstract class StateMachineTransitionServiceBase : IStateMachineTransitio
         where TUserId : IEquatable<TUserId>
     {
         // 1. Find available transitions for the trigger
+        // Include both state-changing transitions and trigger-only transitions
         var availableTransitions = stateMachine.Definition.Transitions
-            .Where(t => t.FromStateId == stateMachine.CurrentStateId && t.Trigger.Id == trigger.Id)
+            .Where(t => t.Trigger.Id == trigger.Id &&
+                       (t.FromStateId == stateMachine.CurrentStateId || t.FromStateId == null))
             .ToList();
 
         if (!availableTransitions.Any())
@@ -156,8 +158,9 @@ public abstract class StateMachineTransitionServiceBase : IStateMachineTransitio
     {
         var availableTransitions = new List<AvailableTransition>();
 
+        // Include both state-changing transitions and trigger-only transitions
         var transitionsFromCurrentState = stateMachine.Definition.Transitions
-            .Where(t => t.FromStateId == stateMachine.CurrentStateId);
+            .Where(t => t.FromStateId == stateMachine.CurrentStateId || t.FromStateId == null);
 
         foreach (var transition in transitionsFromCurrentState)
         {
@@ -167,8 +170,8 @@ public abstract class StateMachineTransitionServiceBase : IStateMachineTransitio
             {
                 TriggerId = transition.Trigger.Id,
                 TriggerName = transition.Trigger.Name,
-                ToStateId = transition.ToState.Id,
-                ToStateName = transition.ToState.Name,
+                ToStateId = transition.ToState?.Id,
+                ToStateName = transition.ToState?.Name,
                 TransitionId = transition.Id,
                 CanExecute = evaluationResult.IsSuccess && evaluationResult.Value.AllRequirementsMet,
                 RequirementEvaluation = evaluationResult.IsSuccess ? evaluationResult.Value : null

@@ -14,10 +14,10 @@ public interface IStateMachineTransitionRequirement
 /// Base abstract class for transition requirements with common properties.
 /// The requirement type is automatically determined by the implementing class type.
 /// </summary>
-public abstract class StateMachineTransitionRequirement : IStateMachineTransitionRequirement
+public abstract record StateMachineTransitionRequirement : IStateMachineTransitionRequirement
 {
-    public string? Description { get; set; }
-    public bool IsOptional { get; set; } = false;
+    public string? Description { get; init; }
+    public bool IsOptional { get; init; } = false;
 
     /// <summary>
     /// Gets the requirement type name based on the actual implementation type.
