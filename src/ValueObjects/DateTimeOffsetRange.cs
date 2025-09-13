@@ -3,15 +3,15 @@
 /// <summary>
 /// Represents a date time range value object with validation and timezone support. Supports open-ended ranges.
 /// </summary>
-public sealed class DateTimeRange : ValueObject
+public sealed class DateTimeOffsetRange : ValueObject
 {
     public DateTimeOffset? Start { get; init; }
     public DateTimeOffset? End { get; init; }
 
     // Parameterless constructor for EF Core
-    public DateTimeRange() { }
+    public DateTimeOffsetRange() { }
 
-    private DateTimeRange(DateTimeOffset? start, DateTimeOffset? end)
+    private DateTimeOffsetRange(DateTimeOffset? start, DateTimeOffset? end)
     {
         Start = start;
         End = end;
@@ -24,12 +24,12 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="end">The end date time of the range (null for open-ended).</param>
     /// <returns>A valid DateTimeRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date time is before the start date time.</exception>
-    public static DateTimeRange Create(DateTimeOffset? start, DateTimeOffset? end)
+    public static DateTimeOffsetRange Create(DateTimeOffset? start, DateTimeOffset? end)
     {
         if (start.HasValue && end.HasValue && end < start)
             throw new ArgumentException("End date time cannot be before start date time.", nameof(end));
 
-        return new DateTimeRange(start, end);
+        return new DateTimeOffsetRange(start, end);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="end">The end date time of the range (null for open-ended).</param>
     /// <returns>A valid DateTimeRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date time is before the start date time.</exception>
-    public static DateTimeRange Create(DateTime? start, DateTime? end)
+    public static DateTimeOffsetRange Create(DateTime? start, DateTime? end)
     {
         DateTimeOffset? startDateTimeOffset = start.HasValue ? new DateTimeOffset(start.Value) : null;
         DateTimeOffset? endDateTimeOffset = end.HasValue ? new DateTimeOffset(end.Value) : null;
@@ -54,7 +54,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="offset">The timezone offset to apply to both dates.</param>
     /// <returns>A valid DateTimeRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date time is before the start date time.</exception>
-    public static DateTimeRange Create(DateTime? start, DateTime? end, TimeSpan offset)
+    public static DateTimeOffsetRange Create(DateTime? start, DateTime? end, TimeSpan offset)
     {
         DateTimeOffset? startDateTimeOffset = start.HasValue ? new DateTimeOffset(start.Value, offset) : null;
         DateTimeOffset? endDateTimeOffset = end.HasValue ? new DateTimeOffset(end.Value, offset) : null;
@@ -68,7 +68,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="end">The end date time of the range.</param>
     /// <returns>A valid closed DateTimeRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date time is before the start date time.</exception>
-    public static DateTimeRange CreateClosed(DateTimeOffset start, DateTimeOffset end)
+    public static DateTimeOffsetRange CreateClosed(DateTimeOffset start, DateTimeOffset end)
     {
         return Create(start, end);
     }
@@ -78,7 +78,7 @@ public sealed class DateTimeRange : ValueObject
     /// </summary>
     /// <param name="start">The start date time of the range.</param>
     /// <returns>A valid open-ended DateTimeRange instance.</returns>
-    public static DateTimeRange CreateFrom(DateTimeOffset start)
+    public static DateTimeOffsetRange CreateFrom(DateTimeOffset start)
     {
         return Create(start, null);
     }
@@ -88,7 +88,7 @@ public sealed class DateTimeRange : ValueObject
     /// </summary>
     /// <param name="end">The end date time of the range.</param>
     /// <returns>A valid open-ended DateTimeRange instance.</returns>
-    public static DateTimeRange CreateUntil(DateTimeOffset end)
+    public static DateTimeOffsetRange CreateUntil(DateTimeOffset end)
     {
         return Create(null, end);
     }
@@ -97,9 +97,9 @@ public sealed class DateTimeRange : ValueObject
     /// Creates a completely open-ended date time range.
     /// </summary>
     /// <returns>A completely open DateTimeRange instance.</returns>
-    public static DateTimeRange CreateOpen()
+    public static DateTimeOffsetRange CreateOpen()
     {
-        return new DateTimeRange(null, null);
+        return new DateTimeOffsetRange(null, null);
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="end">The end date time of the range (null for open-ended).</param>
     /// <param name="result">The created DateTimeRange instance if successful.</param>
     /// <returns>True if the date time range is valid and created successfully, false otherwise.</returns>
-    public static bool TryCreate(DateTimeOffset? start, DateTimeOffset? end, out DateTimeRange? result)
+    public static bool TryCreate(DateTimeOffset? start, DateTimeOffset? end, out DateTimeOffsetRange? result)
     {
         result = null;
 
@@ -131,7 +131,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="end">The end date time of the range (null for open-ended).</param>
     /// <param name="result">The created DateTimeRange instance if successful.</param>
     /// <returns>True if the date time range is valid and created successfully, false otherwise.</returns>
-    public static bool TryCreate(DateTime? start, DateTime? end, out DateTimeRange? result)
+    public static bool TryCreate(DateTime? start, DateTime? end, out DateTimeOffsetRange? result)
     {
         DateTimeOffset? startDateTimeOffset = start.HasValue ? new DateTimeOffset(start.Value) : null;
         DateTimeOffset? endDateTimeOffset = end.HasValue ? new DateTimeOffset(end.Value) : null;
@@ -146,7 +146,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="offset">The timezone offset to apply to both dates.</param>
     /// <param name="result">The created DateTimeRange instance if successful.</param>
     /// <returns>True if the date time range is valid and created successfully, false otherwise.</returns>
-    public static bool TryCreate(DateTime? start, DateTime? end, TimeSpan offset, out DateTimeRange? result)
+    public static bool TryCreate(DateTime? start, DateTime? end, TimeSpan offset, out DateTimeOffsetRange? result)
     {
         DateTimeOffset? startDateTimeOffset = start.HasValue ? new DateTimeOffset(start.Value, offset) : null;
         DateTimeOffset? endDateTimeOffset = end.HasValue ? new DateTimeOffset(end.Value, offset) : null;
@@ -228,7 +228,7 @@ public sealed class DateTimeRange : ValueObject
     /// </summary>
     /// <param name="other">The other date time range to check.</param>
     /// <returns>True if the ranges overlap, false otherwise.</returns>
-    public bool Overlaps(DateTimeRange other)
+    public bool Overlaps(DateTimeOffsetRange other)
     {
         // If either range is completely open, they overlap
         if (!Start.HasValue && !End.HasValue || !other.Start.HasValue && !other.End.HasValue)
@@ -247,11 +247,11 @@ public sealed class DateTimeRange : ValueObject
     /// Converts the DateTimeRange to UTC timezone.
     /// </summary>
     /// <returns>A new DateTimeRange with UTC timezone.</returns>
-    public DateTimeRange ToUtc()
+    public DateTimeOffsetRange ToUtc()
     {
         var startUtc = Start?.ToUniversalTime();
         var endUtc = End?.ToUniversalTime();
-        return new DateTimeRange(startUtc, endUtc);
+        return new DateTimeOffsetRange(startUtc, endUtc);
     }
 
     /// <summary>
@@ -259,11 +259,11 @@ public sealed class DateTimeRange : ValueObject
     /// </summary>
     /// <param name="offset">The target timezone offset.</param>
     /// <returns>A new DateTimeRange with the specified timezone.</returns>
-    public DateTimeRange ToOffset(TimeSpan offset)
+    public DateTimeOffsetRange ToOffset(TimeSpan offset)
     {
         var startOffset = Start?.ToOffset(offset);
         var endOffset = End?.ToOffset(offset);
-        return new DateTimeRange(startOffset, endOffset);
+        return new DateTimeOffsetRange(startOffset, endOffset);
     }
 
     /// <summary>
@@ -334,14 +334,14 @@ public sealed class DateTimeRange : ValueObject
     /// </summary>
     /// <param name="newStart">The new start date time (null for open-ended).</param>
     /// <returns>A new DateTimeRange instance with the modified start date time.</returns>
-    public DateTimeRange WithStart(DateTimeOffset? newStart) => Create(newStart, End);
+    public DateTimeOffsetRange WithStart(DateTimeOffset? newStart) => Create(newStart, End);
 
     /// <summary>
     /// Creates a new DateTimeRange with a modified end date time.
     /// </summary>
     /// <param name="newEnd">The new end date time (null for open-ended).</param>
     /// <returns>A new DateTimeRange instance with the modified end date time.</returns>
-    public DateTimeRange WithEnd(DateTimeOffset? newEnd) => Create(Start, newEnd);
+    public DateTimeOffsetRange WithEnd(DateTimeOffset? newEnd) => Create(Start, newEnd);
 
     /// <summary>
     /// Creates a new DateTimeRange with modified start and end date times.
@@ -349,7 +349,7 @@ public sealed class DateTimeRange : ValueObject
     /// <param name="newStart">The new start date time (null for open-ended).</param>
     /// <param name="newEnd">The new end date time (null for open-ended).</param>
     /// <returns>A new DateTimeRange instance with the modified date times.</returns>
-    public DateTimeRange WithDateTimes(DateTimeOffset? newStart, DateTimeOffset? newEnd) => Create(newStart, newEnd);
+    public DateTimeOffsetRange WithDateTimes(DateTimeOffset? newStart, DateTimeOffset? newEnd) => Create(newStart, newEnd);
 
     protected override IEnumerable<object> GetAtomicValues()
     {

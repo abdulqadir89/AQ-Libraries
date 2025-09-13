@@ -73,6 +73,4 @@ public abstract class Entity : IEntity, IHasDomainEvents
     }
 
     public void UpdateRowVersion() => RowVersion++;
-
-    public void SetClientGeneratedId(Guid id) => Id = id;
 }
