@@ -11,7 +11,6 @@ namespace AQ.Entities;
 /// <typeparam name="T">The concrete entity type implementing the hierarchy</typeparam>
 public abstract class HierarchicalEntity<T> : Entity, IHierarchicalEntity where T : HierarchicalEntity<T>
 {
-    public int Level { get; protected set; }
 
     // Self-referential for n-level hierarchy
     public Guid? ParentId { get; protected set; }
@@ -32,11 +31,9 @@ public abstract class HierarchicalEntity<T> : Entity, IHierarchicalEntity where 
 
     public async Task SetParent(T? parent, Func<T, Guid?, Task> updateClosure)
     {
-        await updateClosure.Invoke((T)this, parent?.Id);
-
         Parent = parent;
         ParentId = parent?.Id;
-        Level = parent is null ? 0 : parent.Level + 1;
+        await updateClosure.Invoke((T)this, parent?.Id);
     }
 
 }
