@@ -123,6 +123,36 @@ public abstract class StateMachineInstance : Entity
     }
 
     /// <summary>
+    /// Method for reverting to a specific state by marking transitions as reverted.
+    /// Used by IStateMachineTransitionService.
+    /// </summary>
+    public void ExecuteRevert<TUser, TUserId>(
+        StateMachineState targetState,
+        IEnumerable<StateMachineStateTransitionHistory> transitionsToRevert)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>
+    {
+        if (targetState == null)
+            throw new ArgumentNullException(nameof(targetState));
+
+        // Mark all specified transitions as reverted
+        foreach (var transition in transitionsToRevert)
+        {
+            if (!transition.IsReverted)
+            {
+                transition.MarkAsReverted();
+            }
+        }
+
+        // Update current state to the target state
+        CurrentStateId = targetState.Id;
+        CurrentState = targetState;
+        LastTransitionAt = DateTimeOffset.UtcNow;
+
+        // Raise domain event for revert operation if needed
+    }
+
+    /// <summary>
     /// Gets all available trigger entities from the current state.
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggers()

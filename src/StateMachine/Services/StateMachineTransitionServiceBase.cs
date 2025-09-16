@@ -181,6 +181,168 @@ public abstract class StateMachineTransitionServiceBase : IStateMachineTransitio
         return availableTransitions;
     }
 
+    public async Task<Result<StateMachineRevertInfo>> RevertTransitionsAsync<TUser, TUserId>(
+        StateMachineInstance stateMachine,
+        int numberOfTransitions,
+        string reason,
+        TUser revertedBy)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>
+    {
+        // Validate input parameters
+        if (numberOfTransitions <= 0)
+        {
+            return Result.Failure<StateMachineRevertInfo>(
+                new Error(ErrorType.Validation, "Revert.InvalidCount",
+                    "Number of transitions to revert must be greater than 0"));
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Failure<StateMachineRevertInfo>(
+                new Error(ErrorType.Validation, "Revert.MissingReason",
+                    "A reason must be provided for the revert operation"));
+        }
+
+        // Get only non-reverted transition history in chronological order (oldest first)
+        var nonRevertedHistory = stateMachine.TransitionHistory
+            .Where(h => !h.IsReverted)
+            .OrderBy(h => h.TransitionedAt)
+            .ToList();
+
+        // Validate we have enough non-reverted transitions to revert
+        if (nonRevertedHistory.Count < numberOfTransitions)
+        {
+            return Result.Failure<StateMachineRevertInfo>(
+                new Error(ErrorType.Validation, "Revert.InsufficientHistory",
+                    $"Cannot revert {numberOfTransitions} transitions. Only {nonRevertedHistory.Count} non-reverted transitions exist"));
+        }
+
+        // Find the target state after reverting (using only non-reverted transitions)
+        var targetStateResult = GetTargetStateAfterRevert(stateMachine, nonRevertedHistory, numberOfTransitions);
+        if (targetStateResult.IsFailure)
+        {
+            return Result.Failure<StateMachineRevertInfo>(targetStateResult.Error);
+        }
+
+        var targetState = targetStateResult.Value;
+        var previousState = stateMachine.CurrentState;
+
+        // Get the last N non-reverted transitions to mark as reverted
+        var transitionsToRevert = nonRevertedHistory.TakeLast(numberOfTransitions).ToList();
+
+        // Execute the revert operation
+        stateMachine.ExecuteRevert<TUser, TUserId>(targetState, transitionsToRevert);
+
+        // Save changes (implementation-specific)
+        await SaveStateMachineChangesAsync(stateMachine);
+
+        return Result.Success(new StateMachineRevertInfo
+        {
+            Success = true,
+            PreviousStateId = previousState.Id,
+            NewStateId = targetState.Id,
+            TransitionsReverted = numberOfTransitions,
+            Reason = reason,
+            RevertedAt = DateTimeOffset.UtcNow,
+            MarkedAsRevertedTransitions = transitionsToRevert
+        });
+    }
+
+    public async Task<Result<StateMachineRevertInfo>> RevertLastTransitionAsync<TUser, TUserId>(
+        StateMachineInstance stateMachine,
+        string reason,
+        TUser revertedBy)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>
+    {
+        return await RevertTransitionsAsync<TUser, TUserId>(stateMachine, 1, reason, revertedBy);
+    }
+
+    /// <summary>
+    /// Determines the target state after reverting the specified number of transitions.
+    /// Only considers non-reverted transitions for the calculation.
+    /// </summary>
+    protected virtual Result<StateMachineState> GetTargetStateAfterRevert(
+        StateMachineInstance stateMachine,
+        IList<StateMachineStateTransitionHistory> nonRevertedHistory,
+        int numberOfTransitions)
+    {
+        if (numberOfTransitions <= 0)
+        {
+            return Result.Failure<StateMachineState>(
+                new Error(ErrorType.Validation, "Revert.InvalidCount",
+                    "Number of transitions must be greater than 0"));
+        }
+
+        if (nonRevertedHistory.Count == 0)
+        {
+            return Result.Failure<StateMachineState>(
+                new Error(ErrorType.Validation, "Revert.NoHistory",
+                    "No non-reverted transition history available"));
+        }
+
+        // If we're reverting all non-reverted transitions, go back to the initial state
+        if (numberOfTransitions >= nonRevertedHistory.Count)
+        {
+            var initialState = stateMachine.Definition.InitialState;
+            if (initialState == null)
+            {
+                return Result.Failure<StateMachineState>(
+                    new Error(ErrorType.Validation, "Revert.NoInitialState",
+                        "State machine definition has no initial state"));
+            }
+            return Result.Success(initialState);
+        }
+
+        // Find the state we should be in after reverting N transitions
+        // This is the "ToState" of the transition that will remain after revert
+        var targetTransitionIndex = nonRevertedHistory.Count - numberOfTransitions - 1;
+        var targetTransition = nonRevertedHistory[targetTransitionIndex];
+
+        // The target state is the ToState of the transition that will remain after revert
+        var targetState = stateMachine.Definition.States.FirstOrDefault(s => s.Id == targetTransition.ToStateId);
+        
+        if (targetState == null)
+        {
+            return Result.Failure<StateMachineState>(
+                new Error(ErrorType.Validation, "Revert.StateNotFound",
+                    $"Target state with ID {targetTransition.ToStateId} not found in definition"));
+        }
+
+        return Result.Success(targetState);
+    }
+
+    /// <summary>
+    /// Validates if a revert operation can be performed safely.
+    /// Only considers non-reverted transitions.
+    /// </summary>
+    protected virtual Result ValidateRevertOperation(
+        StateMachineInstance stateMachine,
+        int numberOfTransitions)
+    {
+        if (numberOfTransitions <= 0)
+        {
+            return Result.Failure(
+                new Error(ErrorType.Validation, "Revert.InvalidCount",
+                    "Number of transitions to revert must be greater than 0"));
+        }
+
+        var nonRevertedHistory = stateMachine.TransitionHistory
+            .Where(h => !h.IsReverted)
+            .OrderBy(h => h.TransitionedAt)
+            .ToList();
+
+        if (nonRevertedHistory.Count < numberOfTransitions)
+        {
+            return Result.Failure(
+                new Error(ErrorType.Validation, "Revert.InsufficientHistory",
+                    $"Cannot revert {numberOfTransitions} transitions. Only {nonRevertedHistory.Count} non-reverted transitions exist"));
+        }
+
+        return Result.Success();
+    }
+
     /// <summary>
     /// Executes the actual transition and saves changes.
     /// Implementation-specific method that should be overridden.

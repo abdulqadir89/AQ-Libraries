@@ -87,6 +87,42 @@ public interface IStateMachineTransitionService
     Task<IEnumerable<AvailableTransition>> GetAvailableTransitionsAsync(
         StateMachineInstance stateMachine,
         IDictionary<string, object>? requirementsContext = null);
+
+    /// <summary>
+    /// Reverts the specified number of transitions, moving the state machine back in its history.
+    /// This operation marks the reverted transitions with RevertedAt timestamp.
+    /// </summary>
+    /// <typeparam name="TUser">User type</typeparam>
+    /// <typeparam name="TUserId">User ID type</typeparam>
+    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="numberOfTransitions">Number of transitions to revert (must be positive)</param>
+    /// <param name="reason">Reason for the revert operation</param>
+    /// <param name="revertedBy">The user performing the revert</param>
+    /// <returns>Result with revert operation details</returns>
+    Task<Result<StateMachineRevertInfo>> RevertTransitionsAsync<TUser, TUserId>(
+        StateMachineInstance stateMachine,
+        int numberOfTransitions,
+        string reason,
+        TUser revertedBy)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>;
+
+    /// <summary>
+    /// Reverts the last transition, moving the state machine back one step in its history.
+    /// This operation marks the last non-reverted transition with RevertedAt timestamp.
+    /// </summary>
+    /// <typeparam name="TUser">User type</typeparam>
+    /// <typeparam name="TUserId">User ID type</typeparam>
+    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="reason">Reason for the revert operation</param>
+    /// <param name="revertedBy">The user performing the revert</param>
+    /// <returns>Result with revert operation details</returns>
+    Task<Result<StateMachineRevertInfo>> RevertLastTransitionAsync<TUser, TUserId>(
+        StateMachineInstance stateMachine,
+        string reason,
+        TUser revertedBy)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>;
 }
 
 /// <summary>
@@ -127,4 +163,18 @@ public class AvailableTransition
     public Guid TransitionId { get; set; }
     public bool CanExecute { get; set; }
     public RequirementEvaluationSummary? RequirementEvaluation { get; set; }
+}
+
+/// <summary>
+/// Information about a state machine revert operation.
+/// </summary>
+public class StateMachineRevertInfo
+{
+    public bool Success { get; set; }
+    public Guid PreviousStateId { get; set; }
+    public Guid NewStateId { get; set; }
+    public int TransitionsReverted { get; set; }
+    public string Reason { get; set; } = default!;
+    public DateTimeOffset RevertedAt { get; set; }
+    public IEnumerable<StateMachineStateTransitionHistory> MarkedAsRevertedTransitions { get; set; } = [];
 }
