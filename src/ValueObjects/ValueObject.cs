@@ -34,6 +34,8 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
     protected abstract IEnumerable<object> GetAtomicValues();
 
+    public abstract ValueObject Clone();
+
     private bool ValuesAreEqual(ValueObject valueObject) =>
         GetAtomicValues().SequenceEqual(valueObject.GetAtomicValues());
 }

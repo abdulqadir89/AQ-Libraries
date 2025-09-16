@@ -129,4 +129,9 @@ public class CollectedValue : ValueObject
         yield return BoolValue ?? false;
         yield return DateTimeOffsetValue ?? DateTimeOffset.MinValue;
     }
+
+    public override CollectedValue Clone()
+    {
+        return new CollectedValue(DataType, StringValue, MarkdownContent, NumericValue, BoolValue, DateTimeOffsetValue);
+    }
 }

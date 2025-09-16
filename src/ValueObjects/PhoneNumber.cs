@@ -79,4 +79,9 @@ public sealed class PhoneNumber : ValueObject
     public override string ToString() => Value;
 
     public static implicit operator string(PhoneNumber phoneNumber) => phoneNumber.Value;
+
+    public override PhoneNumber Clone()
+    {
+        return Create(Value);
+    }
 }
