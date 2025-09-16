@@ -15,8 +15,6 @@ public abstract class HierarchicalEntityClosure<T> : IHierarchicalEntityClosure 
 
     public Guid DescendantId { get; set; }
     public T Descendant { get; set; } = default!;
-    public int Depth { get; set; }
-
     protected HierarchicalEntityClosure() { }
     // Use this entity for ancestor/descendant mapping. Construction and updates should be handled in the application layer when parent changes.
 }
