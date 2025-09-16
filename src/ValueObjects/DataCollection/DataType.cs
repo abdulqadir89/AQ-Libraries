@@ -5,7 +5,9 @@ namespace AQ.ValueObjects.DataCollection;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum DataType
 {
-    String,
+    Text,
+    MultilineText,
+    Markdown,
     Numeric,
     Boolean,
     DateTimeOffset,

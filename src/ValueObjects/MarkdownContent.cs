@@ -27,11 +27,6 @@ public sealed class MarkdownContent : ValueObject
         Html = GenerateHtml(value);
     }
 
-    public MarkdownContent Update(string newValue)
-    {
-        return new MarkdownContent(newValue);
-    }
-
     private static string GenerateHtml(string value)
     {
         // Uses Markdig for Markdown to HTML conversion
@@ -88,6 +83,6 @@ public sealed class MarkdownContent : ValueObject
 
     public MarkdownContent Clone()
     {
-        return Create(this.Value);
+        return Create(Value);
     }
 }

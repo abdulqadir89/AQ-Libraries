@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using AQ.ValueObjects;
 
 namespace AQ.ValueObjects.DataCollection;
 
@@ -9,6 +10,7 @@ public class CollectedValue : ValueObject
     public DataType DataType { get; private set; }
 
     public string? StringValue { get; private set; }
+    public MarkdownContent? MarkdownContent { get; private set; }
     public decimal? NumericValue { get; private set; }
     public bool? BoolValue { get; private set; }
     public DateTimeOffset? DateTimeOffsetValue { get; private set; }
@@ -17,12 +19,14 @@ public class CollectedValue : ValueObject
 
     private CollectedValue(DataType type,
         string? str = null,
+        MarkdownContent? markdown = null,
         decimal? num = null,
         bool? b = null,
         DateTimeOffset? dto = null)
     {
         DataType = type;
         StringValue = str;
+        MarkdownContent = markdown;
         NumericValue = num;
         BoolValue = b;
         DateTimeOffsetValue = dto;
@@ -41,8 +45,15 @@ public class CollectedValue : ValueObject
 
         switch (definition.DataType)
         {
-            case DataType.String:
-                return new CollectedValue(DataType.String, str: rawValue.ToString());
+            case DataType.Text:
+                return new CollectedValue(DataType.Text, str: rawValue.ToString());
+
+            case DataType.MultilineText:
+                return new CollectedValue(DataType.MultilineText, str: rawValue.ToString());
+
+            case DataType.Markdown:
+                var markdownContent = MarkdownContent.Create(rawValue.ToString() ?? string.Empty);
+                return new CollectedValue(DataType.Markdown, markdown: markdownContent);
 
             case DataType.Numeric:
                 if (decimal.TryParse(rawValue.ToString(), out var num))
@@ -96,7 +107,9 @@ public class CollectedValue : ValueObject
 
     public object? GetValueObject() => DataType switch
     {
-        DataType.String => StringValue,
+        DataType.Text => StringValue,
+        DataType.MultilineText => StringValue,
+        DataType.Markdown => MarkdownContent,
         DataType.Numeric => NumericValue,
         DataType.Boolean => BoolValue,
         DataType.DateTimeOffset => DateTimeOffsetValue,
@@ -111,6 +124,7 @@ public class CollectedValue : ValueObject
     {
         yield return DataType;
         yield return StringValue ?? string.Empty;
+        yield return MarkdownContent?.Value ?? string.Empty;
         yield return NumericValue ?? 0;
         yield return BoolValue ?? false;
         yield return DateTimeOffsetValue ?? DateTimeOffset.MinValue;
