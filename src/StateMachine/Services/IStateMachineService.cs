@@ -5,65 +5,35 @@ using AQ.Utilities.Results;
 namespace AQ.StateMachine.Services;
 
 /// <summary>
-/// Service for handling state machine transitions with requirement evaluation.
+/// Service for handling state machine operations including transitions, requirements evaluation, and reverts.
 /// </summary>
-public interface IStateMachineTransitionService
+public interface IStateMachineService
 {
     /// <summary>
-    /// Attempts to transition a state machine using the specified trigger.
-    /// Evaluates all transition requirements before allowing the transition.
+    /// Gets valid transitions for the specified trigger, evaluating all requirements.
+    /// This method does not execute the transition but validates it can be performed.
     /// </summary>
-    /// <typeparam name="TUser">User type</typeparam>
-    /// <typeparam name="TUserId">User ID type</typeparam>
     /// <param name="stateMachine">The state machine instance</param>
-    /// <param name="trigger">The trigger to execute</param>
-    /// <param name="triggeredBy">The user triggering the transition</param>
+    /// <param name="trigger">The trigger to evaluate</param>
     /// <param name="requirementsContext">Requirements context where key is requirement type name and value is context object</param>
-    /// <returns>Result indicating success or failure with details</returns>
-    Task<Result<StateMachineTransitionInfo>> TryTransitionAsync<TUser, TUserId>(
+    /// <returns>Result with valid transitions that can be executed</returns>
+    Task<Result<IEnumerable<ValidTransition>>> GetValidTransitionsAsync(
         StateMachineInstance stateMachine,
         StateMachineTrigger trigger,
-        TUser triggeredBy,
-        IDictionary<string, object>? requirementsContext = null)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>;
+        IDictionary<string, object>? requirementsContext = null);
 
     /// <summary>
-    /// Attempts to transition a state machine using the specified trigger name.
+    /// Executes effects for a completed transition.
+    /// This method should be called after a transition has been executed on the state machine instance.
     /// </summary>
-    /// <typeparam name="TUser">User type</typeparam>
-    /// <typeparam name="TUserId">User ID type</typeparam>
+    /// <param name="transition">The transition that was executed</param>
     /// <param name="stateMachine">The state machine instance</param>
-    /// <param name="triggerName">The name of the trigger to execute</param>
-    /// <param name="triggeredBy">The user triggering the transition</param>
-    /// <param name="requirementsContext">Requirements context where key is requirement type name and value is context object</param>
-    /// <returns>Result indicating success or failure with details</returns>
-    Task<Result<StateMachineTransitionInfo>> TryTransitionAsync<TUser, TUserId>(
+    /// <param name="transitionInfo">Information about the completed transition</param>
+    /// <returns>Result with effect execution summary</returns>
+    Task<Result<EffectExecutionSummary?>> ExecuteEffectsAsync(
+        StateMachineTransition transition,
         StateMachineInstance stateMachine,
-        string triggerName,
-        TUser triggeredBy,
-        IDictionary<string, object>? requirementsContext = null)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>;
-
-    /// <summary>
-    /// Forces a transition to a new state without requirement validation.
-    /// Use with caution as this bypasses all business rules.
-    /// </summary>
-    /// <typeparam name="TUser">User type</typeparam>
-    /// <typeparam name="TUserId">User ID type</typeparam>
-    /// <param name="stateMachine">The state machine instance</param>
-    /// <param name="targetState">The target state entity</param>
-    /// <param name="reason">Reason for the forced transition</param>
-    /// <param name="triggeredBy">The user performing the forced transition</param>
-    /// <returns>Result indicating success or failure</returns>
-    Task<Result<StateMachineTransitionInfo>> ForceTransitionAsync<TUser, TUserId>(
-        StateMachineInstance stateMachine,
-        StateMachineState targetState,
-        string reason,
-        TUser triggeredBy)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>;
+        StateMachineTransitionInfo transitionInfo);
 
     /// <summary>
     /// Evaluates all requirements for a specific transition without executing it.
@@ -117,12 +87,12 @@ public interface IStateMachineTransitionService
     /// <param name="reason">Reason for the revert operation</param>
     /// <param name="revertedBy">The user performing the revert</param>
     /// <returns>Result with revert operation details</returns>
-    Task<Result<StateMachineRevertInfo>> RevertLastTransitionAsync<TUser, TUserId>(
+    async Task<Result<StateMachineRevertInfo>> RevertLastTransitionAsync<TUser, TUserId>(
         StateMachineInstance stateMachine,
         string reason,
         TUser revertedBy)
         where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>;
+        where TUserId : IEquatable<TUserId> => await RevertTransitionsAsync<TUser, TUserId>(stateMachine, 1, reason, revertedBy);
 }
 
 /// <summary>
@@ -163,6 +133,16 @@ public class AvailableTransition
     public Guid TransitionId { get; set; }
     public bool CanExecute { get; set; }
     public RequirementEvaluationSummary? RequirementEvaluation { get; set; }
+}
+
+/// <summary>
+/// Information about a validated transition that can be executed.
+/// </summary>
+public class ValidTransition
+{
+    public StateMachineTransition Transition { get; set; } = default!;
+    public RequirementEvaluationSummary RequirementEvaluation { get; set; } = default!;
+    public bool CanExecute => RequirementEvaluation.AllRequirementsMet;
 }
 
 /// <summary>
