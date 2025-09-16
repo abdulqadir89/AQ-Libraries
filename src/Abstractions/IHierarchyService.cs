@@ -6,4 +6,6 @@ public interface IHierarchyService<T> where T : IHierarchicalEntity
 
     Task<bool> CircularReferenceExists(T entity, Guid? newParentId);
 
+    Task<bool> IsDescendantAsync(T entity, Guid ancestorId);
+    Task<bool> IsAncestorAsync(T entity, Guid descendantId);
 }
