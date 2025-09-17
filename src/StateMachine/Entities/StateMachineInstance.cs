@@ -309,6 +309,11 @@ public class StateMachineInstance<TEntity> : StateMachineInstance
     protected StateMachineInstance() : base() { }
 
     public StateMachineInstance(
+        StateMachineDefinition definition) : base(definition)
+    {
+    }
+
+    public StateMachineInstance(
         StateMachineDefinition definition,
         TEntity entity) : base(definition)
     {
