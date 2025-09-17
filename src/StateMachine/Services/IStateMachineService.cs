@@ -10,14 +10,14 @@ namespace AQ.StateMachine.Services;
 public interface IStateMachineService
 {
     /// <summary>
-    /// Gets valid transitions for the specified trigger, evaluating all requirements.
-    /// This method does not execute the transition but validates it can be performed.
+    /// Gets the first valid transition for the specified trigger, evaluating requirements.
+    /// This method returns the first transition that can be executed, or null if none are valid.
     /// </summary>
     /// <param name="stateMachine">The state machine instance</param>
     /// <param name="trigger">The trigger to evaluate</param>
     /// <param name="requirementsContext">Requirements context where key is requirement type name and value is context object</param>
-    /// <returns>Result with valid transitions that can be executed</returns>
-    Task<Result<IEnumerable<ValidTransition>>> GetValidTransitionsAsync(
+    /// <returns>Result with the first valid transition that can be executed, or null if none are valid</returns>
+    Task<Result<ValidTransition>> GetFirstValidTransitionAsync(
         StateMachineInstance stateMachine,
         StateMachineTrigger trigger,
         IDictionary<string, object>? requirementsContext = null);
