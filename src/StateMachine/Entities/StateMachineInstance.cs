@@ -42,7 +42,7 @@ public abstract class StateMachineInstance : Entity
     /// Method for executing a transition. 
     /// This method bypasses requirement validation and should not be called directly.
     /// </summary>
-    public virtual void ExecuteTransition<TUser, TUserId>(
+    public void ExecuteTransition<TUser, TUserId>(
         StateMachineTransition transition,
         TUser triggeredBy)
         where TUser : class, IUser<TUserId>
@@ -77,7 +77,7 @@ public abstract class StateMachineInstance : Entity
     /// Method for executing a forced transition to a specific state entity.
     /// Used by IStateMachineTransitionService.
     /// </summary>
-    public virtual void ExecuteForcedTransition<TUser, TUserId>(
+    public void ExecuteForcedTransition<TUser, TUserId>(
         StateMachineState targetState,
         string reason,
         TUser triggeredBy)

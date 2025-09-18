@@ -39,7 +39,7 @@ public class StateMachineService : IStateMachineService
             foreach (var transition in transitions)
             {
                 var evaluationResult = await EvaluateRequirementsAsync(transition, stateMachine, requirementsContext);
-                
+
                 if (evaluationResult.IsSuccess && evaluationResult.Value.AllRequirementsMet)
                 {
                     return Result.Success(new ValidTransition
@@ -185,7 +185,7 @@ public class StateMachineService : IStateMachineService
         try
         {
             var previousStateId = stateMachine.CurrentStateId;
-            
+
             // Get non-reverted transitions in reverse chronological order
             var transitionsToRevert = stateMachine.TransitionHistory
                 .Where(h => !h.IsReverted)

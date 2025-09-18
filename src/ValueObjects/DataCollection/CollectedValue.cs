@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using AQ.ValueObjects;
 
 namespace AQ.ValueObjects.DataCollection;
 
