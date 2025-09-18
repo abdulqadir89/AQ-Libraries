@@ -1,5 +1,5 @@
 using AQ.StateMachine.Services;
-using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -88,7 +88,7 @@ public class StateMachineEffectExecutionServiceTests
             Success = true,
             TransitionedAt = DateTimeOffset.UtcNow
         };
-        
+
         var handler = new TestEffectHandler();
         _service.RegisterSpecificHandler(handler);
 

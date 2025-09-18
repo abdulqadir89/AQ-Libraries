@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Entity that tracks individual state transitions within a state machine.
@@ -189,3 +189,4 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
             user: user);
     }
 }
+

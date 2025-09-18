@@ -1,5 +1,5 @@
 using AQ.Abstractions;
-using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 using AQ.Utilities.Results;
 
 namespace AQ.StateMachine.Services;

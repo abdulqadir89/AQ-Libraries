@@ -1,5 +1,5 @@
-﻿using AQ.Abstractions;
-using AQ.StateMachineEntities;
+using AQ.Abstractions;
+using AQ.StateMachine.Entities;
 using AQ.Utilities.Results;
 
 namespace AQ.StateMachine.Services;
@@ -158,3 +158,4 @@ public class StateMachineRevertInfo
     public DateTimeOffset RevertedAt { get; set; }
     public IEnumerable<StateMachineStateTransitionHistory> MarkedAsRevertedTransitions { get; set; } = [];
 }
+

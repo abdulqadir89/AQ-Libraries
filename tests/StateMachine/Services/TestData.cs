@@ -1,4 +1,4 @@
-using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 using AQ.Entities;
 
 namespace AQ.StateMachine.Services.Tests;
@@ -8,16 +8,16 @@ namespace AQ.StateMachine.Services.Tests;
 /// </summary>
 public static class TestData
 {
-    public static TestRequirement CreateValidatorRequirement() => 
+    public static TestRequirement CreateValidatorRequirement() =>
         new("ValidatorRequired");
 
-    public static TestRequirement CreateApprovalRequirement() => 
+    public static TestRequirement CreateApprovalRequirement() =>
         new("ApprovalRequired");
 
-    public static TestEffect CreateNotificationEffect() => 
+    public static TestEffect CreateNotificationEffect() =>
         new("SendNotification");
 
-    public static TestEffect CreateUpdateEffect() => 
+    public static TestEffect CreateUpdateEffect() =>
         new("UpdateRecord");
 
     public static TestStateMachineDefinition CreateSimpleDefinition()

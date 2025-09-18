@@ -1,5 +1,5 @@
 using AQ.StateMachine.Services;
-using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -57,7 +57,7 @@ public class StateMachineServiceTests
         var definition = TestData.CreateSimpleDefinition();
         var instance = TestData.CreateTestInstance();
         var trigger = StateMachineTrigger.Create(definition.Id, "TestTrigger", "Test trigger description");
-        
+
         var fromState = definition.InitialState!;
         var toState = StateMachineState.Create(definition.Id, "Active", category: StateMachineStateCategory.Intermediate);
         var requirements = new[] { TestData.CreateValidatorRequirement() };
@@ -86,7 +86,7 @@ public class StateMachineServiceTests
         var definition = TestData.CreateSimpleDefinition();
         var instance = TestData.CreateTestInstance();
         var trigger = StateMachineTrigger.Create(definition.Id, "TestTrigger", "Test trigger description");
-        
+
         var fromState = definition.InitialState!;
         var toState = StateMachineState.Create(definition.Id, "Active", category: StateMachineStateCategory.Intermediate);
         var effects = new[] { TestData.CreateNotificationEffect() };

@@ -1,4 +1,4 @@
-﻿namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Base interface for all state machine transition requirements.
@@ -71,3 +71,4 @@ public class RequirementEvaluationStatus
     public string? HandlerUsed { get; set; }
     public bool WasProcessedBySpecificHandler { get; set; }
 }
+

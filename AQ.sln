@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.CQRS", "src\CQRS\AQ.CQRS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.Entities", "src\Entities\AQ.Entities.csproj", "{8D3F99A9-5963-4D1E-BD51-0362F08AAA2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.StateMachineEntities", "src\StateMachine\Entities\AQ.StateMachineEntities.csproj", "{9FB8EA93-F08F-4460-A2D9-D2EDFB510740}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.StateMachine.Entities", "src\StateMachine\Entities\AQ.StateMachine.Entities.csproj", "{9FB8EA93-F08F-4460-A2D9-D2EDFB510740}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.StateMachine.Services", "src\StateMachine\Services\AQ.StateMachine.Services.csproj", "{9F1EC6BE-4E53-4825-8C9B-767F8655F9D9}"
 EndProject

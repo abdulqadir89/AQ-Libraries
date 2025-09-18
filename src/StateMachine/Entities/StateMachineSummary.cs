@@ -1,4 +1,4 @@
-﻿namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Summary information about a state machine instance.
@@ -33,3 +33,4 @@ public class StateMachineTransitionSummary
     public bool WasForced { get; set; }
     public string? ForcedReason { get; set; }
 }
+

@@ -1,5 +1,5 @@
 using AQ.StateMachine.Services;
-using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -76,7 +76,7 @@ public class StateMachineRequirementEvaluationServiceTests
         var instance = TestData.CreateTestInstance();
         var requirement = TestData.CreateValidatorRequirement();
         var requirements = new[] { requirement };
-        
+
         var handler = new TestRequirementHandler { ShouldApprove = true };
         _service.RegisterSpecificHandler(handler);
 
@@ -97,7 +97,7 @@ public class StateMachineRequirementEvaluationServiceTests
         var instance = TestData.CreateTestInstance();
         var requirement = TestData.CreateValidatorRequirement();
         var requirements = new[] { requirement };
-        
+
         var handler = new TestRequirementHandler { ShouldApprove = false };
         _service.RegisterSpecificHandler(handler);
 

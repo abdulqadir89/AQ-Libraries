@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// State machine instance that maintains current state and handles transitions.
@@ -321,3 +321,4 @@ public class StateMachineInstance<TEntity> : StateMachineInstance
     }
 
 }
+

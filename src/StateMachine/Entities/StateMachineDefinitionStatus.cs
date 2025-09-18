@@ -1,4 +1,4 @@
-﻿namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 public enum StateMachineDefinitionStatus
 {
@@ -7,3 +7,4 @@ public enum StateMachineDefinitionStatus
     Deprecated = 2,  // old version, no new instances should use it
     Archived = 3     // fully retired, kept only for audit/history
 }
+
