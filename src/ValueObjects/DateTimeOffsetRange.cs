@@ -363,4 +363,9 @@ public sealed class DateTimeOffsetRange : ValueObject
         var end = End?.ToString("yyyy-MM-dd HH:mm:ss zzz") ?? "open";
         return $"{start} to {end}";
     }
+
+    public override DateTimeOffsetRange Clone()
+    {
+        return Create(Start, End);
+    }
 }

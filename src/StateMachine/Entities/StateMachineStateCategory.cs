@@ -1,4 +1,4 @@
-﻿namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Defines the status of a state within a state machine.
@@ -20,3 +20,4 @@ public enum StateMachineStateCategory
     /// </summary>
     Final
 }
+

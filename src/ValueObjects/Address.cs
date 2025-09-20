@@ -167,4 +167,9 @@ public sealed class Address : ValueObject
     }
 
     public override string ToString() => GetFullAddress();
+
+    public override Address Clone()
+    {
+        return Create(Street, City, State, PostalCode, Country);
+    }
 }

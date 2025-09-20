@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// State machine instance that maintains current state and handles transitions.
@@ -39,14 +39,12 @@ public abstract class StateMachineInstance : Entity
     }
 
     /// <summary>
-    /// Method for executing a transition. Used by IStateMachineTransitionService.
+    /// Method for executing a transition. 
     /// This method bypasses requirement validation and should not be called directly.
     /// </summary>
     public void ExecuteTransition<TUser, TUserId>(
         StateMachineTransition transition,
-        TUser triggeredBy,
-        bool isForced = false,
-        string? reason = null)
+        TUser triggeredBy)
         where TUser : class, IUser<TUserId>
         where TUserId : IEquatable<TUserId>
     {
@@ -61,32 +59,18 @@ public abstract class StateMachineInstance : Entity
 
         LastTransitionAt = DateTimeOffset.UtcNow;
 
-        // Record transition history
-        StateMachineStateTransitionHistory historyEntry;
-
-        if (isForced)
-        {
-            historyEntry = StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
-                Id,
-                previousState,
-                transition.ToState ?? CurrentState,
-                reason ?? "Forced transition",
-                triggeredBy);
-        }
-        else
-        {
-            historyEntry = StateMachineStateTransitionHistory<TUser, TUserId>.Create(
-                Id,
-                previousState,
-                transition.ToState ?? CurrentState,
-                transition.Trigger,
-                triggeredBy);
-        }
+        // Record transition history using the consolidated method
+        var historyEntry = CreateTransitionHistoryEntry<TUser, TUserId>(
+            previousState,
+            transition.ToState ?? CurrentState,
+            transition.Trigger,
+            false, // isForced = false for regular transitions
+            null, // no reason for regular transitions
+            triggeredBy);
 
         _transitionHistory.Add(historyEntry);
 
         // Raise domain events
-
     }
 
     /// <summary>
@@ -108,18 +92,82 @@ public abstract class StateMachineInstance : Entity
         CurrentState = targetState;
         LastTransitionAt = DateTimeOffset.UtcNow;
 
-        // Record transition history with forced flag
-        var historyEntry = StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
-            Id,
+        // Record transition history using the consolidated method
+        var historyEntry = CreateTransitionHistoryEntry<TUser, TUserId>(
             previousState,
             CurrentState,
+            null, // No trigger for forced transitions
+            true, // isForced = true
             reason,
             triggeredBy);
 
         _transitionHistory.Add(historyEntry);
 
         // Raise domain event for forced transition
+    }
 
+    /// <summary>
+    /// Consolidated method for creating transition history entries.
+    /// Eliminates duplication in forced transition handling.
+    /// </summary>
+    private StateMachineStateTransitionHistory CreateTransitionHistoryEntry<TUser, TUserId>(
+        StateMachineState fromState,
+        StateMachineState toState,
+        StateMachineTrigger? trigger,
+        bool isForced,
+        string? reason,
+        TUser triggeredBy)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>
+    {
+        if (isForced)
+        {
+            return StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
+                Id,
+                fromState,
+                toState,
+                reason ?? "Forced transition",
+                triggeredBy);
+        }
+        else
+        {
+            return StateMachineStateTransitionHistory<TUser, TUserId>.Create(
+                Id,
+                fromState,
+                toState,
+                trigger!,
+                triggeredBy);
+        }
+    }
+
+    /// <summary>
+    /// Method for reverting to a specific state by marking transitions as reverted.
+    /// Used by IStateMachineTransitionService.
+    /// </summary>
+    public void ExecuteRevert<TUser, TUserId>(
+        StateMachineState targetState,
+        IEnumerable<StateMachineStateTransitionHistory> transitionsToRevert)
+        where TUser : class, IUser<TUserId>
+        where TUserId : IEquatable<TUserId>
+    {
+        if (targetState == null)
+            throw new ArgumentNullException(nameof(targetState));
+
+        // Mark all specified transitions as reverted
+        foreach (var transition in transitionsToRevert)
+        {
+            if (!transition.IsReverted)
+            {
+                transition.MarkAsReverted();
+            }
+        }
+
+        // Update current state to the target state
+        CurrentStateId = targetState.Id;
+        CurrentState = targetState;
+        LastTransitionAt = DateTimeOffset.UtcNow;
+
+        // Raise domain event for revert operation if needed
     }
 
     /// <summary>
@@ -261,6 +309,11 @@ public class StateMachineInstance<TEntity> : StateMachineInstance
     protected StateMachineInstance() : base() { }
 
     public StateMachineInstance(
+        StateMachineDefinition definition) : base(definition)
+    {
+    }
+
+    public StateMachineInstance(
         StateMachineDefinition definition,
         TEntity entity) : base(definition)
     {
@@ -268,3 +321,4 @@ public class StateMachineInstance<TEntity> : StateMachineInstance
     }
 
 }
+

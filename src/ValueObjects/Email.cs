@@ -83,4 +83,9 @@ public sealed partial class Email : ValueObject
 
     [GeneratedRegex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-PK")]
     private static partial Regex MyRegex();
+
+    public override Email Clone()
+    {
+        return Create(Value);
+    }
 }

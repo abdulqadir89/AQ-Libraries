@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Utilities\Results\AQ.Utilities.Results.csproj" />
-    <ProjectReference Include="..\Entities\AQ.StateMachineEntities.csproj" />
+    <ProjectReference Include="..\Entities\AQ.StateMachine.Entities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

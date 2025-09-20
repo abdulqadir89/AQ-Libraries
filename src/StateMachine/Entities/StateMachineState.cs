@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Represents a state within a state machine definition.
@@ -65,3 +65,4 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
 
     public override string ToString() => Name;
 }
+

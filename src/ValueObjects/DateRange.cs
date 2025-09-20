@@ -277,4 +277,9 @@ public sealed class DateRange : ValueObject
         var end = End?.ToString("yyyy-MM-dd") ?? "open";
         return $"{start} to {end}";
     }
+
+    public override DateRange Clone()
+    {
+        return Create(Start, End);
+    }
 }

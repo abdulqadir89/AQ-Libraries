@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Represents a reusable state machine definition that contains states, triggers, and transitions.
@@ -354,3 +354,4 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
         return newDefinition;
     }
 }
+

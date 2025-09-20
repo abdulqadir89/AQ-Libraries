@@ -1,4 +1,4 @@
-﻿namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Base interface for all state machine transition effects.
@@ -88,3 +88,4 @@ public class EffectExecutionStatus
     public DateTimeOffset? ExecutedAt { get; set; }
     public TimeSpan? ExecutionDuration { get; set; }
 }
+

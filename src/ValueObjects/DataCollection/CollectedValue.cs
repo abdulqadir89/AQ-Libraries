@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using AQ.ValueObjects;
 
 namespace AQ.ValueObjects.DataCollection;
 
@@ -128,5 +127,10 @@ public class CollectedValue : ValueObject
         yield return NumericValue ?? 0;
         yield return BoolValue ?? false;
         yield return DateTimeOffsetValue ?? DateTimeOffset.MinValue;
+    }
+
+    public override CollectedValue Clone()
+    {
+        return new CollectedValue(DataType, StringValue, MarkdownContent, NumericValue, BoolValue, DateTimeOffsetValue);
     }
 }

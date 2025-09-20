@@ -1,6 +1,6 @@
-﻿using AQ.Entities;
+using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Represents a transition between states in a state machine definition.
@@ -188,3 +188,4 @@ public class StateMachineTransition : Entity
             ? $"{FromState!.Name} -> {ToState!.Name} ({Trigger.Name})"
             : $"Trigger: {Trigger.Name}";
 }
+

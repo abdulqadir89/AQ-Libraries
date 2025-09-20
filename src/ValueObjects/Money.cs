@@ -204,6 +204,12 @@ public sealed class Money : ValueObject
         yield return Currency;
     }
 
+    // Clone method to create a copy of the Money instance
+    public override Money Clone()
+    {
+        return new Money(Amount, Currency);
+    }
+
     // ISO 4217 Currency factory methods
     public static class Currencies
     {

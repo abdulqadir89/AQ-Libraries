@@ -1,6 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Threading.Tasks;
-using AQ.Abstractions;
+﻿using AQ.Abstractions;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AQ.Entities;
 

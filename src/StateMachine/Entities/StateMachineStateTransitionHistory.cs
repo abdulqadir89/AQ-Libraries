@@ -1,7 +1,7 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Entity that tracks individual state transitions within a state machine.
@@ -22,6 +22,9 @@ public abstract class StateMachineStateTransitionHistory : Entity
     public bool IsForced { get; private set; }
     public string? Reason { get; private set; }
     public DateTimeOffset TransitionedAt { get; private set; }
+
+    public DateTimeOffset? RevertedAt { get; private set; }
+    public bool IsReverted => RevertedAt.HasValue;
 
     // EF Core constructor
     protected StateMachineStateTransitionHistory() { }
@@ -80,6 +83,21 @@ public abstract class StateMachineStateTransitionHistory : Entity
         return (fromStateName == null || FromState.Name == fromStateName) &&
                (toStateName == null || ToState.Name == toStateName) &&
                (triggerName == null || Trigger?.Name == triggerName);
+    }
+
+    /// <summary>
+    /// Marks this transition as reverted at the current time.
+    /// </summary>
+    public void MarkAsReverted(string? reason = null)
+    {
+        if (IsReverted)
+            throw new InvalidOperationException("Transition is already marked as reverted.");
+
+        RevertedAt = DateTimeOffset.UtcNow;
+        if (!string.IsNullOrEmpty(reason))
+        {
+            Reason += $"\n Revert reason: {reason}";
+        }
     }
 }
 
@@ -171,3 +189,4 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
             user: user);
     }
 }
+

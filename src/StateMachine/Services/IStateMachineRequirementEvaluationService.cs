@@ -1,4 +1,4 @@
-﻿using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 
 namespace AQ.StateMachine.Services;
 
@@ -70,3 +70,4 @@ public class HandlerInfo
     public bool IsGeneric { get; set; }
     public string? Description { get; set; }
 }
+

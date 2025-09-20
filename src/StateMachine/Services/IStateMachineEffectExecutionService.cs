@@ -1,4 +1,4 @@
-﻿using AQ.StateMachineEntities;
+using AQ.StateMachine.Entities;
 
 namespace AQ.StateMachine.Services;
 
@@ -84,3 +84,4 @@ public class EffectExecutionSummary
     public int FailedEffects { get; set; }
     public TimeSpan TotalExecutionTime { get; set; }
 }
+

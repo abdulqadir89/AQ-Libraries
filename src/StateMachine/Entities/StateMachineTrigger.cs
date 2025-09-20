@@ -1,6 +1,6 @@
-﻿using AQ.Entities;
+using AQ.Entities;
 
-namespace AQ.StateMachineEntities;
+namespace AQ.StateMachine.Entities;
 
 /// <summary>
 /// Defines the types of triggers that can be used in a state machine.
@@ -89,3 +89,4 @@ public class StateMachineTrigger : Entity
 
     public override string ToString() => $"{Name} ({Type})";
 }
+

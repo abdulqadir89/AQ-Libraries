@@ -238,6 +238,11 @@ public sealed class NumericalRange<T> : ValueObject where T : struct, IComparabl
         var max = Max?.ToString() ?? "open";
         return $"{min} to {max}";
     }
+
+    public override NumericalRange<T> Clone()
+    {
+        return Create(Min, Max);
+    }
 }
 
 /// <summary>

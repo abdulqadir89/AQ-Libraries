@@ -42,4 +42,9 @@ public class FieldDefinition : ValueObject
                 yield return val;
         }
     }
+
+    public override FieldDefinition Clone()
+    {
+        return Create(Name, DataType, IsRequired, AllowedValues);
+    }
 }
