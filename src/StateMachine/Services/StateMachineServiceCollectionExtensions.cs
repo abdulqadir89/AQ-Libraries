@@ -13,6 +13,7 @@ public static class StateMachineServiceCollectionExtensions
     {
         services.AddSingleton<IStateMachineRequirementEvaluationService, StateMachineRequirementEvaluationService>();
         services.AddSingleton<IStateMachineEffectExecutionService, StateMachineEffectExecutionService>();
+        services.AddSingleton<IStateMachineService, StateMachineService>();
         // Note: Transition service is abstract, so registration should be for a concrete implementation in the application layer.
         // Example: services.AddScoped<IStateMachineTransitionService, MyStateMachineTransitionService>();
         return services;
