@@ -60,6 +60,11 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
     /// </summary>
     public abstract StateMachineDefinition CreateNewVersion(int version);
 
+    public virtual string GetDisplayName()
+    {
+        return $"Definition v{Version}";
+    }
+
     /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
     /// </summary>
