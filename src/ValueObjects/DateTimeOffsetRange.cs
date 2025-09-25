@@ -269,28 +269,28 @@ public sealed class DateTimeOffsetRange : ValueObject
     /// <summary>
     /// Indicates whether this range is open-ended (has no start or end date time).
     /// </summary>
-    public bool IsOpen => !Start.HasValue && !End.HasValue;
+    public bool IsOpen() => !Start.HasValue && !End.HasValue;
 
     /// <summary>
     /// Indicates whether this range has a specified start date time.
     /// </summary>
-    public bool HasStart => Start.HasValue;
+    public bool HasStart() => Start.HasValue;
 
     /// <summary>
     /// Indicates whether this range has a specified end date time.
     /// </summary>
-    public bool HasEnd => End.HasValue;
+    public bool HasEnd() => End.HasValue;
 
     /// <summary>
     /// Indicates whether this range is closed (has both start and end date times).
     /// </summary>
-    public bool IsClosed => Start.HasValue && End.HasValue;
+    public bool IsClosed() => Start.HasValue && End.HasValue;
 
     /// <summary>
     /// Validates that the range is closed (has both start and end date times).
     /// </summary>
     /// <returns>True if the range is closed, false otherwise.</returns>
-    public bool ValidateIsClosed() => IsClosed;
+    public bool ValidateIsClosed() => IsClosed();
 
     /// <summary>
     /// Validates that the range has a specific boundary configuration.
@@ -300,7 +300,7 @@ public sealed class DateTimeOffsetRange : ValueObject
     /// <returns>True if the range matches the required boundary configuration, false otherwise.</returns>
     public bool ValidateBoundaries(bool requireStart, bool requireEnd)
     {
-        return HasStart == requireStart && HasEnd == requireEnd;
+        return HasStart() == requireStart && HasEnd() == requireEnd;
     }
 
     /// <summary>
@@ -309,7 +309,7 @@ public sealed class DateTimeOffsetRange : ValueObject
     /// <exception cref="InvalidOperationException">Thrown when the range is not closed.</exception>
     public void EnsureIsClosed()
     {
-        if (!IsClosed)
+        if (!IsClosed())
             throw new InvalidOperationException("Range must be closed (have both start and end date times).");
     }
 
