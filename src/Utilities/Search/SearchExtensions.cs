@@ -331,34 +331,112 @@ public static class SearchExtensions
 
     private static Expression BuildExactExpression(Expression property, SearchCondition condition)
     {
-        var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
-        var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-
-        return Expression.Equal(compareProperty, Expression.Constant(searchValue));
+        var propertyType = property.Type;
+        
+        // Handle nullable types
+        var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        
+        if (underlyingType == typeof(string))
+        {
+            var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
+            var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            return Expression.Equal(compareProperty, Expression.Constant(searchValue));
+        }
+        else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
+        {
+            // Try to convert search term to the property type
+            if (TryConvertSearchTerm(condition.SearchTerm, underlyingType, out var convertedValue))
+            {
+                var constantValue = Expression.Constant(convertedValue, propertyType);
+                return Expression.Equal(property, constantValue);
+            }
+            else
+            {
+                // If conversion fails, return false expression
+                return Expression.Constant(false);
+            }
+        }
+        
+        // Default fallback for unsupported types
+        return Expression.Constant(false);
     }
 
     private static Expression BuildContainsExpression(Expression property, SearchCondition condition)
     {
-        var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
-        var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-
-        return Expression.Call(compareProperty, typeof(string).GetMethod("Contains", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        var propertyType = property.Type;
+        
+        // Handle nullable types
+        var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        
+        if (underlyingType == typeof(string))
+        {
+            var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
+            var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            return Expression.Call(compareProperty, typeof(string).GetMethod("Contains", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        }
+        else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
+        {
+            // For numeric types, "contains" means exact match for the search term
+            if (TryConvertSearchTerm(condition.SearchTerm, underlyingType, out var convertedValue))
+            {
+                var constantValue = Expression.Constant(convertedValue, propertyType);
+                return Expression.Equal(property, constantValue);
+            }
+            else
+            {
+                // If conversion fails, return false expression
+                return Expression.Constant(false);
+            }
+        }
+        
+        // Default fallback for unsupported types
+        return Expression.Constant(false);
     }
 
     private static Expression BuildStartsWithExpression(Expression property, SearchCondition condition)
     {
-        var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
-        var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-
-        return Expression.Call(compareProperty, typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        var propertyType = property.Type;
+        
+        // Handle nullable types
+        var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        
+        if (underlyingType == typeof(string))
+        {
+            var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
+            var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            return Expression.Call(compareProperty, typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        }
+        else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
+        {
+            // For numeric types, StartsWith behaves like exact match
+            return BuildExactExpression(property, condition);
+        }
+        
+        // Default fallback for unsupported types
+        return Expression.Constant(false);
     }
 
     private static Expression BuildEndsWithExpression(Expression property, SearchCondition condition)
     {
-        var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
-        var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-
-        return Expression.Call(compareProperty, typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        var propertyType = property.Type;
+        
+        // Handle nullable types
+        var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        
+        if (underlyingType == typeof(string))
+        {
+            var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
+            var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            return Expression.Call(compareProperty, typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+        }
+        else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
+        {
+            // For numeric types, EndsWith behaves like exact match
+            return BuildExactExpression(property, condition);
+        }
+        
+        // Default fallback for unsupported types
+        return Expression.Constant(false);
     }
 
     private static Expression BuildFuzzyExpression(Expression property, SearchCondition condition)
@@ -380,6 +458,93 @@ public static class SearchExtensions
             : Expression.OrElse(left.Body, rightBody!);
 
         return Expression.Lambda<Func<T, bool>>(body, parameter);
+    }
+
+    private static bool TryConvertSearchTerm(string searchTerm, Type targetType, out object? convertedValue)
+    {
+        convertedValue = null;
+        
+        try
+        {
+            if (targetType == typeof(int))
+            {
+                if (int.TryParse(searchTerm, out var intValue))
+                {
+                    convertedValue = intValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(long))
+            {
+                if (long.TryParse(searchTerm, out var longValue))
+                {
+                    convertedValue = longValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(double))
+            {
+                if (double.TryParse(searchTerm, out var doubleValue))
+                {
+                    convertedValue = doubleValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(decimal))
+            {
+                if (decimal.TryParse(searchTerm, out var decimalValue))
+                {
+                    convertedValue = decimalValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(float))
+            {
+                if (float.TryParse(searchTerm, out var floatValue))
+                {
+                    convertedValue = floatValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(Guid))
+            {
+                if (Guid.TryParse(searchTerm, out var guidValue))
+                {
+                    convertedValue = guidValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(DateTime))
+            {
+                if (DateTime.TryParse(searchTerm, out var dateValue))
+                {
+                    convertedValue = dateValue;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(bool))
+            {
+                if (bool.TryParse(searchTerm, out var boolValue))
+                {
+                    convertedValue = boolValue;
+                    return true;
+                }
+            }
+            else if (targetType.IsEnum)
+            {
+                if (Enum.TryParse(targetType, searchTerm, true, out var enumValue))
+                {
+                    convertedValue = enumValue;
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore conversion errors
+        }
+        
+        return false;
     }
 
     private static SearchResult<T> ScoreEntity<T>(T entity, SearchSpecification specification) where T : class
