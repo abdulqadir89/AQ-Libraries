@@ -625,6 +625,12 @@ public static class FilterExpressionBuilder
             // Handle nullable types
             var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
+            // Special handling for enums
+            if (underlyingType.IsEnum)
+            {
+                return HandleEnumConversion(value, targetType, underlyingType);
+            }
+
             // Convert value to target type
             var convertedValue = Convert.ChangeType(value, underlyingType);
             return Expression.Constant(convertedValue, targetType);
@@ -633,5 +639,70 @@ public static class FilterExpressionBuilder
         {
             return null;
         }
+    }
+
+    private static ConstantExpression? HandleEnumConversion(object value, Type targetType, Type enumType)
+    {
+        try
+        {
+            object? enumValue = null;
+
+            // If the value is already the correct enum type, use it directly
+            if (value.GetType() == enumType)
+            {
+                enumValue = value;
+            }
+            // If value is a string, try to parse it as enum name or numeric value
+            else if (value is string stringValue)
+            {
+                // First try to parse as enum name (case-insensitive)
+                if (Enum.TryParse(enumType, stringValue, ignoreCase: true, out var parsedEnum))
+                {
+                    enumValue = parsedEnum;
+                }
+                // If enum name parsing fails, try to parse as numeric value
+                else if (int.TryParse(stringValue, out var intValue) && Enum.IsDefined(enumType, intValue))
+                {
+                    enumValue = Enum.ToObject(enumType, intValue);
+                }
+                else
+                {
+                    return null; // Could not parse as enum
+                }
+            }
+            // If value is numeric, try to convert to enum
+            else if (IsNumericType(value.GetType()))
+            {
+                var intValue = Convert.ToInt32(value);
+                if (Enum.IsDefined(enumType, intValue))
+                {
+                    enumValue = Enum.ToObject(enumType, intValue);
+                }
+                else
+                {
+                    return null; // Invalid enum value
+                }
+            }
+            else
+            {
+                return null; // Unsupported value type for enum conversion
+            }
+
+            return enumValue != null ? Expression.Constant(enumValue, targetType) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool IsNumericType(Type type)
+    {
+        return type == typeof(byte) || type == typeof(sbyte) ||
+               type == typeof(short) || type == typeof(ushort) ||
+               type == typeof(int) || type == typeof(uint) ||
+               type == typeof(long) || type == typeof(ulong) ||
+               type == typeof(float) || type == typeof(double) ||
+               type == typeof(decimal);
     }
 }
