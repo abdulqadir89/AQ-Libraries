@@ -1,18 +1,40 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 
-namespace AQ.Entities;
+namespace AQ.Events.Outbox;
 
 /// <summary>
-/// Represents a domain event stored in the outbox for reliable processing.
-/// This entity implements the outbox pattern to ensure domain events are persisted
+/// Categories of events that can be stored in the outbox.
+/// </summary>
+public enum OutboxEventCategory
+{
+    /// <summary>
+    /// Domain events that handle internal business logic.
+    /// </summary>
+    Domain = 1,
+    
+    /// <summary>
+    /// Integration events for cross-service communication.
+    /// </summary>
+    Integration = 2
+}
+
+/// <summary>
+/// Represents an event stored in the outbox for reliable processing.
+/// This entity implements the outbox pattern to ensure events are persisted
 /// and processed reliably, even in case of system failures.
+/// Supports both domain events and integration events.
 /// </summary>
 public class OutboxEvent : IEntity
 {
     public Guid Id { get; private set; } = Guid.CreateVersion7();
 
     /// <summary>
-    /// Gets or sets the type of the domain event.
+    /// Gets the category of the event (Domain or Integration).
+    /// </summary>
+    public OutboxEventCategory Category { get; private set; }
+
+    /// <summary>
+    /// Gets the type of the event.
     /// </summary>
     public string EventType { get; private set; } = string.Empty;
 
@@ -51,8 +73,6 @@ public class OutboxEvent : IEntity
     /// </summary>
     public DateTimeOffset? NextProcessingAttempt { get; private set; }
 
-
-
     /// <summary>
     /// Private constructor for EF Core.
     /// </summary>
@@ -61,11 +81,13 @@ public class OutboxEvent : IEntity
     /// <summary>
     /// Creates a new outbox event from any event with the required properties.
     /// </summary>
+    /// <param name="category">The category of the event (Domain or Integration).</param>
     /// <param name="eventType">The type of the event.</param>
     /// <param name="eventData">The serialized event data.</param>
     /// <param name="occurredOn">When the event occurred.</param>
-    public OutboxEvent(string eventType, string eventData, DateTimeOffset occurredOn)
+    public OutboxEvent(OutboxEventCategory category, string eventType, string eventData, DateTimeOffset occurredOn)
     {
+        Category = category;
         EventType = eventType;
         EventData = eventData;
         OccurredOn = occurredOn;

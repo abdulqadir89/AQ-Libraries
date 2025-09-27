@@ -8,12 +8,12 @@ namespace AQ.Events.Dispatchers;
 public interface IDomainEventDispatcher
 {
     /// <summary>
-    /// Dispatches all pending domain events from the given entities.
+    /// Dispatches all provided domain events.
     /// </summary>
-    /// <param name="entities">The entities with pending domain events.</param>
+    /// <param name="domainEvents">The domain events to dispatch.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task DispatchEventsAsync(IEnumerable<IHasDomainEvents> entities, CancellationToken cancellationToken = default);
+    Task DispatchAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Dispatches a single domain event.

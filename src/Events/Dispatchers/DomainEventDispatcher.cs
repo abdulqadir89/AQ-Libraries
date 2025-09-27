@@ -21,22 +21,12 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     }
 
     /// <summary>
-    /// Dispatches all pending domain events from the given entities.
+    /// Dispatches all provided domain events.
     /// </summary>
-    /// <param name="entities">The entities with pending domain events.</param>
+    /// <param name="domainEvents">The domain events to dispatch.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task DispatchEventsAsync(IEnumerable<IHasDomainEvents> entities, CancellationToken cancellationToken = default)
+    public async Task DispatchAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
     {
-        var domainEvents = entities
-            .SelectMany(entity => entity.DomainEvents)
-            .ToList();
-
-        // Clear events from entities after collecting them to prevent re-processing
-        foreach (var entity in entities)
-        {
-            entity.ClearDomainEvents();
-        }
-
         // Process each domain event
         foreach (var domainEvent in domainEvents)
         {
