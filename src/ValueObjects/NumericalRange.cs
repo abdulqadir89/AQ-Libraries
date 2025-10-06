@@ -144,28 +144,28 @@ public sealed class NumericalRange<T> : ValueObject where T : struct, IComparabl
     /// <summary>
     /// Indicates whether this range is open-ended (has no minimum or maximum value).
     /// </summary>
-    public bool IsOpen => !Min.HasValue && !Max.HasValue;
+    public bool IsOpen() => !Min.HasValue && !Max.HasValue;
 
     /// <summary>
     /// Indicates whether this range has a specified minimum value.
     /// </summary>
-    public bool HasMin => Min.HasValue;
+    public bool HasMin() => Min.HasValue;
 
     /// <summary>
     /// Indicates whether this range has a specified maximum value.
     /// </summary>
-    public bool HasMax => Max.HasValue;
+    public bool HasMax() => Max.HasValue;
 
     /// <summary>
     /// Indicates whether this range is closed (has both minimum and maximum values).
     /// </summary>
-    public bool IsClosed => Min.HasValue && Max.HasValue;
+    public bool IsClosed() => Min.HasValue && Max.HasValue;
 
     /// <summary>
     /// Validates that the range is closed (has both minimum and maximum values).
     /// </summary>
     /// <returns>True if the range is closed, false otherwise.</returns>
-    public bool ValidateIsClosed() => IsClosed;
+    public bool ValidateIsClosed() => IsClosed();
 
     /// <summary>
     /// Validates that the range has a specific boundary configuration.
@@ -175,7 +175,7 @@ public sealed class NumericalRange<T> : ValueObject where T : struct, IComparabl
     /// <returns>True if the range matches the required boundary configuration, false otherwise.</returns>
     public bool ValidateBoundaries(bool requireMin, bool requireMax)
     {
-        return HasMin == requireMin && HasMax == requireMax;
+        return HasMin() == requireMin && HasMax() == requireMax;
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public sealed class NumericalRange<T> : ValueObject where T : struct, IComparabl
     /// <exception cref="InvalidOperationException">Thrown when the range is not closed.</exception>
     public void EnsureIsClosed()
     {
-        if (!IsClosed)
+        if (!IsClosed())
             throw new InvalidOperationException("Range must be closed (have both minimum and maximum values).");
     }
 
