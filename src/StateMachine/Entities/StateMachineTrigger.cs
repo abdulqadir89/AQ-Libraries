@@ -48,12 +48,14 @@ public class StateMachineTrigger : Entity
     private StateMachineTrigger() { }
 
     private StateMachineTrigger(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         string name,
         string? description = null,
         StateMachineTriggerType type = StateMachineTriggerType.Manual)
     {
-        StateMachineDefinitionId = stateMachineDefinitionId;
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
+        StateMachineDefinitionId = definition.Id;
+        StateMachineDefinition = definition;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
         Type = type;
@@ -63,15 +65,16 @@ public class StateMachineTrigger : Entity
     /// Creates a new trigger for a state machine definition.
     /// </summary>
     public static StateMachineTrigger Create(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         string name,
         string? description = null,
         StateMachineTriggerType type = StateMachineTriggerType.Manual)
     {
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
 
-        return new StateMachineTrigger(stateMachineDefinitionId, name.Trim(), description?.Trim(), type);
+        return new StateMachineTrigger(definition, name.Trim(), description?.Trim(), type);
     }
 
     /// <summary>

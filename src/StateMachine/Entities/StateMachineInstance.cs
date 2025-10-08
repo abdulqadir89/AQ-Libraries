@@ -123,7 +123,7 @@ public abstract class StateMachineInstance : Entity
         if (isForced)
         {
             return StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
-                Id,
+                this,
                 fromState,
                 toState,
                 reason ?? "Forced transition",
@@ -132,7 +132,7 @@ public abstract class StateMachineInstance : Entity
         else
         {
             return StateMachineStateTransitionHistory<TUser, TUserId>.Create(
-                Id,
+                this,
                 fromState,
                 toState,
                 trigger!,

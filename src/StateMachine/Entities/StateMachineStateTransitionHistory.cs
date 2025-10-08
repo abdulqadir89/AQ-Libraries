@@ -30,14 +30,15 @@ public abstract class StateMachineStateTransitionHistory : Entity
     protected StateMachineStateTransitionHistory() { }
 
     protected StateMachineStateTransitionHistory(
-        Guid stateMachineInstanceId,
+        StateMachineInstance instance,
         StateMachineState fromState,
         StateMachineState toState,
         StateMachineTrigger? trigger,
         bool isForced,
         string? reason)
     {
-        StateMachineInstanceId = stateMachineInstanceId;
+        StateMachineInstance = instance ?? throw new ArgumentNullException(nameof(instance));
+        StateMachineInstanceId = instance.Id;
         FromStateId = fromState?.Id ?? throw new ArgumentNullException(nameof(fromState));
         FromState = fromState;
         ToStateId = toState?.Id ?? throw new ArgumentNullException(nameof(toState));
@@ -110,14 +111,14 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
     public StateMachineStateTransitionHistory() : base() { }
 
     protected StateMachineStateTransitionHistory(
-        Guid stateMachineId,
+        StateMachineInstance instance,
         StateMachineState fromState,
         StateMachineState toState,
         StateMachineTrigger? trigger,
         bool isForced,
         string? reason,
         TUser user) : base(
-            stateMachineId,
+            instance,
             fromState,
             toState,
             trigger,
@@ -132,14 +133,14 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
     /// Creates a new transition history entry for a normal transition.
     /// </summary>
     public static StateMachineStateTransitionHistory Create(
-        Guid stateMachineId,
+        StateMachineInstance instance,
         StateMachineState fromState,
         StateMachineState toState,
         StateMachineTrigger trigger,
         TUser user)
     {
         return new StateMachineStateTransitionHistory<TUser, TUserId>(
-            stateMachineId,
+            instance,
             fromState,
             toState,
             trigger,
@@ -154,13 +155,13 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
     /// Uses the current state as both From and To so DB non-null constraints remain satisfied.
     /// </summary>
     public static StateMachineStateTransitionHistory CreateNoTransition(
-        Guid stateMachineId,
+        StateMachineInstance instance,
         StateMachineState currentState,
         TUser user,
         string? reason = null)
     {
         return new StateMachineStateTransitionHistory<TUser, TUserId>(
-            stateMachineId,
+            instance,
             currentState,
             currentState,
             trigger: null,
@@ -173,14 +174,14 @@ public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineSt
     /// Creates a new transition history entry for a forced transition.
     /// </summary>
     public static StateMachineStateTransitionHistory CreateForced(
-        Guid stateMachineId,
+        StateMachineInstance instance,
         StateMachineState fromState,
         StateMachineState toState,
         string reason,
         TUser user)
     {
         return new StateMachineStateTransitionHistory<TUser, TUserId>(
-            stateMachineId,
+            instance,
             fromState,
             toState,
             trigger: null,

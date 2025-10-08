@@ -23,7 +23,7 @@ public class StateMachineTransition : Entity
     private StateMachineTransition() { }
 
     private StateMachineTransition(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         StateMachineState? fromState,
         StateMachineState? toState,
         StateMachineTrigger trigger,
@@ -31,7 +31,8 @@ public class StateMachineTransition : Entity
         IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
         IEnumerable<IStateMachineTransitionEffect>? effects = null)
     {
-        StateMachineDefinitionId = stateMachineDefinitionId;
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
+        StateMachineDefinitionId = definition.Id;
         FromState = fromState;
         FromStateId = fromState?.Id;
         ToState = toState;
@@ -47,7 +48,7 @@ public class StateMachineTransition : Entity
     /// Creates a new transition for a state machine definition.
     /// </summary>
     public static StateMachineTransition Create(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         StateMachineState? fromState,
         StateMachineState? toState,
         StateMachineTrigger trigger,
@@ -55,11 +56,12 @@ public class StateMachineTransition : Entity
         IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
         IEnumerable<IStateMachineTransitionEffect>? effects = null)
     {
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (trigger == null)
             throw new ArgumentNullException(nameof(trigger));
 
         return new StateMachineTransition(
-            stateMachineDefinitionId,
+            definition,
             fromState,
             toState,
             trigger,

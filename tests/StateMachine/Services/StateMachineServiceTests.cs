@@ -25,7 +25,7 @@ public class StateMachineServiceTests
         // Arrange
         var definition = TestData.CreateSimpleDefinition();
         var instance = TestData.CreateTestInstance();
-        var trigger = StateMachineTrigger.Create(definition.Id, "NonExistentTrigger", "Non-existent trigger");
+    var trigger = StateMachineTrigger.Create(definition, "NonExistentTrigger", "Non-existent trigger");
 
         // Act
         var result = await _service.GetFirstValidTransitionAsync(instance, trigger);
@@ -40,7 +40,7 @@ public class StateMachineServiceTests
     {
         // Arrange
         var definition = TestData.CreateSimpleDefinition();
-        var trigger = StateMachineTrigger.Create(definition.Id, "TestTrigger", "Test trigger description");
+    var trigger = StateMachineTrigger.Create(definition, "TestTrigger", "Test trigger description");
 
         // Act
         var result = await _service.GetFirstValidTransitionAsync(null!, trigger);
@@ -56,12 +56,12 @@ public class StateMachineServiceTests
         // Arrange
         var definition = TestData.CreateSimpleDefinition();
         var instance = TestData.CreateTestInstance();
-        var trigger = StateMachineTrigger.Create(definition.Id, "TestTrigger", "Test trigger description");
+    var trigger = StateMachineTrigger.Create(definition, "TestTrigger", "Test trigger description");
 
         var fromState = definition.InitialState!;
-        var toState = StateMachineState.Create(definition.Id, "Active", category: StateMachineStateCategory.Intermediate);
-        var requirements = new[] { TestData.CreateValidatorRequirement() };
-        var transition = StateMachineTransition.Create(definition.Id, fromState, toState, trigger, requirements: requirements);
+    var toState = StateMachineState.Create(definition, "Active", category: StateMachineStateCategory.Intermediate);
+    var requirements = new[] { TestData.CreateValidatorRequirement() };
+    var transition = StateMachineTransition.Create(definition, fromState, toState, trigger, requirements: requirements);
 
         var evaluationSummary = new RequirementEvaluationSummary
         {
@@ -85,12 +85,12 @@ public class StateMachineServiceTests
         // Arrange
         var definition = TestData.CreateSimpleDefinition();
         var instance = TestData.CreateTestInstance();
-        var trigger = StateMachineTrigger.Create(definition.Id, "TestTrigger", "Test trigger description");
+    var trigger = StateMachineTrigger.Create(definition, "TestTrigger", "Test trigger description");
 
         var fromState = definition.InitialState!;
-        var toState = StateMachineState.Create(definition.Id, "Active", category: StateMachineStateCategory.Intermediate);
-        var effects = new[] { TestData.CreateNotificationEffect() };
-        var transition = StateMachineTransition.Create(definition.Id, fromState, toState, trigger, effects: effects);
+    var toState = StateMachineState.Create(definition, "Active", category: StateMachineStateCategory.Intermediate);
+    var effects = new[] { TestData.CreateNotificationEffect() };
+    var transition = StateMachineTransition.Create(definition, fromState, toState, trigger, effects: effects);
 
         var transitionInfo = new StateMachineTransitionInfo
         {

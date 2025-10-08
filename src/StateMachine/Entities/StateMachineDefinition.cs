@@ -47,7 +47,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         Version = version;
 
         // Create the initial state
-        var initialState = StateMachineState.Create(Id, initialStateName, category: StateMachineStateCategory.Initial);
+    var initialState = StateMachineState.Create(this, initialStateName, category: StateMachineStateCategory.Initial);
         _states.Add(initialState);
 
         // Add domain event for definition creation
@@ -72,7 +72,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var state in _states.Where(s => s.Id != InitialState.Id))
         {
             var newState = StateMachineState.Create(
-                newDefinition.Id,
+                newDefinition,
                 state.Name,
                 state.Description,
                 state.Category);
@@ -83,7 +83,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         foreach (var trigger in _triggers)
         {
             var newTrigger = StateMachineTrigger.Create(
-                newDefinition.Id,
+                newDefinition,
                 trigger.Name,
                 trigger.Description,
                 trigger.Type);
@@ -105,7 +105,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
             if (newTrigger != null)
             {
                 var newTransition = StateMachineTransition.Create(
-                    newDefinition.Id,
+                    newDefinition,
                     newFromState,
                     newToState,
                     newTrigger,

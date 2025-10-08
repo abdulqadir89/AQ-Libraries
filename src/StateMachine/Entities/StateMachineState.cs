@@ -18,12 +18,14 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     private StateMachineState() { }
 
     private StateMachineState(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         string name,
         string? description = null,
         StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
     {
-        StateMachineDefinitionId = stateMachineDefinitionId;
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
+        StateMachineDefinitionId = definition.Id;
+        StateMachineDefinition = definition;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
         Category = category;
@@ -33,15 +35,17 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     /// Creates a new state for a state machine definition.
     /// </summary>
     public static StateMachineState Create(
-        Guid stateMachineDefinitionId,
+        StateMachineDefinition definition,
         string name,
         string? description = null,
         StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
     {
+        if (definition is null)
+            throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("State name cannot be null or empty.", nameof(name));
 
-        return new StateMachineState(stateMachineDefinitionId, name.Trim(), description?.Trim(), category);
+        return new StateMachineState(definition, name.Trim(), description?.Trim(), category);
     }
 
     /// <summary>
