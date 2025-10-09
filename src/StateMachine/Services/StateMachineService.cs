@@ -1,6 +1,7 @@
 using AQ.Abstractions;
 using AQ.StateMachine.Entities;
 using AQ.Utilities.Results;
+using Microsoft.Extensions.Logging;
 
 namespace AQ.StateMachine.Services;
 
@@ -8,18 +9,14 @@ namespace AQ.StateMachine.Services;
 /// Implementation of state machine service for handling operations including transitions, requirements evaluation, and reverts.
 /// This service acts as a higher-level orchestrator that doesn't handle persistence directly.
 /// </summary>
-public class StateMachineService : IStateMachineService
+public class StateMachineService(
+    ILogger<StateMachineService> logger,
+    IStateMachineRequirementEvaluationService requirementEvaluationService,
+    IStateMachineEffectExecutionService? effectExecutionService = null) : IStateMachineService
 {
-    private readonly IStateMachineRequirementEvaluationService _requirementEvaluationService;
-    private readonly IStateMachineEffectExecutionService? _effectExecutionService;
-
-    public StateMachineService(
-        IStateMachineRequirementEvaluationService requirementEvaluationService,
-        IStateMachineEffectExecutionService? effectExecutionService = null)
-    {
-        _requirementEvaluationService = requirementEvaluationService ?? throw new ArgumentNullException(nameof(requirementEvaluationService));
-        _effectExecutionService = effectExecutionService;
-    }
+    private readonly ILogger<StateMachineService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IStateMachineRequirementEvaluationService _requirementEvaluationService = requirementEvaluationService ?? throw new ArgumentNullException(nameof(requirementEvaluationService));
+    private readonly IStateMachineEffectExecutionService? _effectExecutionService = effectExecutionService;
 
     public async Task<Result<ValidTransition>> GetFirstValidTransitionAsync(
         StateMachineInstance stateMachine,
@@ -156,8 +153,9 @@ public class StateMachineService : IStateMachineService
 
             return availableTransitions;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error occurred while getting available transitions");
             return [];
         }
     }

@@ -185,7 +185,7 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<StateMachineTransition> GetAvailableTransitions()
     {
-        return Definition.Transitions.Where(t => t.FromStateId == CurrentStateId);
+        return Definition.Transitions.Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null);
     }
 
     /// <summary>
