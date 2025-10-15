@@ -12,11 +12,6 @@ public abstract class Entity : IEntity, IHasDomainEvents
     public Guid Id { get; protected set; } = Guid.CreateVersion7();
 
     /// <summary>
-    /// Row version for optimistic concurrency control.
-    /// </summary>
-    public int RowVersion { get; private set; }
-
-    /// <summary>
     /// Gets the collection of domain events raised by this entity.
     /// </summary>
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -71,6 +66,4 @@ public abstract class Entity : IEntity, IHasDomainEvents
     {
         _domainEvents.Clear();
     }
-
-    public void UpdateRowVersion() => RowVersion++;
 }

@@ -9,8 +9,6 @@ namespace AQ.StateMachine.Entities;
 /// </summary>
 public abstract class StateMachineInstance : Entity
 {
-    protected readonly List<StateMachineStateTransitionHistory> _transitionHistory = [];
-
     public Guid DefinitionId { get; protected set; }
     public StateMachineDefinition Definition { get; protected set; } = default!;
     public StateMachineState CurrentState { get; protected set; } = default!;
@@ -18,10 +16,9 @@ public abstract class StateMachineInstance : Entity
     public DateTimeOffset? LastTransitionAt { get; protected set; }
 
     /// <summary>
-    /// Read-only collection of transition history ordered by timestamp.
+    /// Collection of transition history. This is the actual EF Core navigation property.
     /// </summary>
-    public IReadOnlyList<StateMachineStateTransitionHistory> TransitionHistory =>
-        _transitionHistory.OrderBy(h => h.TransitionedAt).ToList().AsReadOnly();
+    public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = default!;
 
     // EF Core constructor
     protected StateMachineInstance() { }
@@ -42,7 +39,7 @@ public abstract class StateMachineInstance : Entity
     /// Method for executing a transition. 
     /// This method bypasses requirement validation and should not be called directly.
     /// </summary>
-    public void ExecuteTransition<TUser, TUserId>(
+    public StateMachineStateTransitionHistory ExecuteTransition<TUser, TUserId>(
         StateMachineTransition transition,
         TUser triggeredBy)
         where TUser : class, IUser<TUserId>
@@ -68,7 +65,11 @@ public abstract class StateMachineInstance : Entity
             null, // no reason for regular transitions
             triggeredBy);
 
-        _transitionHistory.Add(historyEntry);
+        TransitionHistory ??= [];
+
+        TransitionHistory.Add(historyEntry);
+
+        return historyEntry;
 
         // Raise domain events
     }
@@ -101,7 +102,7 @@ public abstract class StateMachineInstance : Entity
             reason,
             triggeredBy);
 
-        _transitionHistory.Add(historyEntry);
+        TransitionHistory.Add(historyEntry);
 
         // Raise domain event for forced transition
     }
@@ -172,12 +173,14 @@ public abstract class StateMachineInstance : Entity
 
     /// <summary>
     /// Gets all available trigger entities from the current state.
+    /// Includes both state-changing transitions and non-state-changing (trigger-only) transitions.
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggers()
     {
-        return Definition.Transitions.Where(t => t.FromStateId == CurrentStateId)
-                          .Select(t => t.Trigger)
-                          .Distinct();
+        return Definition.Transitions
+            .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
+            .Select(t => t.Trigger)
+            .Distinct();
     }
 
     /// <summary>
@@ -190,6 +193,7 @@ public abstract class StateMachineInstance : Entity
 
     /// <summary>
     /// Gets all requirements for a specific trigger from the current state.
+    /// Includes requirements from both state-changing and non-state-changing transitions.
     /// </summary>
     public IEnumerable<IStateMachineTransitionRequirement> GetRequirementsForTrigger(StateMachineTrigger trigger)
     {
@@ -197,24 +201,26 @@ public abstract class StateMachineInstance : Entity
             return [];
 
         return Definition.Transitions
-            .Where(t => t.FromStateId == CurrentStateId && t.TriggerId == trigger.Id)
+            .Where(t => (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
     }
 
     /// <summary>
     /// Gets all requirements for all available transitions from the current state.
+    /// Includes requirements from both state-changing and non-state-changing transitions.
     /// </summary>
     public IEnumerable<IStateMachineTransitionRequirement> GetAllRequirementsFromCurrentState()
     {
         return Definition.Transitions
-            .Where(t => t.FromStateId == CurrentStateId)
+            .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
     }
 
     /// <summary>
     /// Gets transitions that can be triggered with the specified trigger from the current state.
+    /// Includes both state-changing transitions and non-state-changing (trigger-only) transitions.
     /// </summary>
     public IEnumerable<StateMachineTransition> GetTransitionsForTrigger(StateMachineTrigger trigger)
     {
@@ -222,11 +228,12 @@ public abstract class StateMachineInstance : Entity
             return [];
 
         return Definition.Transitions.Where(t =>
-            t.FromStateId == CurrentStateId && t.TriggerId == trigger.Id);
+            (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id);
     }
 
     /// <summary>
     /// Checks if a specific trigger entity is available from the current state.
+    /// Includes both state-changing transitions and non-state-changing (trigger-only) transitions.
     /// </summary>
     public bool CanTrigger(StateMachineTrigger trigger)
     {
@@ -234,7 +241,7 @@ public abstract class StateMachineInstance : Entity
             return false;
 
         return Definition.Transitions.Any(t =>
-            t.FromStateId == CurrentStateId && t.TriggerId == trigger.Id);
+            (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id);
     }
 
     /// <summary>
@@ -272,6 +279,7 @@ public abstract class StateMachineInstance : Entity
 
     /// <summary>
     /// Checks if a transition can be made to a specific state using a specific trigger.
+    /// Only checks state-changing transitions (non-state-changing transitions are not included).
     /// </summary>
     public bool CanTransitionTo(StateMachineState targetState, StateMachineTrigger trigger)
     {
@@ -286,6 +294,7 @@ public abstract class StateMachineInstance : Entity
 
     /// <summary>
     /// Gets the transition entity for a specific trigger and target state from the current state.
+    /// Only returns state-changing transitions (non-state-changing transitions are not included).
     /// </summary>
     public StateMachineTransition? GetTransition(StateMachineTrigger trigger, StateMachineState targetState)
     {
