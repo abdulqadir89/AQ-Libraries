@@ -46,7 +46,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
 
     public async Task<RequirementEvaluationSummary> EvaluateRequirementsAsync(
         IEnumerable<IStateMachineTransitionRequirement> requirements,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         IDictionary<string, object>? requirementsContext = null)
     {
         var requirementsList = requirements.ToList();
@@ -79,7 +79,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
 
                         if (handleMethod != null)
                         {
-                            var task = (Task<bool>)handleMethod.Invoke(handler, [requirement, stateMachine, specificContext])!;
+                            var task = (Task<bool>)handleMethod.Invoke(handler, [requirement, stateMachineId, specificContext])!;
                             var result = await task;
 
                             if (result)
@@ -106,7 +106,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
         {
             try
             {
-                var processedStatuses = await genericHandler.HandleAsync(evaluationStatuses, stateMachine, requirementsContext);
+                var processedStatuses = await genericHandler.HandleAsync(evaluationStatuses, stateMachineId, requirementsContext);
                 evaluationStatuses = processedStatuses.ToList();
             }
             catch (Exception ex)

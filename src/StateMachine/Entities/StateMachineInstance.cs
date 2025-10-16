@@ -15,9 +15,6 @@ public abstract class StateMachineInstance : Entity
     public Guid CurrentStateId { get; protected set; }
     public DateTimeOffset? LastTransitionAt { get; protected set; }
 
-    /// <summary>
-    /// Collection of transition history. This is the actual EF Core navigation property.
-    /// </summary>
     public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = default!;
 
     // EF Core constructor
@@ -35,112 +32,7 @@ public abstract class StateMachineInstance : Entity
         CurrentStateId = initialState.Id;
     }
 
-    /// <summary>
-    /// Method for executing a transition. 
-    /// This method bypasses requirement validation and should not be called directly.
-    /// </summary>
-    public StateMachineStateTransitionHistory ExecuteTransition<TUser, TUserId>(
-        StateMachineTransition transition,
-        TUser triggeredBy)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>
-    {
-        var previousState = CurrentState;
-
-        // Only change state if this is a state-changing transition
-        if (transition.ChangesState)
-        {
-            CurrentStateId = transition.ToStateId!.Value;
-            CurrentState = transition.ToState!;
-        }
-
-        LastTransitionAt = DateTimeOffset.UtcNow;
-
-        // Record transition history using the consolidated method
-        var historyEntry = CreateTransitionHistoryEntry<TUser, TUserId>(
-            previousState,
-            transition.ToState ?? CurrentState,
-            transition.Trigger,
-            false, // isForced = false for regular transitions
-            null, // no reason for regular transitions
-            triggeredBy);
-
-        TransitionHistory ??= [];
-
-        TransitionHistory.Add(historyEntry);
-
-        return historyEntry;
-
-        // Raise domain events
-    }
-
-    /// <summary>
-    /// Method for executing a forced transition to a specific state entity.
-    /// Used by IStateMachineTransitionService.
-    /// </summary>
-    public void ExecuteForcedTransition<TUser, TUserId>(
-        StateMachineState targetState,
-        string reason,
-        TUser triggeredBy)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>
-    {
-        if (targetState == null)
-            throw new ArgumentNullException(nameof(targetState));
-
-        var previousState = CurrentState;
-        CurrentStateId = targetState.Id;
-        CurrentState = targetState;
-        LastTransitionAt = DateTimeOffset.UtcNow;
-
-        // Record transition history using the consolidated method
-        var historyEntry = CreateTransitionHistoryEntry<TUser, TUserId>(
-            previousState,
-            CurrentState,
-            null, // No trigger for forced transitions
-            true, // isForced = true
-            reason,
-            triggeredBy);
-
-        TransitionHistory.Add(historyEntry);
-
-        // Raise domain event for forced transition
-    }
-
-    /// <summary>
-    /// Consolidated method for creating transition history entries.
-    /// Eliminates duplication in forced transition handling.
-    /// </summary>
-    private StateMachineStateTransitionHistory CreateTransitionHistoryEntry<TUser, TUserId>(
-        StateMachineState fromState,
-        StateMachineState toState,
-        StateMachineTrigger? trigger,
-        bool isForced,
-        string? reason,
-        TUser triggeredBy)
-        where TUser : class, IUser<TUserId>
-        where TUserId : IEquatable<TUserId>
-    {
-        if (isForced)
-        {
-            return StateMachineStateTransitionHistory<TUser, TUserId>.CreateForced(
-                this,
-                fromState,
-                toState,
-                reason ?? "Forced transition",
-                triggeredBy);
-        }
-        else
-        {
-            return StateMachineStateTransitionHistory<TUser, TUserId>.Create(
-                this,
-                fromState,
-                toState,
-                trigger!,
-                triggeredBy);
-        }
-    }
-
+    
     /// <summary>
     /// Method for reverting to a specific state by marking transitions as reverted.
     /// Used by IStateMachineTransitionService.
@@ -232,79 +124,11 @@ public abstract class StateMachineInstance : Entity
     }
 
     /// <summary>
-    /// Checks if a specific trigger entity is available from the current state.
-    /// Includes both state-changing transitions and non-state-changing (trigger-only) transitions.
-    /// </summary>
-    public bool CanTrigger(StateMachineTrigger trigger)
-    {
-        if (trigger == null)
-            return false;
-
-        return Definition.Transitions.Any(t =>
-            (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id);
-    }
-
-    /// <summary>
-    /// Gets the current state object.
-    /// </summary>
-    public StateMachineState? GetCurrentState()
-    {
-        return CurrentState;
-    }
-
-    /// <summary>
-    /// Gets a state by name.
-    /// </summary>
-    public StateMachineState? GetState(string stateName)
-    {
-        return Definition.States.FirstOrDefault(s => s.Name == stateName);
-    }
-
-    /// <summary>
-    /// Gets a trigger by name.
-    /// </summary>
-    public StateMachineTrigger? GetTrigger(string triggerName)
-    {
-        return Definition.Triggers.FirstOrDefault(t => t.Name == triggerName);
-    }
-
-    /// <summary>
     /// Checks if the state machine is in a final state.
     /// </summary>
     public bool IsInFinalState()
     {
-        var currentState = GetCurrentState();
-        return currentState?.Category == StateMachineStateCategory.Final;
-    }
-
-    /// <summary>
-    /// Checks if a transition can be made to a specific state using a specific trigger.
-    /// Only checks state-changing transitions (non-state-changing transitions are not included).
-    /// </summary>
-    public bool CanTransitionTo(StateMachineState targetState, StateMachineTrigger trigger)
-    {
-        if (targetState == null || trigger == null)
-            return false;
-
-        return Definition.Transitions.Any(t =>
-            t.FromStateId == CurrentStateId &&
-            t.ToStateId == targetState.Id &&
-            t.TriggerId == trigger.Id);
-    }
-
-    /// <summary>
-    /// Gets the transition entity for a specific trigger and target state from the current state.
-    /// Only returns state-changing transitions (non-state-changing transitions are not included).
-    /// </summary>
-    public StateMachineTransition? GetTransition(StateMachineTrigger trigger, StateMachineState targetState)
-    {
-        if (trigger == null || targetState == null)
-            return null;
-
-        return Definition.Transitions.FirstOrDefault(t =>
-            t.FromStateId == CurrentStateId &&
-            t.TriggerId == trigger.Id &&
-            t.ToStateId == targetState.Id);
+        return CurrentState.Category == StateMachineStateCategory.Final;
     }
 }
 

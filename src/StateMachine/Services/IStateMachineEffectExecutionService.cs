@@ -5,6 +5,7 @@ namespace AQ.StateMachine.Services;
 /// <summary>
 /// Service for executing state machine transition effects.
 /// Executes effects in sequence: specific handlers first, then generic handlers.
+/// Handlers are responsible for fetching their own data from the database.
 /// </summary>
 public interface IStateMachineEffectExecutionService
 {
@@ -15,12 +16,12 @@ public interface IStateMachineEffectExecutionService
     /// Non-critical failures are logged but don't prevent the transition.
     /// </summary>
     /// <param name="effects">The effects to execute</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="transitionInfo">Information about the completed transition</param>
     /// <returns>Detailed execution result</returns>
     Task<EffectExecutionSummary> ExecuteEffectsAsync(
         IEnumerable<IStateMachineTransitionEffect> effects,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         StateMachineTransitionInfo transitionInfo);
 
     /// <summary>

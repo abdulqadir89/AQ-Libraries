@@ -57,7 +57,7 @@ public class StateMachineEffectExecutionService : IStateMachineEffectExecutionSe
 
     public async Task<EffectExecutionSummary> ExecuteEffectsAsync(
         IEnumerable<IStateMachineTransitionEffect> effects,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         StateMachineTransitionInfo transitionInfo)
     {
         var effectsList = effects.ToList();
@@ -97,7 +97,7 @@ public class StateMachineEffectExecutionService : IStateMachineEffectExecutionSe
                             // Convert domain TransitionExecutionInfo to application StateMachineTransitionInfo
                             var domainTransitionInfo = new TransitionExecutionInfo
                             {
-                                StateMachineId = stateMachine.Id,
+                                StateMachineId = stateMachineId,
                                 PreviousStateId = transitionInfo.PreviousStateId,
                                 NewStateId = transitionInfo.NewStateId ?? Guid.Empty,
                                 TriggerId = transitionInfo.TriggerId,
@@ -106,7 +106,7 @@ public class StateMachineEffectExecutionService : IStateMachineEffectExecutionSe
                                 TransitionedAt = transitionInfo.TransitionedAt
                             };
 
-                            var task = (Task<bool>)handleMethod.Invoke(handler, [effect, stateMachine, domainTransitionInfo])!;
+                            var task = (Task<bool>)handleMethod.Invoke(handler, [effect, stateMachineId, domainTransitionInfo])!;
                             var result = await task;
 
                             if (result)
@@ -153,7 +153,7 @@ public class StateMachineEffectExecutionService : IStateMachineEffectExecutionSe
                 // Convert domain TransitionExecutionInfo to application StateMachineTransitionInfo
                 var domainTransitionInfo = new TransitionExecutionInfo
                 {
-                    StateMachineId = stateMachine.Id,
+                    StateMachineId = stateMachineId,
                     PreviousStateId = transitionInfo.PreviousStateId,
                     NewStateId = transitionInfo.NewStateId ?? Guid.Empty,
                     TriggerId = transitionInfo.TriggerId,
@@ -162,7 +162,7 @@ public class StateMachineEffectExecutionService : IStateMachineEffectExecutionSe
                     TransitionedAt = transitionInfo.TransitionedAt
                 };
 
-                var updatedStatuses = await genericHandler.HandleAsync(executionStatuses, stateMachine, domainTransitionInfo);
+                var updatedStatuses = await genericHandler.HandleAsync(executionStatuses, stateMachineId, domainTransitionInfo);
                 executionStatuses = updatedStatuses.ToList();
             }
             catch

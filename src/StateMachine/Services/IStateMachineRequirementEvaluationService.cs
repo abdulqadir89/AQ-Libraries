@@ -5,6 +5,7 @@ namespace AQ.StateMachine.Services;
 /// <summary>
 /// Service for evaluating state machine transition requirements.
 /// Evaluates requirements in sequence: specific handlers first, then generic handler.
+/// Handlers are responsible for fetching their own data from the database.
 /// </summary>
 public interface IStateMachineRequirementEvaluationService
 {
@@ -15,12 +16,12 @@ public interface IStateMachineRequirementEvaluationService
     /// Returns true only if ALL requirements are fulfilled (AND relationship).
     /// </summary>
     /// <param name="requirements">The requirements to evaluate</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="requirementsContext">Requirements context data where key is requirement type name and value is the context object</param>
     /// <returns>Detailed evaluation result</returns>
     Task<RequirementEvaluationSummary> EvaluateRequirementsAsync(
         IEnumerable<IStateMachineTransitionRequirement> requirements,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         IDictionary<string, object>? requirementsContext = null);
 
     /// <summary>

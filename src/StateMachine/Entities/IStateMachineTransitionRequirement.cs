@@ -28,35 +28,39 @@ public abstract record StateMachineTransitionRequirement : IStateMachineTransiti
 /// <summary>
 /// Handler interface for specific requirement types.
 /// Multiple handlers can exist for the same requirement type (OR relationship).
+/// Handlers are responsible for fetching their own data from the database using the state machine ID.
 /// </summary>
 public interface IStateMachineTransitionRequirementHandler<TRequirement> where TRequirement : IStateMachineTransitionRequirement
 {
     /// <summary>
     /// Evaluates if the requirement is fulfilled.
+    /// Handler should fetch state machine instance and related data from database as needed.
     /// </summary>
     /// <param name="requirement">The requirement to evaluate</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="requirementContext">Specific context object for this requirement type (if available)</param>
     /// <returns>True if requirement is fulfilled, false otherwise</returns>
-    Task<bool> HandleAsync(TRequirement requirement, StateMachineInstance stateMachine, object? requirementContext);
+    Task<bool> HandleAsync(TRequirement requirement, Guid stateMachineId, object? requirementContext);
 }
 
 /// <summary>
 /// Generic handler interface that can handle all requirements.
 /// This handler receives all requirements with their evaluation status and can process them as needed.
+/// Handler is responsible for fetching its own data from the database using the state machine ID.
 /// </summary>
 public interface IStateMachineTransitionHandler
 {
     /// <summary>
     /// Handles all requirements for a transition. Called after specific handlers have been evaluated.
+    /// Handler should fetch state machine instance and related data from database as needed.
     /// </summary>
     /// <param name="requirements">All requirements with their current evaluation status</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="requirementsContext">Complete requirements context data</param>
     /// <returns>Updated requirements with final evaluation status</returns>
     Task<IEnumerable<RequirementEvaluationStatus>> HandleAsync(
         IEnumerable<RequirementEvaluationStatus> requirements,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         IDictionary<string, object>? requirementsContext);
 }
 

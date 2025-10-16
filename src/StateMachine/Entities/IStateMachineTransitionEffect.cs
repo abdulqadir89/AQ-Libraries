@@ -43,35 +43,39 @@ public class TransitionExecutionInfo
 /// <summary>
 /// Handler interface for specific effect types.
 /// Multiple handlers can exist for the same effect type (all will be executed).
+/// Handlers are responsible for fetching their own data from the database using the state machine ID.
 /// </summary>
 public interface IStateMachineTransitionEffectHandler<TEffect> where TEffect : IStateMachineTransitionEffect
 {
     /// <summary>
     /// Executes the effect after a successful transition.
+    /// Handler should fetch state machine instance and related data from database as needed.
     /// </summary>
     /// <param name="effect">The effect to execute</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="transitionInfo">Information about the completed transition</param>
     /// <returns>True if effect executed successfully, false otherwise</returns>
-    Task<bool> HandleAsync(TEffect effect, StateMachineInstance stateMachine, TransitionExecutionInfo transitionInfo);
+    Task<bool> HandleAsync(TEffect effect, Guid stateMachineId, TransitionExecutionInfo transitionInfo);
 }
 
 /// <summary>
 /// Generic handler interface that can handle all effects.
 /// This handler receives all effects with their execution status and can process them as needed.
+/// Handler is responsible for fetching its own data from the database using the state machine ID.
 /// </summary>
 public interface IStateMachineTransitionEffectHandler
 {
     /// <summary>
     /// Handles all effects for a transition. Called after specific handlers have been executed.
+    /// Handler should fetch state machine instance and related data from database as needed.
     /// </summary>
     /// <param name="effects">All effects with their current execution status</param>
-    /// <param name="stateMachine">The state machine instance</param>
+    /// <param name="stateMachineId">The state machine instance ID</param>
     /// <param name="transitionInfo">Information about the completed transition</param>
     /// <returns>Updated effects with final execution status</returns>
     Task<IEnumerable<EffectExecutionStatus>> HandleAsync(
         IEnumerable<EffectExecutionStatus> effects,
-        StateMachineInstance stateMachine,
+        Guid stateMachineId,
         TransitionExecutionInfo transitionInfo);
 }
 
