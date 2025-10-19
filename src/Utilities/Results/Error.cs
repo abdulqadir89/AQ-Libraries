@@ -65,4 +65,19 @@ public sealed record Error(ErrorType Type, string Code, string Message)
     /// </summary>
     /// <param name="message">The error message.</param>
     public static implicit operator Error(string message) => new(ErrorType.General, "Error.General", message);
+
+    /// <summary>
+    /// Converts the error type to the corresponding HTTP status code.
+    /// </summary>
+    /// <returns>The HTTP status code.</returns>
+    public int ToHttpStatusCode() => Type switch
+    {
+        ErrorType.NotFound => 404,
+        ErrorType.Validation => 400,
+        ErrorType.Conflict => 409,
+        ErrorType.Unauthorized => 401,
+        ErrorType.Forbidden => 403,
+        ErrorType.BusinessRule => 422,
+        _ => 400
+    };
 }
