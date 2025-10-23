@@ -11,10 +11,10 @@ namespace AQ.Entities;
 public abstract class HierarchicalEntityClosure<T> : IHierarchicalEntityClosure where T : HierarchicalEntity<T>
 {
     public Guid AncestorId { get; set; }
-    public T Ancestor { get; set; } = default!;
+    public T? Ancestor { get; set; }
 
     public Guid DescendantId { get; set; }
-    public T Descendant { get; set; } = default!;
+    public T? Descendant { get; set; }
     protected HierarchicalEntityClosure() { }
     // Use this entity for ancestor/descendant mapping. Construction and updates should be handled in the application layer when parent changes.
 }

@@ -10,12 +10,12 @@ namespace AQ.StateMachine.Entities;
 public abstract class StateMachineInstance : Entity
 {
     public Guid DefinitionId { get; protected set; }
-    public StateMachineDefinition Definition { get; protected set; } = default!;
-    public StateMachineState CurrentState { get; protected set; } = default!;
+    public StateMachineDefinition? Definition { get; protected set; }
+    public StateMachineState? CurrentState { get; protected set; }
     public Guid CurrentStateId { get; protected set; }
     public DateTimeOffset? LastTransitionAt { get; protected set; }
 
-    public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = default!;
+    public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = [];
 
     // EF Core constructor
     protected StateMachineInstance() { }
@@ -69,9 +69,9 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggers()
     {
-        return Definition.Transitions
+        return Definition!.Transitions
             .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
-            .Select(t => t.Trigger)
+            .Select(t => t.Trigger!)
             .Distinct();
     }
 
@@ -80,7 +80,7 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<StateMachineTransition> GetAvailableTransitions()
     {
-        return Definition.Transitions.Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null);
+        return Definition!.Transitions.Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public abstract class StateMachineInstance : Entity
         if (trigger == null)
             return [];
 
-        return Definition.Transitions
+        return Definition!.Transitions
             .Where(t => (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
@@ -104,7 +104,7 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<IStateMachineTransitionRequirement> GetAllRequirementsFromCurrentState()
     {
-        return Definition.Transitions
+        return Definition!.Transitions
             .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
@@ -119,7 +119,7 @@ public abstract class StateMachineInstance : Entity
         if (trigger == null)
             return [];
 
-        return Definition.Transitions.Where(t =>
+        return Definition!.Transitions.Where(t =>
             (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id);
     }
 
@@ -128,7 +128,7 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public bool IsInFinalState()
     {
-        return CurrentState.Category == StateMachineStateCategory.Final;
+        return CurrentState!.Category == StateMachineStateCategory.Final;
     }
 }
 
@@ -136,7 +136,7 @@ public abstract class StateMachineInstance : Entity
 public class StateMachineInstance<TEntity> : StateMachineInstance
 {
     public Guid EntityId { get; private set; }
-    public TEntity Entity { get; private set; } = default!;
+    public TEntity? Entity { get; private set; }
 
     // EF Core constructor
     protected StateMachineInstance() : base() { }

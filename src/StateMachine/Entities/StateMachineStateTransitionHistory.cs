@@ -9,13 +9,13 @@ namespace AQ.StateMachine.Entities;
 public abstract class StateMachineStateTransitionHistory : Entity
 {
     public Guid StateMachineInstanceId { get; private set; }
-    public StateMachineInstance StateMachineInstance { get; private set; } = default!;
+    public StateMachineInstance? StateMachineInstance { get; private set; }
 
     public Guid FromStateId { get; private set; }
-    public StateMachineState FromState { get; private set; } = default!;
+    public StateMachineState? FromState { get; private set; }
 
     public Guid ToStateId { get; private set; }
-    public StateMachineState ToState { get; private set; } = default!;
+    public StateMachineState? ToState { get; private set; }
 
     public Guid? TriggerId { get; private set; }
     public StateMachineTrigger? Trigger { get; private set; }
@@ -59,11 +59,11 @@ public abstract class StateMachineStateTransitionHistory : Entity
     {
         // No-op entry (no state change and no trigger)
         if (FromStateId == ToStateId && Trigger == null)
-            return $"No transition at '{FromState.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}";
+            return $"No transition at '{FromState!.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}";
 
         return IsForced
-            ? $"Forced transition from '{FromState.Name}' to '{ToState.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}"
-            : $"Transition from '{FromState.Name}' to '{ToState.Name}' via trigger '{Trigger?.Name}'";
+            ? $"Forced transition from '{FromState!.Name}' to '{ToState!.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}"
+            : $"Transition from '{FromState!.Name}' to '{ToState!.Name}' via trigger '{Trigger?.Name}'";
     }
 
     /// <summary>
@@ -81,8 +81,8 @@ public abstract class StateMachineStateTransitionHistory : Entity
     /// </summary>
     public bool MatchesByName(string? fromStateName = null, string? toStateName = null, string? triggerName = null)
     {
-        return (fromStateName == null || FromState.Name == fromStateName) &&
-               (toStateName == null || ToState.Name == toStateName) &&
+        return (fromStateName == null || FromState!.Name == fromStateName) &&
+               (toStateName == null || ToState!.Name == toStateName) &&
                (triggerName == null || Trigger?.Name == triggerName);
     }
 
@@ -105,8 +105,8 @@ public abstract class StateMachineStateTransitionHistory : Entity
 
 public class StateMachineStateTransitionHistory<TUser, TUserId> : StateMachineStateTransitionHistory where TUser : class, IUser<TUserId> where TUserId : IEquatable<TUserId>
 {
-    public TUserId UserId { get; protected set; } = default!;
-    public TUser User { get; protected set; } = default!;
+    public TUserId? UserId { get; protected set; }
+    public TUser? User { get; protected set; }
 
     public StateMachineStateTransitionHistory() : base() { }
 

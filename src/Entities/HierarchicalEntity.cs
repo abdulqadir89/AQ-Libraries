@@ -14,13 +14,13 @@ public abstract class HierarchicalEntity<T> : Entity, IHierarchicalEntity where 
     // Self-referential for n-level hierarchy
     public Guid? ParentId { get; protected set; }
     public T? Parent { get; protected set; }
-    public ICollection<T> Children { get; protected set; } = default!;
+    public ICollection<T> Children { get; protected set; } = [];
 
     [InverseProperty(nameof(HierarchicalEntityClosure<T>.Descendant))]
-    public ICollection<HierarchicalEntityClosure<T>> Ancestors { get; set; } = default!;
+    public ICollection<HierarchicalEntityClosure<T>> Ancestors { get; set; } = [];
 
     [InverseProperty(nameof(HierarchicalEntityClosure<T>.Ancestor))]
-    public ICollection<HierarchicalEntityClosure<T>> Descendants { get; set; } = default!;
+    public ICollection<HierarchicalEntityClosure<T>> Descendants { get; set; } = [];
 
     protected HierarchicalEntity() { }
 

@@ -100,7 +100,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
             var newToState = transition.ToState != null
                 ? newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name)
                 : null;
-            var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger.Name);
+            var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger!.Name);
 
             if (newTrigger != null)
             {
@@ -146,7 +146,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggersFromState(StateMachineState state)
     {
-        return GetTransitionsFromState(state).Select(t => t.Trigger).Distinct();
+        return GetTransitionsFromState(state).Select(t => t.Trigger!).Distinct();
     }
 
     /// <summary>
@@ -168,7 +168,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
             var toStateName = transition.ToState != null
                 ? SanitizeStateName(transition.ToState.Name)
                 : "[*]";
-            var triggerName = transition.Trigger.Name;
+            var triggerName = transition.Trigger!.Name;
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
 
@@ -315,7 +315,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEntity : IEntity
 {
     public Guid EntityId { get; private set; }
-    public TEntity Entity { get; private set; } = default!;
+    public TEntity? Entity { get; private set; }
 
     // EF Core constructor
     protected StateMachineDefinition() : base() { }
@@ -346,8 +346,8 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
         if (InitialState == null)
             throw new InvalidOperationException("Cannot create new version without an initial state.");
 
-        var newDefinition = new StateMachineDefinition<TEntity>(Entity, InitialState.Name, version);
-        newDefinition.SetEntity(Entity);
+        var newDefinition = new StateMachineDefinition<TEntity>(Entity!, InitialState.Name, version);
+        newDefinition.SetEntity(Entity!);
 
         CopyDefinitionDataTo(newDefinition);
 

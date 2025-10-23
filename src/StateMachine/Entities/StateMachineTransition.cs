@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AQ.Entities;
 
 namespace AQ.StateMachine.Entities;
@@ -12,7 +13,7 @@ public class StateMachineTransition : Entity
     public Guid? FromStateId { get; private set; }
     public StateMachineState? ToState { get; private set; }
     public Guid? ToStateId { get; private set; }
-    public StateMachineTrigger Trigger { get; private set; } = default!;
+    public StateMachineTrigger? Trigger { get; private set; }
     public Guid TriggerId { get; private set; }
     public string? Description { get; private set; }
 
@@ -208,7 +209,161 @@ public class StateMachineTransition : Entity
 
     public override string ToString() =>
         ChangesState
-            ? $"{FromState!.Name} -> {ToState!.Name} ({Trigger.Name})"
-            : $"Trigger: {Trigger.Name}";
+            ? $"{FromState!.Name} -> {ToState!.Name} ({Trigger!.Name})"
+            : $"Trigger: {Trigger!.Name}";
+
+    #region JSON Serialization for Persistence
+
+    /// <summary>
+    /// Serializes requirements to JSON for database storage.
+    /// </summary>
+    public static string? SerializeRequirements(IEnumerable<IStateMachineTransitionRequirement>? requirements)
+    {
+        if (requirements == null) return null;
+
+        var requirementDict = new Dictionary<string, object>();
+
+        foreach (var requirement in requirements)
+        {
+            var typeName = requirement.GetType().Name;
+            var data = JsonSerializer.SerializeToElement(requirement);
+            requirementDict[typeName] = data;
+        }
+
+        return JsonSerializer.Serialize(requirementDict);
+    }
+
+    /// <summary>
+    /// Deserializes requirements from JSON database storage.
+    /// </summary>
+    public static IEnumerable<IStateMachineTransitionRequirement>? DeserializeRequirements(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+
+        try
+        {
+            var requirementDict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (requirementDict == null) return null;
+
+            var requirements = new List<IStateMachineTransitionRequirement>();
+
+            foreach (var kvp in requirementDict)
+            {
+                var requirementType = kvp.Key;
+                var data = kvp.Value;
+
+                // Create a generic requirement wrapper for JSON storage
+                var requirement = new JsonStoredRequirement
+                {
+                    RequirementTypeName = requirementType,
+                    Data = JsonSerializer.Deserialize<Dictionary<string, object>>(data.ToString() ?? "{}") ?? new Dictionary<string, object>()
+                };
+
+                requirements.Add(requirement);
+            }
+
+            return requirements;
+        }
+        catch
+        {
+            // Return empty collection if deserialization fails
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Serializes effects to JSON for database storage.
+    /// </summary>
+    public static string? SerializeEffects(IEnumerable<IStateMachineTransitionEffect>? effects)
+    {
+        if (effects == null) return null;
+
+        var effectDict = new Dictionary<string, object>();
+
+        foreach (var effect in effects)
+        {
+            var typeName = effect.GetType().Name;
+            var data = JsonSerializer.SerializeToElement(effect);
+            effectDict[typeName] = data;
+        }
+
+        return JsonSerializer.Serialize(effectDict);
+    }
+
+    /// <summary>
+    /// Deserializes effects from JSON database storage.
+    /// </summary>
+    public static IEnumerable<IStateMachineTransitionEffect>? DeserializeEffects(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+
+        try
+        {
+            var effectDict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (effectDict == null) return null;
+
+            var effects = new List<IStateMachineTransitionEffect>();
+
+            foreach (var kvp in effectDict)
+            {
+                var effectType = kvp.Key;
+                var data = kvp.Value;
+
+                // Create a generic effect wrapper for JSON storage
+                var effect = new JsonStoredEffect
+                {
+                    EffectTypeName = effectType,
+                    Data = JsonSerializer.Deserialize<Dictionary<string, object>>(data.ToString() ?? "{}") ?? new Dictionary<string, object>()
+                };
+
+                effects.Add(effect);
+            }
+
+            return effects;
+        }
+        catch
+        {
+            // Return empty collection if deserialization fails
+            return [];
+        }
+    }
+
+    #endregion
+
+    #region Internal Storage Classes
+
+    /// <summary>
+    /// Internal class for storing requirements as JSON in the database.
+    /// This allows storage of any requirement type without requiring specific configurations.
+    /// The requirement type is determined by the actual implementation class type.
+    /// </summary>
+    internal class JsonStoredRequirement : IStateMachineTransitionRequirement
+    {
+        public string RequirementTypeName { get; set; } = default!;
+        public Dictionary<string, object> Data { get; set; } = [];
+
+        /// <summary>
+        /// Gets the requirement type name based on the stored type name.
+        /// </summary>
+        public string GetRequirementTypeName() => RequirementTypeName;
+    }
+
+    /// <summary>
+    /// Internal class for storing effects as JSON in the database.
+    /// This allows storage of any effect type without requiring specific configurations.
+    /// The effect type is determined by the actual implementation class type.
+    /// </summary>
+    internal class JsonStoredEffect : IStateMachineTransitionEffect
+    {
+        public string EffectTypeName { get; set; } = default!;
+        public Dictionary<string, object> Data { get; set; } = [];
+
+        /// <summary>
+        /// Gets the effect type name based on the stored type name.
+        /// </summary>
+        public string GetEffectTypeName() => EffectTypeName;
+    }
+
+    #endregion
 }
 

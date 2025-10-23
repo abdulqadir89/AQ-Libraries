@@ -9,7 +9,7 @@ namespace AQ.StateMachine.Entities;
 public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
 {
     public Guid StateMachineDefinitionId { get; private set; }
-    public StateMachineDefinition StateMachineDefinition { get; private set; } = default!;
+    public StateMachineDefinition? StateMachineDefinition { get; private set; }
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
     public StateMachineStateCategory Category { get; private set; } = StateMachineStateCategory.Intermediate;
