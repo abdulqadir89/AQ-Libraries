@@ -23,6 +23,13 @@ public abstract record StateMachineTransitionRequirement : IStateMachineTransiti
     /// Gets the requirement type name based on the actual implementation type.
     /// </summary>
     public virtual string GetRequirementTypeName() => GetType().Name;
+
+    /// <summary>
+    /// Gets the types of data entities that need to be collected from the user for this requirement.
+    /// Return empty collection if no user data collection is needed.
+    /// Handlers will fetch this data directly from the database during evaluation.
+    /// </summary>
+    public virtual IEnumerable<Type> GetRequiredDataTypes() => Enumerable.Empty<Type>();
 }
 
 /// <summary>

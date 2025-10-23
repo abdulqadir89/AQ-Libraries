@@ -19,6 +19,13 @@ The State Machine system supports requirements that must be evaluated before all
 - **Evaluation Sequence**: System first tries specific handlers, then evaluates all registered generic handlers
 - **Auto-Discovery**: Handlers are automatically discovered from configured assemblies
 
+### Requirement Data
+- **User Data Collection**: Requirements can specify that additional user data must be collected before evaluation
+- **Marker Interface**: Implement `IStateMachineTransitionRequirementData` on entities that store required user data
+- **Handler Fetches Data**: Handlers fetch required data directly from the database using StateMachineId and TransitionId
+- **Discovery**: Use `GetRequiredDataTypes()` on transitions to discover what data needs to be collected
+- **Database-Backed**: Data entities are persisted in your application database with normal EF Core configuration
+
 ### Entity-Based Operations
 - **States**: Use `StateMachineState` entities instead of string names
 - **Triggers**: Use `StateMachineTrigger` entities instead of string names
@@ -28,9 +35,10 @@ The State Machine system supports requirements that must be evaluated before all
 
 ### Domain Layer
 - `IStateMachineTransitionRequirement` - Base requirement interface
-- `StateMachineTransitionRequirement` - Abstract base class with common properties
+- `StateMachineTransitionRequirement` - Abstract base class with common properties and `GetRequiredDataType()` method
 - `IStateMachineTransitionRequirementHandler<TRequirement>` - Typed handler interface
 - `IStateMachineTransitionHandler` - Generic handler interface for processing all requirements
+- `IStateMachineTransitionRequirementData` - Marker interface for requirement data entities
 - `RequirementEvaluationStatus` - Tracks evaluation status and handler processing
 - Example requirements in `Requirements/ExampleRequirements.cs`
 
@@ -78,11 +86,44 @@ public class UserRoleRequirementHandler : IStateMachineTransitionRequirementHand
 {
     public async Task<bool> HandleAsync(
         UserRoleRequirement requirement, 
-        StateMachineInstance stateMachine, 
-        IDictionary<string, object>? context)
+        Guid stateMachineId, 
+        object? requirementContext)
     {
         // Implementation logic here
         return userHasRole;
+    }
+}
+```
+
+#### Handler that Fetches User-Provided Data
+```csharp
+public class ApprovalJustificationRequirementHandler(IApplicationDbContext dbContext) 
+    : IStateMachineTransitionRequirementHandler<ApprovalJustificationRequirement>
+{
+    public async Task<bool> HandleAsync(
+        ApprovalJustificationRequirement requirement,
+        Guid stateMachineId,
+        object? requirementContext)
+    {
+        // Fetch the user-provided data from database
+        var justificationData = await dbContext.ApprovalJustifications
+            .FirstOrDefaultAsync(aj => 
+                aj.StateMachineId == stateMachineId && 
+                aj.TransitionId == requirement.TransitionId);
+
+        // If data hasn't been collected yet, requirement not fulfilled
+        if (justificationData == null)
+            return false;
+
+        // Validate the data
+        if (justificationData.Justification.Length < requirement.MinimumCharacters)
+            return false;
+
+        if (requirement.RequiresSupportingDocuments && !justificationData.SupportingDocumentUrls.Any())
+            return false;
+
+        // Additional business logic
+        return true;
     }
 }
 ```
@@ -213,42 +254,143 @@ The system includes several example requirement types:
 3. **Multiple Generic Handlers**: Support for multiple generic handlers that all get evaluated
 4. **Flexible Assembly Scanning**: Configurable assemblies for handler discovery
 5. **Auto-Registration**: Automatic handler discovery and registration
-6. **Extensibility**: Easy to add new requirement types and handlers
-7. **Separation of Concerns**: Business logic separated from state machine mechanics
-8. **Type Safety**: Strong typing with runtime flexibility
-9. **Testability**: Requirements and handlers can be unit tested independently
+6. **Simple Data Collection**: Requirements signal what data is needed, handlers fetch it
+7. **No Extra Layers**: Handlers fetch data directly from database - no service abstraction needed
+8. **Extensibility**: Easy to add new requirement types and handlers
+9. **Separation of Concerns**: Business logic separated from state machine mechanics
+10. **Type Safety**: Strong typing with runtime flexibility
+11. **Testability**: Requirements and handlers can be unit tested independently
+
+## Requirement Data Collection
+
+### Overview
+
+Some requirements need user-provided data before they can be evaluated. The system uses a simple pattern:
+1. Requirements override `GetRequiredDataTypes()` to specify what data entity types are needed (can be multiple)
+2. Data entities implement `IStateMachineTransitionRequirementData` marker interface
+3. Application queries `transition.GetRequiredDataTypes()` to discover what data to collect
+4. Handlers fetch the data directly from database during evaluation
+
+### Defining a Requirement that Needs Data
+
+```csharp
+// Requirement can specify one or multiple data entity types
+public record ApprovalJustificationRequirement : StateMachineTransitionRequirement
+{
+    public int MinimumCharacters { get; init; } = 50;
+    public bool RequiresSupportingDocuments { get; init; } = false;
+
+    // Override to specify the data entity types (can return multiple)
+    public override IEnumerable<Type> GetRequiredDataTypes() => 
+        new[] { typeof(ApprovalJustification), typeof(ApprovalAttachments) };
+}
+
+// Or single data type
+public record ReviewCommentRequirement : StateMachineTransitionRequirement
+{
+    public override IEnumerable<Type> GetRequiredDataTypes() => 
+        new[] { typeof(ReviewComment) };
+}
+```
+
+### Defining the Data Entity
+
+```csharp
+// Data entity implements marker interface
+public class ApprovalJustification : Entity, IStateMachineTransitionRequirementData
+{
+    public Guid StateMachineId { get; private set; }
+    public Guid TransitionId { get; private set; }
+    public string Justification { get; private set; } = default!;
+    public List<string> SupportingDocumentUrls { get; private set; } = new();
+    public DateTime SubmittedAt { get; private set; }
+
+    private ApprovalJustification() { }
+
+    public static ApprovalJustification Create(
+        Guid stateMachineId,
+        Guid transitionId,
+        string justification,
+        List<string>? documentUrls = null)
+    {
+        return new ApprovalJustification
+        {
+            StateMachineId = stateMachineId,
+            TransitionId = transitionId,
+            Justification = justification,
+            SupportingDocumentUrls = documentUrls ?? new(),
+            SubmittedAt = DateTime.UtcNow
+        };
+    }
+}
+```
+
+### Discovering Required Data
+
+```csharp
+// Check what data is needed for a transition
+var transition = await dbContext.StateMachineTransitions
+    .FirstAsync(t => t.Id == transitionId);
+
+var requiredDataTypes = transition.GetRequiredDataTypes();
+
+if (transition.RequiresUserData)
+{
+    // Inform user: "This transition requires you to provide:"
+    foreach (var dataType in requiredDataTypes)
+    {
+        // Present appropriate form based on dataType
+        // e.g., if dataType == typeof(ApprovalJustification), show justification form
+    }
+}
+```
+
+### Handler Fetches Data from Database
+
+```csharp
+public class ApprovalJustificationRequirementHandler(IApplicationDbContext dbContext) 
+    : IStateMachineTransitionRequirementHandler<ApprovalJustificationRequirement>
+{
+    public async Task<bool> HandleAsync(
+        ApprovalJustificationRequirement requirement,
+        Guid stateMachineId,
+        object? requirementContext)
+    {
+        // Handler fetches the data directly from database
+        var justification = await dbContext.ApprovalJustifications
+            .FirstOrDefaultAsync(aj => 
+                aj.StateMachineId == stateMachineId && 
+                aj.TransitionId == /* get from context or requirement */);
+
+        // If data hasn't been collected yet, requirement not fulfilled
+        if (justification == null)
+            return false;
+
+        // Validate against requirement configuration
+        if (justification.Justification.Length < requirement.MinimumCharacters)
+            return false;
+
+        if (requirement.RequiresSupportingDocuments && !justification.SupportingDocumentUrls.Any())
+            return false;
+
+        return true;
+    }
+}
+```
 
 ## Service Registration
 
-### Basic Registration (Single Assembly)
+### Basic Registration
 ```csharp
 // Scans the calling assembly for handlers
-services.AddStateMachineRequirementEvaluation();
-```
-
-### Multiple Assemblies
-```csharp
-// Scans multiple assemblies for handlers
-services.AddStateMachineRequirementEvaluation(
-    Assembly.GetExecutingAssembly(),
-    typeof(SomeOtherModule).Assembly
-);
-```
-
-### Custom Configuration
-```csharp
-services.AddStateMachineRequirementEvaluation(options =>
-{
-    options.HandlerAssemblies.Add(Assembly.GetExecutingAssembly());
-    options.HandlerAssemblies.Add(pluginAssembly);
-    options.AutoRegisterHandlers = true;
-});
+services.AddStateMachineServices();
 ```
 
 ### Manual Handler Registration
 ```csharp
 // Register specific handlers
 services.AddScoped<IStateMachineTransitionRequirementHandler<UserRoleRequirement>, UserRoleRequirementHandler>();
+services.AddScoped<IStateMachineTransitionRequirementHandler<ApprovalJustificationRequirement>, ApprovalJustificationHandler>();
 
 // Register generic handlers
 services.AddScoped<IStateMachineTransitionHandler, AdminOverrideHandler>();

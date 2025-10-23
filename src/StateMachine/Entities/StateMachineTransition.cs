@@ -104,6 +104,27 @@ public class StateMachineTransition : Entity
     public int EffectCount => Effects?.Count() ?? 0;
 
     /// <summary>
+    /// Gets the types of data entities that need to be collected from users for this transition.
+    /// Returns an empty collection if no data collection is required.
+    /// </summary>
+    public IEnumerable<Type> GetRequiredDataTypes()
+    {
+        if (!HasRequirements)
+            return Enumerable.Empty<Type>();
+
+        return Requirements!
+            .OfType<StateMachineTransitionRequirement>()
+            .SelectMany(r => r.GetRequiredDataTypes())
+            .Distinct()
+            .ToList();
+    }
+
+    /// <summary>
+    /// Checks if this transition requires any user-provided data to be collected.
+    /// </summary>
+    public bool RequiresUserData => GetRequiredDataTypes().Any();
+
+    /// <summary>
     /// Indicates whether this transition changes state (has both from and to states).
     /// </summary>
     public bool ChangesState => FromState != null && ToState != null;
