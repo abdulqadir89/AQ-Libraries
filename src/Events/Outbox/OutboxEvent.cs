@@ -11,7 +11,7 @@ public enum OutboxEventCategory
     /// Domain events that handle internal business logic.
     /// </summary>
     Domain = 1,
-    
+
     /// <summary>
     /// Integration events for cross-service communication.
     /// </summary>

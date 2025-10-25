@@ -32,7 +32,7 @@ public abstract class StateMachineInstance : Entity
         CurrentStateId = initialState.Id;
     }
 
-    
+
     /// <summary>
     /// Method for reverting to a specific state by marking transitions as reverted.
     /// Used by IStateMachineTransitionService.

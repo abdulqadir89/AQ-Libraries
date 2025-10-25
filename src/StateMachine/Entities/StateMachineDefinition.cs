@@ -47,7 +47,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
         Version = version;
 
         // Create the initial state
-    var initialState = StateMachineState.Create(this, initialStateName, category: StateMachineStateCategory.Initial);
+        var initialState = StateMachineState.Create(this, initialStateName, category: StateMachineStateCategory.Initial);
         _states.Add(initialState);
 
         // Add domain event for definition creation

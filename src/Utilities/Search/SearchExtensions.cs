@@ -332,10 +332,10 @@ public static class SearchExtensions
     private static Expression BuildExactExpression(Expression property, SearchCondition condition)
     {
         var propertyType = property.Type;
-        
+
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-        
+
         if (underlyingType == typeof(string))
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
@@ -356,7 +356,7 @@ public static class SearchExtensions
                 return Expression.Constant(false);
             }
         }
-        
+
         // Default fallback for unsupported types
         return Expression.Constant(false);
     }
@@ -364,10 +364,10 @@ public static class SearchExtensions
     private static Expression BuildContainsExpression(Expression property, SearchCondition condition)
     {
         var propertyType = property.Type;
-        
+
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-        
+
         if (underlyingType == typeof(string))
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
@@ -388,7 +388,7 @@ public static class SearchExtensions
                 return Expression.Constant(false);
             }
         }
-        
+
         // Default fallback for unsupported types
         return Expression.Constant(false);
     }
@@ -396,10 +396,10 @@ public static class SearchExtensions
     private static Expression BuildStartsWithExpression(Expression property, SearchCondition condition)
     {
         var propertyType = property.Type;
-        
+
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-        
+
         if (underlyingType == typeof(string))
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
@@ -411,7 +411,7 @@ public static class SearchExtensions
             // For numeric types, StartsWith behaves like exact match
             return BuildExactExpression(property, condition);
         }
-        
+
         // Default fallback for unsupported types
         return Expression.Constant(false);
     }
@@ -419,10 +419,10 @@ public static class SearchExtensions
     private static Expression BuildEndsWithExpression(Expression property, SearchCondition condition)
     {
         var propertyType = property.Type;
-        
+
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-        
+
         if (underlyingType == typeof(string))
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
@@ -434,7 +434,7 @@ public static class SearchExtensions
             // For numeric types, EndsWith behaves like exact match
             return BuildExactExpression(property, condition);
         }
-        
+
         // Default fallback for unsupported types
         return Expression.Constant(false);
     }
@@ -463,7 +463,7 @@ public static class SearchExtensions
     private static bool TryConvertSearchTerm(string searchTerm, Type targetType, out object? convertedValue)
     {
         convertedValue = null;
-        
+
         try
         {
             if (targetType == typeof(int))
@@ -543,7 +543,7 @@ public static class SearchExtensions
         {
             // Ignore conversion errors
         }
-        
+
         return false;
     }
 
