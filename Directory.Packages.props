@@ -11,10 +11,10 @@
     <PackageVersion Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <!-- Hosting Services -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.7" />
-    <PackageVersion Include="Markdig" Version="0.42.0" />
+    <PackageVersion Include="Markdig" Version="0.43.0" />
     <PackageVersion Include="HtmlSanitizer" Version="9.0.886" />
     <!-- Logging -->
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <!-- Dependency Injection -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
     <!-- Test Packages -->
