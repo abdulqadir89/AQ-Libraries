@@ -1,5 +1,5 @@
-using System.Text.Json;
 using AQ.Entities;
+using System.Text.Json;
 
 namespace AQ.StateMachine.Entities;
 

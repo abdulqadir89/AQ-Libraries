@@ -1,6 +1,3 @@
-using AQ.Events.Domain;
-using AQ.Events.Integration;
-
 namespace AQ.Events.Outbox;
 
 /// <summary>
