@@ -4,12 +4,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AQ.Entities;
 
-public abstract class Entity : IEntity, IHasDomainEvents
+public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
 {
     [NotMapped]
     private readonly List<IDomainEvent> _domainEvents = [];
 
     public Guid Id { get; protected set; } = Guid.CreateVersion7();
+    public Guid? CreatedById { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? UpdatedById { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+    public int Revision { get; private set; }
 
     /// <summary>
     /// Gets the collection of domain events raised by this entity.
@@ -65,5 +70,29 @@ public abstract class Entity : IEntity, IHasDomainEvents
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
+    }
+
+    /// <summary>
+    /// Mark the entity as created by given user. Does not overwrite existing CreatedById.
+    /// </summary>
+    /// <param name="userId">Creator user id, or null for unauthenticated</param>
+    public void SetCreatedBy(Guid? userId)
+    {
+        if (CreatedById is null)
+        {
+            CreatedById = userId;
+            CreatedAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Mark the entity as updated by the given user and increment Revision.
+    /// </summary>
+    /// <param name="userId">Updater user id, or null for unauthenticated</param>
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        UpdatedAt = DateTime.UtcNow;
+        Revision++;
     }
 }
