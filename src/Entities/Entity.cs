@@ -11,11 +11,10 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
 
     public Guid Id { get; protected set; } = Guid.CreateVersion7();
     public Guid? CreatedById { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
     public Guid? UpdatedById { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
+    public DateTimeOffset? UpdatedAt { get; private set; }
     public int Revision { get; private set; }
-
     /// <summary>
     /// Gets the collection of domain events raised by this entity.
     /// </summary>
@@ -81,7 +80,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
         if (CreatedById is null)
         {
             CreatedById = userId;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
         }
     }
 
@@ -92,7 +91,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
     public void SetUpdatedBy(Guid? userId)
     {
         UpdatedById = userId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
         Revision++;
     }
 }

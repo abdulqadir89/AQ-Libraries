@@ -3,9 +3,9 @@ namespace AQ.Abstractions;
 public interface IAuditable
 {
     Guid? CreatedById { get; }
-    DateTime CreatedAt { get; }
+    DateTimeOffset CreatedAt { get; }
     Guid? UpdatedById { get; }
-    DateTime? UpdatedAt { get; }
+    DateTimeOffset? UpdatedAt { get; }
     int Revision { get; }
 
     /// <summary>
