@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AQ.Entities;
 
-public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
+public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceCreator
 {
     [NotMapped]
     private readonly List<IDomainEvent> _domainEvents = [];
