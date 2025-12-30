@@ -19,27 +19,27 @@ public static class QueryableExtensions
     /// <returns>A DataResult containing the data and metadata</returns>
     public static async Task<DataSet<T>> ToDataResultAsync<T>(
         this IQueryable<T> query,
-        int skip,
-        int take,
+        int? skip,
+        int? take,
         Func<IQueryable<T>, CancellationToken, Task<int>> countAsync,
         Func<IQueryable<T>, CancellationToken, Task<List<T>>> toListAsync,
         CancellationToken cancellationToken = default)
     {
         // Validate parameters
-        if (skip < 0) skip = 0;
-        if (take < 1) take = 50;
+        if (skip == null || skip < 0) skip = 0;
+        if (take == null || take < 1) take = 50;
 
         // Get total count before applying skip/take
         var totalCount = await countAsync(query, cancellationToken);
 
         // Apply skip/take
         var dataQuery = query
-            .Skip(skip)
-            .Take(take);
+            .Skip(skip.Value)
+            .Take(take.Value);
 
         var data = await toListAsync(dataQuery, cancellationToken);
 
-        return DataSet<T>.Create(data, skip, take, totalCount);
+        return DataSet<T>.Create(data, skip.Value, take.Value, totalCount);
     }
 
     /// <summary>
