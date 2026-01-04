@@ -94,4 +94,8 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceC
         UpdatedAt = DateTimeOffset.UtcNow;
         Revision++;
     }
+
+    public virtual void OnRemove()
+    {
+    }
 }
