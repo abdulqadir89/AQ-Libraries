@@ -110,8 +110,7 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
                     newToState,
                     newTrigger,
                     transition.Description,
-                    transition.Requirements,
-                    transition.Effects);
+                    transition.Requirements);
                 newDefinition._transitions.Add(newTransition);
             }
         }
@@ -172,35 +171,19 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
 
-            // Add note with requirements and effects if they exist
-            if (transition.HasRequirements || transition.HasEffects)
+            // Add note with requirements if they exist
+            if (transition.HasRequirements)
             {
                 diagram.AppendLine($"    note right of {toStateName}");
 
                 // Add requirements
-                if (transition.HasRequirements)
+                var requirements = transition.Requirements!
+                    .Select(r => GetRequirementDescription(r))
+                    .Where(desc => !string.IsNullOrEmpty(desc));
+
+                foreach (var requirement in requirements)
                 {
-                    var requirements = transition.Requirements!
-                        .Select(r => GetRequirementDescription(r))
-                        .Where(desc => !string.IsNullOrEmpty(desc));
-
-                    foreach (var requirement in requirements)
-                    {
-                        diagram.AppendLine($"      Require: {requirement}");
-                    }
-                }
-
-                // Add effects
-                if (transition.HasEffects)
-                {
-                    var effects = transition.Effects!
-                        .Select(e => GetEffectDescription(e))
-                        .Where(desc => !string.IsNullOrEmpty(desc));
-
-                    foreach (var effect in effects)
-                    {
-                        diagram.AppendLine($"      Effect: {effect}");
-                    }
+                    diagram.AppendLine($"      Require: {requirement}");
                 }
 
                 diagram.AppendLine("    end note");
@@ -242,22 +225,6 @@ public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDe
 
         // Fall back to type name
         return requirement.GetType().Name.Replace("Requirement", "").Replace("_", " ");
-    }
-
-    /// <summary>
-    /// Gets a human-readable description of an effect.
-    /// </summary>
-    private static string GetEffectDescription(IStateMachineTransitionEffect effect)
-    {
-        // Try to get description from the effect itself
-        if (effect is StateMachineTransitionEffect baseEffect &&
-            !string.IsNullOrEmpty(baseEffect.Description))
-        {
-            return baseEffect.Description;
-        }
-
-        // Fall back to type name
-        return effect.GetType().Name.Replace("Effect", "").Replace("_", " ");
     }
 
     /// <summary>

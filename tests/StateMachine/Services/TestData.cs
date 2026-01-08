@@ -14,12 +14,6 @@ public static class TestData
     public static TestRequirement CreateApprovalRequirement() =>
         new("ApprovalRequired");
 
-    public static TestEffect CreateNotificationEffect() =>
-        new("SendNotification");
-
-    public static TestEffect CreateUpdateEffect() =>
-        new("UpdateRecord");
-
     public static TestStateMachineDefinition CreateSimpleDefinition()
     {
         return new TestStateMachineDefinition("Draft");
@@ -65,32 +59,13 @@ public record TestRequirement(string Name) : StateMachineTransitionRequirement
     public override string GetRequirementTypeName() => Name;
 }
 
-// Simple test effect record  
-public record TestEffect(string Name) : StateMachineTransitionEffect
-{
-    public override string GetEffectTypeName() => Name;
-}
-
 // Simple test handlers
 public class TestRequirementHandler : IStateMachineTransitionRequirementHandler<TestRequirement>
 {
     public bool ShouldApprove { get; set; } = true;
 
-    public Task<bool> HandleAsync(TestRequirement requirement, StateMachineInstance stateMachine, object? context)
+    public Task<bool> HandleAsync(TestRequirement requirement, Guid stateMachineId, object? context)
     {
         return Task.FromResult(ShouldApprove);
-    }
-}
-
-public class TestEffectHandler : IStateMachineTransitionEffectHandler<TestEffect>
-{
-    public bool WasExecuted { get; private set; }
-    public TestEffect? LastEffect { get; private set; }
-
-    public Task<bool> HandleAsync(TestEffect effect, StateMachineInstance stateMachine, TransitionExecutionInfo transitionInfo)
-    {
-        WasExecuted = true;
-        LastEffect = effect;
-        return Task.FromResult(true);
     }
 }

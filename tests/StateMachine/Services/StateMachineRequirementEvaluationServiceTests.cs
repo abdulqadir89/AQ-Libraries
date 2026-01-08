@@ -29,7 +29,7 @@ public class StateMachineRequirementEvaluationServiceTests
         var requirements = Array.Empty<IStateMachineTransitionRequirement>();
 
         // Act
-        var result = await _service.EvaluateRequirementsAsync(requirements, instance);
+        var result = await _service.EvaluateRequirementsAsync(requirements, instance.Id);
 
         // Assert
         result.AllRequirementsMet.Should().BeTrue();
@@ -81,7 +81,7 @@ public class StateMachineRequirementEvaluationServiceTests
         _service.RegisterSpecificHandler(handler);
 
         // Act
-        var result = await _service.EvaluateRequirementsAsync(requirements, instance);
+        var result = await _service.EvaluateRequirementsAsync(requirements, instance.Id);
 
         // Assert
         result.AllRequirementsMet.Should().BeTrue();
@@ -102,7 +102,7 @@ public class StateMachineRequirementEvaluationServiceTests
         _service.RegisterSpecificHandler(handler);
 
         // Act
-        var result = await _service.EvaluateRequirementsAsync(requirements, instance);
+        var result = await _service.EvaluateRequirementsAsync(requirements, instance.Id);
 
         // Assert
         result.AllRequirementsMet.Should().BeFalse();

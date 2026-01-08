@@ -18,7 +18,6 @@ public class StateMachineTransition : Entity
     public string? Description { get; private set; }
 
     public IEnumerable<IStateMachineTransitionRequirement>? Requirements { get; private set; }
-    public IEnumerable<IStateMachineTransitionEffect>? Effects { get; private set; }
 
     // EF Core constructor
     private StateMachineTransition() { }
@@ -29,8 +28,7 @@ public class StateMachineTransition : Entity
         StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
-        IEnumerable<IStateMachineTransitionEffect>? effects = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
@@ -42,7 +40,6 @@ public class StateMachineTransition : Entity
         TriggerId = trigger.Id;
         Description = description?.Trim();
         Requirements = requirements;
-        Effects = effects;
     }
 
     /// <summary>
@@ -54,8 +51,7 @@ public class StateMachineTransition : Entity
         StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
-        IEnumerable<IStateMachineTransitionEffect>? effects = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (trigger == null)
@@ -67,8 +63,7 @@ public class StateMachineTransition : Entity
             toState,
             trigger,
             description?.Trim(),
-            requirements,
-            effects);
+            requirements);
     }
 
     /// <summary>
@@ -76,12 +71,10 @@ public class StateMachineTransition : Entity
     /// </summary>
     public void Update(
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
-        IEnumerable<IStateMachineTransitionEffect>? effects = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
     {
         Description = description?.Trim();
         Requirements = requirements;
-        Effects = effects;
     }
 
     /// <summary>
@@ -93,16 +86,6 @@ public class StateMachineTransition : Entity
     /// Gets the count of requirements for this transition.
     /// </summary>
     public int RequirementCount => Requirements?.Count() ?? 0;
-
-    /// <summary>
-    /// Checks if this transition has any effects that need to be executed.
-    /// </summary>
-    public bool HasEffects => Effects?.Any() == true;
-
-    /// <summary>
-    /// Gets the count of effects for this transition.
-    /// </summary>
-    public int EffectCount => Effects?.Count() ?? 0;
 
     /// <summary>
     /// Gets the types of data entities that need to be collected from users for this transition.
@@ -169,42 +152,6 @@ public class StateMachineTransition : Entity
         var currentRequirements = Requirements?.ToList() ?? [];
         currentRequirements.RemoveAll(r => r.GetType().Name == requirementTypeName);
         Requirements = currentRequirements.Any() ? currentRequirements : null;
-    }
-
-    /// <summary>
-    /// Adds an effect to this transition.
-    /// </summary>
-    public void AddEffect(IStateMachineTransitionEffect effect)
-    {
-        if (effect == null)
-            throw new ArgumentNullException(nameof(effect));
-
-        var currentEffects = Effects?.ToList() ?? [];
-        currentEffects.Add(effect);
-        Effects = currentEffects;
-    }
-
-    /// <summary>
-    /// Removes an effect from this transition by type.
-    /// </summary>
-    public void RemoveEffect<T>() where T : IStateMachineTransitionEffect
-    {
-        var currentEffects = Effects?.ToList() ?? [];
-        currentEffects.RemoveAll(e => e.GetType() == typeof(T));
-        Effects = currentEffects.Any() ? currentEffects : null;
-    }
-
-    /// <summary>
-    /// Removes an effect from this transition by type name.
-    /// </summary>
-    public void RemoveEffect(string effectTypeName)
-    {
-        if (string.IsNullOrWhiteSpace(effectTypeName))
-            return;
-
-        var currentEffects = Effects?.ToList() ?? [];
-        currentEffects.RemoveAll(e => e.GetType().Name == effectTypeName);
-        Effects = currentEffects.Any() ? currentEffects : null;
     }
 
     public override string ToString() =>
@@ -290,43 +237,7 @@ public class StateMachineTransition : Entity
         return JsonSerializer.Serialize(effectDict);
     }
 
-    /// <summary>
-    /// Deserializes effects from JSON database storage.
-    /// </summary>
-    public static IEnumerable<IStateMachineTransitionEffect>? DeserializeEffects(string? json)
-    {
-        if (string.IsNullOrEmpty(json)) return null;
 
-        try
-        {
-            var effectDict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-            if (effectDict == null) return null;
-
-            var effects = new List<IStateMachineTransitionEffect>();
-
-            foreach (var kvp in effectDict)
-            {
-                var effectType = kvp.Key;
-                var data = kvp.Value;
-
-                // Create a generic effect wrapper for JSON storage
-                var effect = new JsonStoredEffect
-                {
-                    EffectTypeName = effectType,
-                    Data = JsonSerializer.Deserialize<Dictionary<string, object>>(data.ToString() ?? "{}") ?? new Dictionary<string, object>()
-                };
-
-                effects.Add(effect);
-            }
-
-            return effects;
-        }
-        catch
-        {
-            // Return empty collection if deserialization fails
-            return [];
-        }
-    }
 
     #endregion
 
@@ -346,22 +257,6 @@ public class StateMachineTransition : Entity
         /// Gets the requirement type name based on the stored type name.
         /// </summary>
         public string GetRequirementTypeName() => RequirementTypeName;
-    }
-
-    /// <summary>
-    /// Internal class for storing effects as JSON in the database.
-    /// This allows storage of any effect type without requiring specific configurations.
-    /// The effect type is determined by the actual implementation class type.
-    /// </summary>
-    internal class JsonStoredEffect : IStateMachineTransitionEffect
-    {
-        public string EffectTypeName { get; set; } = default!;
-        public Dictionary<string, object> Data { get; set; } = [];
-
-        /// <summary>
-        /// Gets the effect type name based on the stored type name.
-        /// </summary>
-        public string GetEffectTypeName() => EffectTypeName;
     }
 
     #endregion
