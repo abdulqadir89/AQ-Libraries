@@ -7,7 +7,7 @@ namespace AQ.StateMachine.Entities;
 /// Represents a reusable state machine definition that contains states, triggers, and transitions.
 /// This is the template/blueprint that state machine instances are based on.
 /// </summary>
-public abstract class StateMachineDefinition : Entity, IHasStatus<StateMachineDefinitionStatus>
+public abstract class StateMachineDefinition : Entity
 {
     private readonly List<StateMachineState> _states = [];
     private readonly List<StateMachineTrigger> _triggers = [];
