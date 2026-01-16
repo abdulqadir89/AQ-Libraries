@@ -95,6 +95,14 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceC
         Revision++;
     }
 
+    public virtual void OnAdd()
+    {
+    }
+
+    public virtual void OnUpdate()
+    {
+    }
+
     public virtual void OnRemove()
     {
     }
