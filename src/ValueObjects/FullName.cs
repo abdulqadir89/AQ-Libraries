@@ -75,7 +75,7 @@ public sealed class FullName : ValueObject
 
     public override string ToString() => Value;
 
-    public static implicit operator string(FullName fullName) => fullName.Value;
+    public static implicit operator string(FullName? fullName) => fullName?.Value ?? string.Empty;
 
     public override FullName Clone()
     {
