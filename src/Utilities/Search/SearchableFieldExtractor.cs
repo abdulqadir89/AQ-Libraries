@@ -125,14 +125,14 @@ public static class SearchableFieldExtractor
                 continue;
 
             var propertyPath = string.IsNullOrEmpty(prefix) ? property.Name : $"{prefix}.{property.Name}";
-            
+
             // Check if this is a Value Object (has a Value property)
             var actualPropertyPath = propertyPath;
             if (IsValueObject(property.PropertyType))
             {
                 actualPropertyPath = $"{propertyPath}.Value";
             }
-            
+
             var fieldName = searchableAttribute.SearchFieldName ?? property.Name;
 
             fields[actualPropertyPath] = new SearchFieldInfo
@@ -311,7 +311,7 @@ public static class SearchableFieldExtractor
     {
         // Check if the type has a public Value property (common pattern for Value Objects)
         var valueProperty = type.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
-        
+
         // Also check if it inherits from a base class named "ValueObject" (common pattern)
         var baseType = type.BaseType;
         while (baseType != null && baseType != typeof(object))
@@ -320,7 +320,7 @@ public static class SearchableFieldExtractor
                 return true;
             baseType = baseType.BaseType;
         }
-        
+
         // If it has a Value property and looks like a value object structure
         return valueProperty != null && type.IsClass && !type.IsAbstract;
     }
