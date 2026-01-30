@@ -90,4 +90,19 @@ public static class DataSeedingServiceExtensions
     {
         return services.AddDataSeeders<Types.IMigrationSeeder, TDbContext>(assemblies);
     }
+
+    /// <summary>
+    /// Registers all baseline data seeders from the specified assemblies.
+    /// </summary>
+    /// <typeparam name="TDbContext">The database context type</typeparam>
+    /// <param name="services">The service collection</param>
+    /// <param name="assemblies">Assemblies to scan for seeders. If none provided, uses calling assembly.</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddBaselineSeeders<TDbContext>(
+        this IServiceCollection services,
+        params Assembly[] assemblies)
+        where TDbContext : DbContext
+    {
+        return services.AddDataSeeders<Types.IBaselineSeeder, TDbContext>(assemblies);
+    }
 }
