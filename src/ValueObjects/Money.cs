@@ -57,7 +57,7 @@ public sealed class Money : ValueObject
         "ZWL", "VEF", "SDD", "CSD", "YUM", "SIT", "SKK", "EEK", "LVL", "LTL", "CYP", "MTL"
     };
 
-    public decimal Amount { get; init; }
+    public decimal Value { get; init; }
     public string Currency { get; init; } = default!;
 
     // Parameterless constructor for EF Core
@@ -75,7 +75,7 @@ public sealed class Money : ValueObject
         if (!ValidIsoCurrencies.Contains(normalizedCurrency))
             throw new ArgumentException($"Invalid currency code '{currency}'. Must be a valid ISO 4217 currency code.", nameof(currency));
 
-        Amount = amount;
+        Value = amount;
         Currency = normalizedCurrency;
     }
 
@@ -125,7 +125,7 @@ public sealed class Money : ValueObject
         if (Currency != other.Currency)
             throw new InvalidOperationException($"Cannot add money with different currencies: {Currency} and {other.Currency}");
 
-        return new Money(Amount + other.Amount, Currency);
+        return new Money(Value + other.Value, Currency);
     }
 
     public Money Subtract(Money other)
@@ -133,24 +133,24 @@ public sealed class Money : ValueObject
         if (Currency != other.Currency)
             throw new InvalidOperationException($"Cannot subtract money with different currencies: {Currency} and {other.Currency}");
 
-        return new Money(Amount - other.Amount, Currency);
+        return new Money(Value - other.Value, Currency);
     }
 
-    public Money Multiply(decimal multiplier) => new(Amount * multiplier, Currency);
+    public Money Multiply(decimal multiplier) => new(Value * multiplier, Currency);
 
     public Money Divide(decimal divisor)
     {
         if (divisor == 0)
             throw new DivideByZeroException("Cannot divide money by zero.");
 
-        return new Money(Amount / divisor, Currency);
+        return new Money(Value / divisor, Currency);
     }
 
-    public bool IsZero => Amount == 0;
+    public bool IsZero => Value == 0;
 
-    public bool IsPositive => Amount > 0;
+    public bool IsPositive => Value > 0;
 
-    public bool IsNegative => Amount < 0;
+    public bool IsNegative => Value < 0;
 
     public static Money operator +(Money left, Money right) => left.Add(right);
 
@@ -167,7 +167,7 @@ public sealed class Money : ValueObject
         if (left.Currency != right.Currency)
             throw new InvalidOperationException($"Cannot compare money with different currencies: {left.Currency} and {right.Currency}");
 
-        return left.Amount > right.Amount;
+        return left.Value > right.Value;
     }
 
     public static bool operator <(Money left, Money right)
@@ -175,7 +175,7 @@ public sealed class Money : ValueObject
         if (left.Currency != right.Currency)
             throw new InvalidOperationException($"Cannot compare money with different currencies: {left.Currency} and {right.Currency}");
 
-        return left.Amount < right.Amount;
+        return left.Value < right.Value;
     }
 
     public static bool operator >=(Money left, Money right)
@@ -183,7 +183,7 @@ public sealed class Money : ValueObject
         if (left.Currency != right.Currency)
             throw new InvalidOperationException($"Cannot compare money with different currencies: {left.Currency} and {right.Currency}");
 
-        return left.Amount >= right.Amount;
+        return left.Value >= right.Value;
     }
 
     public static bool operator <=(Money left, Money right)
@@ -191,23 +191,23 @@ public sealed class Money : ValueObject
         if (left.Currency != right.Currency)
             throw new InvalidOperationException($"Cannot compare money with different currencies: {left.Currency} and {right.Currency}");
 
-        return left.Amount <= right.Amount;
+        return left.Value <= right.Value;
     }
 
-    public override string ToString() => $"{Amount:F2} {Currency}";
+    public override string ToString() => $"{Value:F2} {Currency}";
 
-    public string ToString(string format) => $"{Amount.ToString(format, CultureInfo.InvariantCulture)} {Currency}";
+    public string ToString(string format) => $"{Value.ToString(format, CultureInfo.InvariantCulture)} {Currency}";
 
     protected override IEnumerable<object> GetAtomicValues()
     {
-        yield return Amount;
+        yield return Value;
         yield return Currency;
     }
 
     // Clone method to create a copy of the Money instance
     public override Money Clone()
     {
-        return new Money(Amount, Currency);
+        return new Money(Value, Currency);
     }
 
     // ISO 4217 Currency factory methods

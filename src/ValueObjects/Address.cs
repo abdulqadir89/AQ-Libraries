@@ -9,7 +9,7 @@ public sealed class Address : ValueObject
     public string? City { get; init; }
     public string? State { get; init; }
     public string? PostalCode { get; init; }
-    public string Country { get; init; }
+    public Country Country { get; init; }
 
     // Parameterless constructor for EF Core
     private Address()
@@ -21,7 +21,7 @@ public sealed class Address : ValueObject
         Country = default!;
     }
 
-    private Address(string? street, string? city, string? state, string? postalCode, string country)
+    private Address(string? street, string? city, string? state, string? postalCode, Country country)
     {
         Street = street;
         City = city;
@@ -37,16 +37,14 @@ public sealed class Address : ValueObject
     /// <param name="city">The city name.</param>
     /// <param name="state">The state or province.</param>
     /// <param name="postalCode">The postal or ZIP code.</param>
-    /// <param name="country">The country name.</param>
+    /// <param name="countryCode">The ISO 3166-1 alpha-2 country code.</param>
     /// <returns>A valid Address instance.</returns>
     /// <exception cref="ArgumentException">Thrown when any required field is invalid.</exception>
-    public static Address Create(string? street, string? city, string? state, string? postalCode, string country)
+    public static Address Create(string? street, string? city, string? state, string? postalCode, string countryCode)
     {
-        if (string.IsNullOrWhiteSpace(country))
-            throw new ArgumentException("Country cannot be null or empty.", nameof(country));
+        ArgumentNullException.ThrowIfNull(countryCode);
 
-        if (country.Length > 50)
-            throw new ArgumentException("Country cannot exceed 50 characters.", nameof(country));
+        var country = Country.FromCode(countryCode);
 
         if (!string.IsNullOrWhiteSpace(street) && street.Length > 100)
             throw new ArgumentException("Street address cannot exceed 100 characters.", nameof(street));
@@ -65,7 +63,7 @@ public sealed class Address : ValueObject
             string.IsNullOrWhiteSpace(city) ? null : city.Trim(),
             string.IsNullOrWhiteSpace(state) ? null : state.Trim(),
             string.IsNullOrWhiteSpace(postalCode) ? null : postalCode.Trim(),
-            country.Trim()
+            country
         );
     }
 
@@ -76,16 +74,16 @@ public sealed class Address : ValueObject
     /// <param name="city">The city name.</param>
     /// <param name="state">The state or province.</param>
     /// <param name="postalCode">The postal or ZIP code.</param>
-    /// <param name="country">The country name.</param>
+    /// <param name="countryCode">The ISO 3166-1 alpha-2 country code.</param>
     /// <param name="result">The created Address instance if successful.</param>
     /// <returns>True if the address is valid and created successfully, false otherwise.</returns>
-    public static bool TryCreate(string? street, string? city, string? state, string? postalCode, string country, out Address? result)
+    public static bool TryCreate(string? street, string? city, string? state, string? postalCode, string countryCode, out Address? result)
     {
         result = null;
 
         try
         {
-            result = Create(street, city, state, postalCode, country);
+            result = Create(street, city, state, postalCode, countryCode);
             return true;
         }
         catch
@@ -117,7 +115,7 @@ public sealed class Address : ValueObject
         if (statePostal.Count > 0)
             parts.Add(string.Join(" ", statePostal));
 
-        parts.Add(Country);
+        parts.Add(Country.Name);
 
         return string.Join(", ", parts);
     }
@@ -127,35 +125,35 @@ public sealed class Address : ValueObject
     /// </summary>
     /// <param name="newStreet">The new street address.</param>
     /// <returns>A new Address instance with the modified street.</returns>
-    public Address WithStreet(string? newStreet) => Create(newStreet, City, State, PostalCode, Country);
+    public Address WithStreet(string? newStreet) => Create(newStreet, City, State, PostalCode, Country.Value);
 
     /// <summary>
     /// Creates a new Address with a modified city.
     /// </summary>
     /// <param name="newCity">The new city name.</param>
     /// <returns>A new Address instance with the modified city.</returns>
-    public Address WithCity(string? newCity) => Create(Street, newCity, State, PostalCode, Country);
+    public Address WithCity(string? newCity) => Create(Street, newCity, State, PostalCode, Country.Value);
 
     /// <summary>
     /// Creates a new Address with a modified state.
     /// </summary>
     /// <param name="newState">The new state or province.</param>
     /// <returns>A new Address instance with the modified state.</returns>
-    public Address WithState(string? newState) => Create(Street, City, newState, PostalCode, Country);
+    public Address WithState(string? newState) => Create(Street, City, newState, PostalCode, Country.Value);
 
     /// <summary>
     /// Creates a new Address with a modified postal code.
     /// </summary>
     /// <param name="newPostalCode">The new postal or ZIP code.</param>
     /// <returns>A new Address instance with the modified postal code.</returns>
-    public Address WithPostalCode(string? newPostalCode) => Create(Street, City, State, newPostalCode, Country);
+    public Address WithPostalCode(string? newPostalCode) => Create(Street, City, State, newPostalCode, Country.Value);
 
     /// <summary>
     /// Creates a new Address with a modified country.
     /// </summary>
-    /// <param name="newCountry">The new country name.</param>
+    /// <param name="newCountryCode">The new ISO 3166-1 alpha-2 country code.</param>
     /// <returns>A new Address instance with the modified country.</returns>
-    public Address WithCountry(string newCountry) => Create(Street, City, State, PostalCode, newCountry);
+    public Address WithCountry(string newCountryCode) => Create(Street, City, State, PostalCode, newCountryCode);
 
     protected override IEnumerable<object> GetAtomicValues()
     {
@@ -170,6 +168,6 @@ public sealed class Address : ValueObject
 
     public override Address Clone()
     {
-        return Create(Street, City, State, PostalCode, Country);
+        return Create(Street, City, State, PostalCode, Country.Value);
     }
 }
