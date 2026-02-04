@@ -94,19 +94,20 @@ public class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddDbContext<MyDbContext>();
-                services.AddTestDataSeeders<MyDbContext>();
+                services.AddTestDataSeeders();
             })
             .Build();
 
         // Get the seeding service
         using var scope = host.Services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<DataSeedingService<ITestDataSeeder, MyDbContext>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+        var seeder = scope.ServiceProvider.GetRequiredService<DataSeedingService<ITestDataSeeder>>();
         
         // Seed all data
         await seeder.SeedAllAsync();
         
         // Or reset database (drop, migrate, seed)
-        await seeder.ResetAllAsync();
+        await seeder.ResetAllAsync(dbContext);
         
         await host.RunAsync();
     }
@@ -147,9 +148,10 @@ public class MySeeder : IDataSeeder<IMyCustomSeeder> { ... }
 
 3. Register and use:
 ```csharp
-services.AddDataSeeders<IMyCustomSeeder, MyDbContext>();
-var seeder = services.GetRequiredService<DataSeedingService<IMyCustomSeeder, MyDbContext>>();
-await seeder.SeedAllAsync();
+services.AddDataSeeders<IMyCustomSeeder>();
+var seeder = services.GetRequiredService<DataSeedingService<IMyCustomSeeder>>();
+var dbContext = services.GetRequiredService<MyDbContext>();
+await seeder.SeedAllAsync(dbContext);
 ```
 
 ## Advanced Features

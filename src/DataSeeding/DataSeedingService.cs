@@ -6,26 +6,22 @@ namespace AQ.DataSeeding;
 
 /// <summary>
 /// Generic data seeding service that handles dependency resolution and execution order for a specific seeder type.
+/// DbContext is passed as a method parameter to support multiple contexts.
 /// </summary>
 /// <typeparam name="TSeederType">The seeder type to process (ITestDataSeeder, IConfigurationSeeder, etc.)</typeparam>
-/// <typeparam name="TDbContext">The database context type</typeparam>
-public class DataSeedingService<TSeederType, TDbContext> 
+public class DataSeedingService<TSeederType>
     where TSeederType : ISeederType
-    where TDbContext : DbContext
 {
     private readonly Dictionary<Type, IDataSeeder<TSeederType>> _seederMap;
-    private readonly ILogger<DataSeedingService<TSeederType, TDbContext>> _logger;
-    private readonly TDbContext _dbContext;
+    private readonly ILogger<DataSeedingService<TSeederType>> _logger;
     private readonly string _seederTypeName;
 
     public DataSeedingService(
-        IEnumerable<IDataSeeder<TSeederType>> seeders, 
-        ILogger<DataSeedingService<TSeederType, TDbContext>> logger, 
-        TDbContext dbContext)
+        IEnumerable<IDataSeeder<TSeederType>> seeders,
+        ILogger<DataSeedingService<TSeederType>> logger)
     {
         _seederMap = seeders.ToDictionary(s => s.GetType());
         _logger = logger;
-        _dbContext = dbContext;
         _seederTypeName = typeof(TSeederType).Name;
     }
 
@@ -44,18 +40,18 @@ public class DataSeedingService<TSeederType, TDbContext>
             {
                 var seeder = ordered[i];
                 var seederName = seeder.GetType().Name;
-                _logger.LogInformation("Running {SeederType} seeder {Index}/{Total}: {SeederName}", 
+                _logger.LogInformation("Running {SeederType} seeder {Index}/{Total}: {SeederName}",
                     _seederTypeName, i + 1, ordered.Count, seederName);
 
                 try
                 {
                     await seeder.SeedAsync();
-                    _logger.LogInformation("Successfully completed {SeederType} seeder: {SeederName}", 
+                    _logger.LogInformation("Successfully completed {SeederType} seeder: {SeederName}",
                         _seederTypeName, seederName);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to run {SeederType} seeder: {SeederName}", 
+                    _logger.LogError(ex, "Failed to run {SeederType} seeder: {SeederName}",
                         _seederTypeName, seederName);
                     throw;
                 }
@@ -73,12 +69,12 @@ public class DataSeedingService<TSeederType, TDbContext>
     /// <summary>
     /// Drops the database.
     /// </summary>
-    public async Task DropDatabaseAsync()
+    public async Task DropDatabaseAsync(DbContext dbContext)
     {
         try
         {
             _logger.LogInformation("Dropping database...");
-            await _dbContext.Database.EnsureDeletedAsync();
+            await dbContext.Database.EnsureDeletedAsync();
             _logger.LogInformation("Database dropped successfully");
         }
         catch (Exception ex)
@@ -91,12 +87,12 @@ public class DataSeedingService<TSeederType, TDbContext>
     /// <summary>
     /// Applies pending migrations to the database.
     /// </summary>
-    public async Task ApplyMigrationsAsync()
+    public async Task ApplyMigrationsAsync(DbContext dbContext)
     {
         try
         {
             _logger.LogInformation("Applying database migrations...");
-            await _dbContext.Database.MigrateAsync();
+            await dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migrations applied successfully");
         }
         catch (Exception ex)
@@ -109,10 +105,10 @@ public class DataSeedingService<TSeederType, TDbContext>
     /// <summary>
     /// Drops database, applies migrations, and seeds all data. Useful for testing.
     /// </summary>
-    public async Task ResetAllAsync()
+    public async Task ResetAllAsync(DbContext dbContext)
     {
-        await DropDatabaseAsync();
-        await ApplyMigrationsAsync();
+        await DropDatabaseAsync(dbContext);
+        await ApplyMigrationsAsync(dbContext);
         await SeedAllAsync();
     }
 
