@@ -1,3 +1,4 @@
+using AQ.Utilities.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
@@ -26,10 +27,14 @@ public class DataSeedingService<TSeederType>
     }
 
     /// <summary>
-    /// Seeds all registered seeders of this type in dependency order.
+    /// Seeds all registered seeders of this type in dependency order with real-time progress reporting.
     /// </summary>
-    public async Task SeedAllAsync()
+    /// <param name="onProgress">Optional callback to receive progress updates in real-time</param>
+    public async Task<Result> SeedAllAsync(Func<SeederProgress, Task>? onProgress = null)
     {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var errors = new List<string>();
+
         try
         {
             _logger.LogInformation("Starting {SeederType} seeding process...", _seederTypeName);
@@ -40,29 +45,149 @@ public class DataSeedingService<TSeederType>
             {
                 var seeder = ordered[i];
                 var seederName = seeder.GetType().Name;
-                _logger.LogInformation("Running {SeederType} seeder {Index}/{Total}: {SeederName}",
-                    _seederTypeName, i + 1, ordered.Count, seederName);
+                _logger.LogInformation("[{Index}/{Total}] Starting {SeederType} seeder: {SeederName}",
+                    i + 1, ordered.Count, _seederTypeName, seederName);
 
                 try
                 {
-                    await seeder.SeedAsync();
-                    _logger.LogInformation("Successfully completed {SeederType} seeder: {SeederName}",
-                        _seederTypeName, seederName);
+                    // Check if seeder supports batch processing
+                    if (seeder is IBatchDataSeeder<TSeederType> batchSeeder)
+                    {
+                        var totalBatches = batchSeeder.GetBatchCount();
+                        _logger.LogInformation("Seeder {SeederName} will process {TotalBatches} batches",
+                            seederName, totalBatches);
+
+                        for (int batch = 1; batch <= totalBatches; batch++)
+                        {
+                            var batchStopwatch = System.Diagnostics.Stopwatch.StartNew();
+                            try
+                            {
+                                var itemsProcessed = await batchSeeder.SeedBatchAsync(batch);
+                                batchStopwatch.Stop();
+
+                                var progress = new SeederProgress(
+                                    seederName,
+                                    batch,
+                                    totalBatches,
+                                    itemsProcessed,
+                                    batch == totalBatches,
+                                    true,
+                                    null,
+                                    batchStopwatch.Elapsed);
+
+                                _logger.LogInformation(
+                                    "✓ [{SeederName}] Batch {Batch}/{TotalBatches} completed - " +
+                                    "Items: {ItemsProcessed}, Duration: {Duration:mm\\:ss\\.fff}",
+                                    seederName, batch, totalBatches, itemsProcessed, batchStopwatch.Elapsed);
+
+                                if (onProgress != null)
+                                    await onProgress(progress);
+                            }
+                            catch (Exception ex)
+                            {
+                                batchStopwatch.Stop();
+                                var errorMsg = $"Batch {batch}/{totalBatches} failed: {ex.Message}";
+                                errors.Add($"{seederName}: {errorMsg}");
+
+                                var progress = new SeederProgress(
+                                    seederName,
+                                    batch,
+                                    totalBatches,
+                                    0,
+                                    false,
+                                    false,
+                                    errorMsg,
+                                    batchStopwatch.Elapsed);
+
+                                _logger.LogError(ex,
+                                    "✗ [{SeederName}] Batch {Batch}/{TotalBatches} FAILED after {Duration:mm\\:ss\\.fff}",
+                                    seederName, batch, totalBatches, batchStopwatch.Elapsed);
+
+                                if (onProgress != null)
+                                    await onProgress(progress);
+
+                                throw;
+                            }
+                        }
+
+                        _logger.LogInformation("✓ [{SeederName}] All batches completed successfully", seederName);
+                    }
+                    else
+                    {
+                        // Non-batch seeder - treat as single operation
+                        var seederStopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        try
+                        {
+                            await seeder.SeedAsync();
+                            seederStopwatch.Stop();
+
+                            var progress = new SeederProgress(
+                                seederName,
+                                1,
+                                1,
+                                0,
+                                true,
+                                true,
+                                null,
+                                seederStopwatch.Elapsed);
+
+                            _logger.LogInformation("✓ [{SeederName}] Completed in {Duration:mm\\:ss\\.fff}",
+                                seederName, seederStopwatch.Elapsed);
+
+                            if (onProgress != null)
+                                await onProgress(progress);
+                        }
+                        catch (Exception ex)
+                        {
+                            seederStopwatch.Stop();
+                            var errorMsg = ex.Message;
+                            errors.Add($"{seederName}: {errorMsg}");
+
+                            var progress = new SeederProgress(
+                                seederName,
+                                1,
+                                1,
+                                0,
+                                true,
+                                false,
+                                errorMsg,
+                                seederStopwatch.Elapsed);
+
+                            _logger.LogError(ex, "✗ [{SeederName}] FAILED after {Duration:mm\\:ss\\.fff}",
+                                seederName, seederStopwatch.Elapsed);
+
+                            if (onProgress != null)
+                                await onProgress(progress);
+
+                            throw;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to run {SeederType} seeder: {SeederName}",
-                        _seederTypeName, seederName);
+                    _logger.LogError(ex, "❌ Critical error in seeder: {SeederName}", seederName);
                     throw;
                 }
             }
 
-            _logger.LogInformation("{SeederType} seeding completed successfully", _seederTypeName);
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "✓ {SeederType} seeding completed successfully in {Duration:mm\\:ss\\.fff}",
+                _seederTypeName, stopwatch.Elapsed);
+
+            return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred during {SeederType} seeding", _seederTypeName);
-            throw;
+            stopwatch.Stop();
+            _logger.LogError(ex, 
+                "❌ {SeederType} seeding FAILED after {Duration:mm\\:ss\\.fff}",
+                _seederTypeName, stopwatch.Elapsed);
+
+            return Result.Failure(new Error(
+                ErrorType.General,
+                "SeedingFailed",
+                $"{_seederTypeName} seeding failed: {ex.Message}"));
         }
     }
 
@@ -105,11 +230,11 @@ public class DataSeedingService<TSeederType>
     /// <summary>
     /// Drops database, applies migrations, and seeds all data. Useful for testing.
     /// </summary>
-    public async Task ResetAllAsync(DbContext dbContext)
+    public async Task<Result> ResetAllAsync(DbContext dbContext, Func<SeederProgress, Task>? onProgress = null)
     {
         await DropDatabaseAsync(dbContext);
         await ApplyMigrationsAsync(dbContext);
-        await SeedAllAsync();
+        return await SeedAllAsync(onProgress);
     }
 
     /// <summary>

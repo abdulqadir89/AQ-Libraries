@@ -14,4 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Utilities\Results\AQ.Utilities.Results.csproj" />
+  </ItemGroup>
+
 </Project>
