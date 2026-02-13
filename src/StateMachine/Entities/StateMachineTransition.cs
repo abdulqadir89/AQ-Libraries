@@ -1,4 +1,5 @@
 using AQ.Entities;
+using AQ.Utilities.Search;
 using System.Text.Json;
 
 namespace AQ.StateMachine.Entities;
@@ -15,6 +16,7 @@ public class StateMachineTransition : Entity
     public Guid? ToStateId { get; private set; }
     public StateMachineTrigger? Trigger { get; private set; }
     public Guid TriggerId { get; private set; }
+    [Searchable]
     public string? Description { get; private set; }
 
     public IEnumerable<IStateMachineTransitionRequirement>? Requirements { get; private set; }

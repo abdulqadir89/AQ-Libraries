@@ -1,5 +1,6 @@
 using AQ.Abstractions;
 using AQ.Entities;
+using AQ.Utilities.Search;
 
 namespace AQ.StateMachine.Entities;
 
@@ -10,7 +11,9 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
 {
     public Guid StateMachineDefinitionId { get; private set; }
     public StateMachineDefinition? StateMachineDefinition { get; private set; }
+    [Searchable]
     public string Name { get; private set; } = default!;
+    [Searchable]
     public string? Description { get; private set; }
     public StateMachineStateCategory Category { get; private set; } = StateMachineStateCategory.Intermediate;
 

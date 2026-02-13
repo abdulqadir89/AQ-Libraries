@@ -1,4 +1,5 @@
 using AQ.Entities;
+using AQ.Utilities.Search;
 
 namespace AQ.StateMachine.Entities;
 
@@ -40,7 +41,9 @@ public class StateMachineTrigger : Entity
 {
     public Guid StateMachineDefinitionId { get; private set; }
     public StateMachineDefinition? StateMachineDefinition { get; private set; }
+    [Searchable]
     public string Name { get; private set; } = default!;
+    [Searchable]
     public string? Description { get; private set; }
     public StateMachineTriggerType Type { get; private set; }
 
@@ -78,12 +81,16 @@ public class StateMachineTrigger : Entity
     }
 
     /// <summary>
-    /// Updates the trigger's description and type.
+    /// Updates the trigger's name, description and type.
     /// </summary>
     public void Update(
+        string? name = null,
         string? description = null,
         StateMachineTriggerType? type = null)
     {
+        if (!string.IsNullOrWhiteSpace(name))
+            Name = name.Trim();
+
         Description = description?.Trim();
 
         if (type.HasValue)
