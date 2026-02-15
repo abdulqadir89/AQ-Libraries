@@ -18,7 +18,7 @@ public sealed class Address : ValueObject
         City = null;
         State = null;
         PostalCode = null;
-        Country = default!;
+        Country = Country.FromCode("PK"); // Default to Pakistan
     }
 
     private Address(string? street, string? city, string? state, string? postalCode, Country country)

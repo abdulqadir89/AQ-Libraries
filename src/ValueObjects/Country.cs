@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace AQ.ValueObjects;
 
 /// <summary>
@@ -411,4 +414,36 @@ public sealed class Country : ValueObject
         { "ZM", ("Zambia", "ZMW") },
         { "ZW", ("Zimbabwe", "ZWL") }
     };
+}
+
+/// <summary>
+/// JSON converter for Country value object to enable serialization/deserialization
+/// including support for dictionary keys.
+/// </summary>
+public class CountryJsonConverter : JsonConverter<Country>
+{
+    public override Country? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+            return null;
+
+        var code = reader.GetString();
+        return string.IsNullOrEmpty(code) ? null : Country.FromCode(code);
+    }
+
+    public override void Write(Utf8JsonWriter writer, Country value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.Value);
+    }
+
+    public override Country ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var code = reader.GetString();
+        return Country.FromCode(code!);
+    }
+
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, Country value, JsonSerializerOptions options)
+    {
+        writer.WritePropertyName(value.Value);
+    }
 }
