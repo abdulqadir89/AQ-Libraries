@@ -69,6 +69,10 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggers()
     {
+        // Final states have no outgoing transitions
+        if (CurrentState?.Category == StateMachineStateCategory.Final)
+            return [];
+
         return Definition!.Transitions
             .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
             .Select(t => t.Trigger!)
@@ -80,6 +84,10 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public IEnumerable<StateMachineTransition> GetAvailableTransitions()
     {
+        // Final states have no outgoing transitions
+        if (CurrentState?.Category == StateMachineStateCategory.Final)
+            return [];
+
         return Definition!.Transitions.Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null);
     }
 
