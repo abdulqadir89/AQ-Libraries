@@ -1,6 +1,18 @@
 ﻿namespace AQ.ValueObjects;
 
 /// <summary>
+/// DTO for serializing/deserializing Address value object.
+/// </summary>
+public class AddressDto
+{
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? PostalCode { get; set; }
+    public string Country { get; set; } = "PK";
+}
+
+/// <summary>
 /// Represents a physical address value object.
 /// </summary>
 public sealed class Address : ValueObject
@@ -169,5 +181,55 @@ public sealed class Address : ValueObject
     public override Address Clone()
     {
         return Create(Street, City, State, PostalCode, Country.Value);
+    }
+
+    /// <summary>
+    /// Converts this Address to a DTO for serialization.
+    /// </summary>
+    /// <returns>An AddressDto instance.</returns>
+    public AddressDto ToDto()
+    {
+        return new AddressDto
+        {
+            Street = Street,
+            City = City,
+            State = State,
+            PostalCode = PostalCode,
+            Country = Country.Value
+        };
+    }
+
+    /// <summary>
+    /// Creates an Address from a DTO.
+    /// </summary>
+    /// <param name="dto">The AddressDto to convert.</param>
+    /// <returns>An Address instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when dto is null.</exception>
+    public static Address FromDto(AddressDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        return Create(dto.Street, dto.City, dto.State, dto.PostalCode, dto.Country);
+    }
+
+    /// <summary>
+    /// Attempts to create an Address from a DTO without throwing an exception.
+    /// </summary>
+    /// <param name="dto">The AddressDto to convert.</param>
+    /// <param name="result">The created Address instance if successful.</param>
+    /// <returns>True if the conversion is successful, false otherwise.</returns>
+    public static bool TryFromDto(AddressDto? dto, out Address? result)
+    {
+        result = null;
+        if (dto == null) return false;
+
+        try
+        {
+            result = FromDto(dto);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

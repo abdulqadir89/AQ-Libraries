@@ -1,6 +1,15 @@
 ﻿namespace AQ.ValueObjects;
 
 /// <summary>
+/// DTO for DateRange value object serialization in API endpoints.
+/// </summary>
+public class DateRangeDto
+{
+    public DateOnly? Start { get; set; }
+    public DateOnly? End { get; set; }
+}
+
+/// <summary>
 /// Represents a date range value object with validation. Supports open-ended ranges.
 /// </summary>
 public sealed class DateRange : ValueObject
@@ -9,7 +18,7 @@ public sealed class DateRange : ValueObject
     public DateOnly? End { get; init; }
 
     // Parameterless constructor for EF Core
-    public DateRange() { }
+    private DateRange() { }
 
     private DateRange(DateOnly? start, DateOnly? end)
     {
@@ -281,5 +290,37 @@ public sealed class DateRange : ValueObject
     public override DateRange Clone()
     {
         return Create(Start, End);
+    }
+
+    /// <summary>
+    /// Converts this DateRange to a DTO for API serialization.
+    /// </summary>
+    public DateRangeDto ToDto()
+    {
+        return new DateRangeDto
+        {
+            Start = Start,
+            End = End
+        };
+    }
+
+    /// <summary>
+    /// Creates a DateRange from a DTO.
+    /// </summary>
+    public static DateRange FromDto(DateRangeDto dto)
+    {
+        return Create(dto.Start, dto.End);
+    }
+
+    /// <summary>
+    /// Attempts to create a DateRange from a DTO without throwing exceptions.
+    /// </summary>
+    public static bool TryFromDto(DateRangeDto? dto, out DateRange? result)
+    {
+        result = null;
+        if (dto == null)
+            return false;
+
+        return TryCreate(dto.Start, dto.End, out result);
     }
 }
