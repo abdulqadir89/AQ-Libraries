@@ -3,6 +3,17 @@ using Markdig;
 
 namespace AQ.ValueObjects;
 
+/// <summary>
+/// DTO for MarkdownContent responses in API endpoints.
+/// Contains both the raw markdown and the rendered HTML.
+/// Use string directly in request objects (only the raw value is needed for input).
+/// </summary>
+public class MarkdownContentDto
+{
+    public string Value { get; set; } = default!;
+    public string Html { get; set; } = default!;
+}
+
 public sealed class MarkdownContent : ValueObject
 {
     public string Value { get; init; }
@@ -85,5 +96,17 @@ public sealed class MarkdownContent : ValueObject
     {
         return Create(Value);
 
+    }
+
+    /// <summary>
+    /// Converts this MarkdownContent to a DTO for API response serialization.
+    /// </summary>
+    public MarkdownContentDto ToDto()
+    {
+        return new MarkdownContentDto
+        {
+            Value = Value,
+            Html = Html
+        };
     }
 }

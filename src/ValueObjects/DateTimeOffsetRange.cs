@@ -1,6 +1,15 @@
 ﻿namespace AQ.ValueObjects;
 
 /// <summary>
+/// DTO for DateTimeOffsetRange value object serialization in API endpoints.
+/// </summary>
+public class DateTimeOffsetRangeDto
+{
+    public DateTimeOffset? Start { get; set; }
+    public DateTimeOffset? End { get; set; }
+}
+
+/// <summary>
 /// Represents a date time range value object with validation and timezone support. Supports open-ended ranges.
 /// </summary>
 public sealed class DateTimeOffsetRange : ValueObject
@@ -367,5 +376,37 @@ public sealed class DateTimeOffsetRange : ValueObject
     public override DateTimeOffsetRange Clone()
     {
         return Create(Start, End);
+    }
+
+    /// <summary>
+    /// Converts this DateTimeOffsetRange to a DTO for API serialization.
+    /// </summary>
+    public DateTimeOffsetRangeDto ToDto()
+    {
+        return new DateTimeOffsetRangeDto
+        {
+            Start = Start,
+            End = End
+        };
+    }
+
+    /// <summary>
+    /// Creates a DateTimeOffsetRange from a DTO.
+    /// </summary>
+    public static DateTimeOffsetRange FromDto(DateTimeOffsetRangeDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        return Create(dto.Start, dto.End);
+    }
+
+    /// <summary>
+    /// Attempts to create a DateTimeOffsetRange from a DTO without throwing exceptions.
+    /// </summary>
+    public static bool TryFromDto(DateTimeOffsetRangeDto? dto, out DateTimeOffsetRange? result)
+    {
+        result = null;
+        if (dto == null) return false;
+
+        return TryCreate(dto.Start, dto.End, out result);
     }
 }

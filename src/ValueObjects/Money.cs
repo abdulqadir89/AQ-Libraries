@@ -2,6 +2,15 @@
 
 namespace AQ.ValueObjects;
 
+/// <summary>
+/// DTO for serializing/deserializing Money value object.
+/// </summary>
+public class MoneyDto
+{
+    public decimal Value { get; set; }
+    public string Currency { get; set; } = "PKR";
+}
+
 public sealed class Money : ValueObject
 {
     private static readonly HashSet<string> ValidIsoCurrencies = new()
@@ -208,6 +217,46 @@ public sealed class Money : ValueObject
     public override Money Clone()
     {
         return new Money(Value, Currency);
+    }
+
+    /// <summary>
+    /// Converts this Money to a DTO for API serialization.
+    /// </summary>
+    public MoneyDto ToDto()
+    {
+        return new MoneyDto
+        {
+            Value = Value,
+            Currency = Currency
+        };
+    }
+
+    /// <summary>
+    /// Creates a Money instance from a DTO.
+    /// </summary>
+    public static Money FromDto(MoneyDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        return new Money(dto.Value, dto.Currency);
+    }
+
+    /// <summary>
+    /// Attempts to create a Money instance from a DTO without throwing an exception.
+    /// </summary>
+    public static bool TryFromDto(MoneyDto? dto, out Money? result)
+    {
+        result = null;
+        if (dto == null) return false;
+
+        try
+        {
+            result = FromDto(dto);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ISO 4217 Currency factory methods

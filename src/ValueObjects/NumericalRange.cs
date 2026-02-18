@@ -1,6 +1,15 @@
 ﻿namespace AQ.ValueObjects;
 
 /// <summary>
+/// DTO for NumericalRange value object serialization in API endpoints.
+/// </summary>
+public class NumericalRangeDto<T> where T : struct
+{
+    public T? Min { get; set; }
+    public T? Max { get; set; }
+}
+
+/// <summary>
 /// Represents a numerical range value object with validation. Supports open-ended ranges.
 /// </summary>
 /// <typeparam name="T">The numeric type (int, decimal, double, etc.)</typeparam>
@@ -242,6 +251,38 @@ public sealed class NumericalRange<T> : ValueObject where T : struct, IComparabl
     public override NumericalRange<T> Clone()
     {
         return Create(Min, Max);
+    }
+
+    /// <summary>
+    /// Converts this NumericalRange to a DTO for API serialization.
+    /// </summary>
+    public NumericalRangeDto<T> ToDto()
+    {
+        return new NumericalRangeDto<T>
+        {
+            Min = Min,
+            Max = Max
+        };
+    }
+
+    /// <summary>
+    /// Creates a NumericalRange from a DTO.
+    /// </summary>
+    public static NumericalRange<T> FromDto(NumericalRangeDto<T> dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        return Create(dto.Min, dto.Max);
+    }
+
+    /// <summary>
+    /// Attempts to create a NumericalRange from a DTO without throwing exceptions.
+    /// </summary>
+    public static bool TryFromDto(NumericalRangeDto<T>? dto, out NumericalRange<T>? result)
+    {
+        result = null;
+        if (dto == null) return false;
+
+        return TryCreate(dto.Min, dto.Max, out result);
     }
 }
 
