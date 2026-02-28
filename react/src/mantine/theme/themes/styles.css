@@ -1,0 +1,8 @@
+/* 
+ * Shared shadcn component styles for all theme presets.
+ * These styles use CSS variables and are theme-agnostic — 
+ * the actual colors come from each theme's CSSVariablesResolver.
+ * 
+ * Import this file once in consuming apps (e.g., globals.css or entry point).
+ */
+@import './zinc/styles.css';

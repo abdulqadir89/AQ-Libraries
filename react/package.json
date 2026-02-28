@@ -1,0 +1,23 @@
+{
+  "name": "@AQ/react-components",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "@mantine/core": ">=8",
+    "@mantine/dates": ">=8",
+    "@mantine/hooks": ">=8",
+    "@mantine/modals": ">=8",
+    "@tabler/icons-react": ">=3",
+    "@tanstack/react-query": ">=5",
+    "dayjs": ">=1",
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~5.8.3"
+  }
+}
