@@ -274,6 +274,14 @@ public abstract class StateMachineDefinition : Entity
 
     public void SetStatus(StateMachineDefinitionStatus status)
     {
+        if (status == StateMachineDefinitionStatus.Published)
+        {
+            var errors = Validate().ToList();
+            if (errors.Count > 0)
+                throw new InvalidOperationException(
+                    $"Cannot publish state machine definition with validation errors: {string.Join("; ", errors)}");
+        }
+
         Status = status;
     }
 }
