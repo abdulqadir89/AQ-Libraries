@@ -20,7 +20,7 @@ public sealed class DateTimeOffsetRange : ValueObject
     public DateTimeOffset? End { get; init; }
 
     // Parameterless constructor for EF Core
-    public DateTimeOffsetRange() { }
+    private DateTimeOffsetRange() { }
 
     private DateTimeOffsetRange(DateTimeOffset? start, DateTimeOffset? end)
     {

@@ -2,3 +2,4 @@
 export * from './data-grid';
 export * from './autocomplete';
 export * from './theme';
+export * from './datetime';
