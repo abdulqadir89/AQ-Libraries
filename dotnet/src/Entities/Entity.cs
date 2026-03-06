@@ -54,7 +54,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceC
     /// Removes multiple domain events from this entity.
     /// </summary>
     /// <param name="domainEvents">The domain events to remove.</param>
-    public void RemoveEvents(IEnumerable<IDomainEvent> domainEvents)
+    public void RemoveDomainEvents(IEnumerable<IDomainEvent> domainEvents)
     {
         ArgumentNullException.ThrowIfNull(domainEvents);
         foreach (var domainEvent in domainEvents)
@@ -95,15 +95,39 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceC
         Revision++;
     }
 
+    /// <summary>
+    /// Lifecycle method called when the entity is added to the repository. Can be used to perform actions like raising domain events.
+    /// Note: This is called every time the entity is added to the repository, even if it's already persisted. Use with caution.
+    /// </summary>
     public virtual void OnAdd()
     {
     }
 
+    /// <summary> Lifecycle method called when the entity is updated. Can be used to perform actions like raising domain events.
+    /// Note: This is called every time the entity is updated in the repository, even if it's already persisted. Use with caution.
+    /// </summary>
     public virtual void OnUpdate()
     {
     }
 
+    /// <summary>
+    /// Lifecycle method called when the entity is removed from the repository. Can be used to perform actions like raising domain events or checking constraints before deletion.
+    /// Note: This is called every time the entity is removed from the repository, even if it's already persisted. Use with caution.
+    /// </summary>
     public virtual void OnRemove()
     {
+        if (!CanRemove())
+        {
+            throw new InvalidOperationException($"Entity of type {GetType().Name} with ID {Id} cannot be removed due to business constraints.");
+        }
+    }
+
+    /// <summary>
+    /// Lifecycle method called to check if the entity can be removed from the repository. Can be used to perform actions like checking constraints before deletion.
+    /// Note: This is called every time the entity is checked for removal, even if it's already persisted. Use with caution.
+    /// </summary>
+    public virtual bool CanRemove()
+    {
+        return true;
     }
 }

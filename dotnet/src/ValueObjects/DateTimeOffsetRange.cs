@@ -1,4 +1,6 @@
-﻿namespace AQ.ValueObjects;
+﻿using System.Linq.Expressions;
+
+namespace AQ.ValueObjects;
 
 /// <summary>
 /// DTO for DateTimeOffsetRange value object serialization in API endpoints.
@@ -231,6 +233,13 @@ public sealed class DateTimeOffsetRange : ValueObject
     /// <param name="dateTime">The DateTime to check.</param>
     /// <returns>True if the date time is within the range, false otherwise.</returns>
     public bool Contains(DateTime dateTime) => Contains(new DateTimeOffset(dateTime));
+
+
+    /// <summary>
+    /// Gets an expression that can be used in LINQ queries to check if a given date time falls within this date time range (inclusive).
+    /// </summary>
+    public Expression<Func<DateTimeOffset, bool>> ContainsExpression =>
+        dateTime => (!Start.HasValue || dateTime >= Start.Value) && (!End.HasValue || dateTime <= End.Value);
 
     /// <summary>
     /// Checks if this date time range overlaps with another date time range.

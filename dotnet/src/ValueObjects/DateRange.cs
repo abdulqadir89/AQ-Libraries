@@ -1,4 +1,6 @@
-﻿namespace AQ.ValueObjects;
+﻿using System.Linq.Expressions;
+
+namespace AQ.ValueObjects;
 
 /// <summary>
 /// DTO for DateRange value object serialization in API endpoints.
@@ -168,6 +170,18 @@ public sealed class DateRange : ValueObject
     /// <param name="date">The DateTime to check.</param>
     /// <returns>True if the date is within the range, false otherwise.</returns>
     public bool Contains(DateTime date) => Contains(DateOnly.FromDateTime(date));
+
+    /// <summary>
+    /// Gets an expression that can be used in LINQ queries to check if a given date time falls within this date range (inclusive).
+    /// </summary>
+    public Expression<Func<DateOnly, bool>> ContainsDateExpression =>
+        date => (!Start.HasValue || date >= Start.Value) && (!End.HasValue || date <= End.Value);
+
+    /// <summary>
+    /// Gets an expression that can be used in LINQ queries to check if a given date time falls within this date range (inclusive).
+    /// </summary>
+    public Expression<Func<DateTime, bool>> ContainsDateTimeExpression =>
+        date => (!Start.HasValue || date >= Start.Value.ToDateTime(TimeOnly.MinValue)) && (!End.HasValue || date <= End.Value.ToDateTime(TimeOnly.MaxValue));
 
     /// <summary>
     /// Checks if this date range overlaps with another date range.
