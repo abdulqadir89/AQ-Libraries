@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AQ.Entities;
 
-public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceCreator
+public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
 {
     [NotMapped]
     private readonly List<IDomainEvent> _domainEvents = [];
@@ -130,4 +130,11 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable, IResourceC
     {
         return true;
     }
+}
+
+public abstract class Entity<TUser> : Entity, IAuditable<TUser>
+    where TUser : class
+{
+    public TUser? CreatedBy { get; private set; }
+    public TUser? UpdatedBy { get; private set; }
 }

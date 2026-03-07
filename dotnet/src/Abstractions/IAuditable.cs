@@ -21,3 +21,9 @@ public interface IAuditable
     /// <param name="userId">The user id who updated the entity, or null if unauthenticated.</param>
     void SetUpdatedBy(Guid? userId);
 }
+
+public interface IAuditable<TUser> : IAuditable
+{
+    TUser? CreatedBy { get; }
+    TUser? UpdatedBy { get; }
+}
