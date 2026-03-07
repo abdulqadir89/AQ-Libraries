@@ -154,6 +154,11 @@ export function DataGrid<T extends Record<string, unknown>>({
   }, [data]);
 
   // Initialize column widths
+  // Use a stable signature (key + explicit width) to avoid recalculating on
+  // every parent render when `columns` is defined inline (new reference each render).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}`).join(',');
+
   useEffect(() => {
     const initialWidths: Record<string, number> = {};
     
@@ -168,7 +173,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     });
     
     setColumnWidths(initialWidths);
-  }, [columns, calculateDynamicWidth]);
+  }, [columnSignature, calculateDynamicWidth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle column resize move
   const handleResizeMove = useCallback((e: MouseEvent) => {
@@ -342,6 +347,12 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Track initial mount to prevent onSearch('') on mount
   const isInitialMount = useRef(true);
 
+  // Keep a stable ref to the latest onSearch so the debounce effect
+  // doesn't need onSearch in its deps (avoids infinite loop when parent
+  // passes an inline function that changes reference on every render).
+  const onSearchRef = useRef(onSearch);
+  useEffect(() => { onSearchRef.current = onSearch; });
+
   // Handle search
   const handleSearch = useCallback((value: string) => {
     setState(prev => ({ ...prev, searchText: value }));
@@ -350,24 +361,26 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Handle clear search
   const handleClearSearch = useCallback(() => {
     setState(prev => ({ ...prev, searchText: '' }));
-    onSearch?.('');
-  }, [onSearch]);
+    onSearchRef.current?.('');
+  }, []);
 
   // Handle Enter key for immediate search
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      onSearch?.(state.searchText);
+      onSearchRef.current?.(state.searchText);
     }
-  }, [onSearch, state.searchText]);
+  }, [state.searchText]);
 
-  // Call onSearch when debounced value changes (skip initial mount)
+  // Call onSearch when debounced value changes (skip initial mount).
+  // Intentionally excludes onSearch from deps — use onSearchRef instead
+  // to avoid an infinite loop when parent passes a new function reference each render.
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    onSearch?.(debouncedSearchText);
-  }, [onSearch, debouncedSearchText]);
+    onSearchRef.current?.(debouncedSearchText);
+  }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
