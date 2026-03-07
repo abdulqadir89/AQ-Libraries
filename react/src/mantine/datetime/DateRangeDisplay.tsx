@@ -1,20 +1,19 @@
 import { Text, Tooltip } from '@mantine/core';
-import type { DateTimeOffsetRangeDto } from '../../utils/DateTimeOffsetUtils';
+import type { DateRangeDto } from '../../utils/DateTimeOffsetUtils';
 import {
-  getTimezoneSuffix,
-  buildCompactRangeValue,
-  buildRangeIntervalTooltip,
-  formatDateTimeNoTz,
+  buildCompactDateRangeValue,
+  buildDateRangeTooltip,
+  formatDate,
 } from '../../utils/DateTimeOffsetUtils';
 
-export interface DateTimeOffsetRangeDisplayProps {
+export interface DateRangeDisplayProps {
   /**
-   * DateTimeOffsetRangeDto with start and end
+   * DateRangeDto with start and end ISO date strings (YYYY-MM-DD format)
    */
-  value: DateTimeOffsetRangeDto | null | undefined;
+  value: DateRangeDto | null | undefined;
 
   /**
-   * Whether to use compact format (combines date/time on same day)
+   * Whether to use compact format
    * @default false
    */
   compact?: boolean;
@@ -26,7 +25,7 @@ export interface DateTimeOffsetRangeDisplayProps {
   separator?: string;
 
   /**
-   * Whether to show tooltips with original timezone information
+   * Whether to show tooltips with timespan information
    * @default true
    */
   showTooltips?: boolean;
@@ -38,24 +37,22 @@ export interface DateTimeOffsetRangeDisplayProps {
 }
 
 /**
- * Displays a DateTimeOffset range in the user's local timezone.
- * Timezone suffix is shown only once at the end and only when different from the user's timezone.
+ * Displays a date range (date only, no time component).
+ * Supports compact mode with optional tooltip showing timespan between dates.
  */
-export function DateTimeOffsetRangeDisplay({
+export function DateRangeDisplay({
   value,
   compact = false,
   separator = ' - ',
   showTooltips = true,
   textProps,
-}: DateTimeOffsetRangeDisplayProps) {
+}: DateRangeDisplayProps) {
   if (!value || (!value.start && !value.end)) {
     return <Text {...textProps}>—</Text>;
   }
 
-  const timezoneSuffix = getTimezoneSuffix(value);
-
   if (compact) {
-    const compactValue = buildCompactRangeValue(value, separator, timezoneSuffix);
+    const compactValue = buildCompactDateRangeValue(value, separator);
     if (!compactValue) {
       return <Text {...textProps}>—</Text>;
     }
@@ -64,13 +61,13 @@ export function DateTimeOffsetRangeDisplay({
       return <Text {...textProps}>{compactValue}</Text>;
     }
 
-    const tooltipLabel = buildRangeIntervalTooltip(value);
+    const tooltipLabel = buildDateRangeTooltip(value);
     if (!tooltipLabel) {
       return <Text {...textProps}>{compactValue}</Text>;
     }
 
     return (
-      <Tooltip label={tooltipLabel} withArrow position="top">
+      <Tooltip label={tooltipLabel} withArrow position="top" multiline>
         <Text {...textProps} style={{ cursor: 'help', ...textProps?.style }}>
           {compactValue}
         </Text>
@@ -78,15 +75,15 @@ export function DateTimeOffsetRangeDisplay({
     );
   }
 
-  const startFormatted = value.start ? formatDateTimeNoTz(value.start) : null;
-  const endFormatted = value.end ? formatDateTimeNoTz(value.end) : null;
+  const startFormatted = value.start ? formatDate(value.start) : null;
+  const endFormatted = value.end ? formatDate(value.end) : null;
 
   const displayValue = startFormatted && endFormatted
-    ? `${startFormatted}${separator}${endFormatted}${timezoneSuffix}`
+    ? `${startFormatted}${separator}${endFormatted}`
     : startFormatted
-      ? `From ${startFormatted}${timezoneSuffix}`
+      ? `From ${startFormatted}`
       : endFormatted
-        ? `Until ${endFormatted}${timezoneSuffix}`
+        ? `Until ${endFormatted}`
         : '';
 
   if (!displayValue) {
@@ -97,13 +94,13 @@ export function DateTimeOffsetRangeDisplay({
     return <Text {...textProps}>{displayValue}</Text>;
   }
 
-  const tooltipLabel = buildRangeIntervalTooltip(value);
+  const tooltipLabel = buildDateRangeTooltip(value);
   if (!tooltipLabel) {
     return <Text {...textProps}>{displayValue}</Text>;
   }
 
   return (
-    <Tooltip label={tooltipLabel} withArrow position="top">
+    <Tooltip label={tooltipLabel} withArrow position="top" multiline>
       <Text {...textProps} style={{ cursor: 'help', ...textProps?.style }}>
         {displayValue}
       </Text>
