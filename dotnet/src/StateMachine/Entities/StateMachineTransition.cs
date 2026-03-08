@@ -220,27 +220,6 @@ public class StateMachineTransition : Entity
         }
     }
 
-    /// <summary>
-    /// Serializes effects to JSON for database storage.
-    /// </summary>
-    public static string? SerializeEffects(IEnumerable<IStateMachineTransitionEffect>? effects)
-    {
-        if (effects == null) return null;
-
-        var effectDict = new Dictionary<string, object>();
-
-        foreach (var effect in effects)
-        {
-            var typeName = effect.GetType().Name;
-            var data = JsonSerializer.SerializeToElement(effect);
-            effectDict[typeName] = data;
-        }
-
-        return JsonSerializer.Serialize(effectDict);
-    }
-
-
-
     #endregion
 
     #region Internal Storage Classes

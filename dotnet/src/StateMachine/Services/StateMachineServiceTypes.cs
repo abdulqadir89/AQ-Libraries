@@ -4,7 +4,7 @@ namespace AQ.StateMachine.Services;
 
 /// <summary>
 /// Information about a state machine transition operation.
-/// Used for passing transition context to effect handlers.
+/// Used for passing transition context to state machine services.
 /// </summary>
 public class StateMachineTransitionInfo
 {
