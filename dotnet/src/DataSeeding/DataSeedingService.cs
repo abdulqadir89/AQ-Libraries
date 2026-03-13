@@ -38,7 +38,22 @@ public class DataSeedingService<TSeederType>
         try
         {
             _logger.LogInformation("Starting {SeederType} seeding process...", _seederTypeName);
-            var ordered = ResolveOrder();
+            var explicitlySkipped = GetExplicitlySkippedSeederTypes();
+            var allSkipped = ResolveSkippedSeederTypes(explicitlySkipped);
+
+            if (allSkipped.Count > 0)
+            {
+                _logger.LogInformation(
+                    "Skipping {SkippedCount} {SeederType} seeders: {SkippedSeeders}",
+                    allSkipped.Count,
+                    _seederTypeName,
+                    string.Join(", ", allSkipped.Select(t =>
+                        explicitlySkipped.Contains(t)
+                            ? $"{t.Name} (SkipSeeding)"
+                            : $"{t.Name} (depends on skipped seeder)")));
+            }
+
+            var ordered = ResolveOrder(allSkipped);
             _logger.LogInformation("Resolved seeding order for {Count} {SeederType} seeders", ordered.Count, _seederTypeName);
 
             for (int i = 0; i < ordered.Count; i++)
@@ -242,24 +257,36 @@ public class DataSeedingService<TSeederType>
     /// </summary>
     public int GetSeederCount() => _seederMap.Count;
 
-    private List<IDataSeeder<TSeederType>> ResolveOrder()
+    private List<IDataSeeder<TSeederType>> ResolveOrder(IReadOnlySet<Type> skippedSeederTypes)
     {
         var resolved = new List<IDataSeeder<TSeederType>>();
         var visited = new HashSet<Type>();
 
         // Get all seeders sorted by priority
-        var sortedSeeders = _seederMap.Values.OrderBy(s => s.Priority).ToList();
+        var sortedSeeders = _seederMap.Values
+            .Where(s => !skippedSeederTypes.Contains(s.GetType()))
+            .OrderBy(s => s.Priority)
+            .ToList();
 
         foreach (var seeder in sortedSeeders)
         {
-            Visit(seeder.GetType(), visited, resolved);
+            Visit(seeder.GetType(), visited, resolved, skippedSeederTypes);
         }
 
         return resolved;
     }
 
-    private void Visit(Type type, HashSet<Type> visited, List<IDataSeeder<TSeederType>> resolved)
+    private void Visit(
+        Type type,
+        HashSet<Type> visited,
+        List<IDataSeeder<TSeederType>> resolved,
+        IReadOnlySet<Type> skippedSeederTypes)
     {
+        if (skippedSeederTypes.Contains(type))
+        {
+            return;
+        }
+
         if (visited.Contains(type)) return;
 
         visited.Add(type);
@@ -274,14 +301,62 @@ public class DataSeedingService<TSeederType>
 
         foreach (var dep in dependencies)
         {
+            if (skippedSeederTypes.Contains(dep.Type))
+            {
+                continue;
+            }
+
             if (!_seederMap.ContainsKey(dep.Type))
             {
                 throw new InvalidOperationException(
                     $"Dependency {dep.Type.Name} for {type.Name} not registered as {_seederTypeName}");
             }
-            Visit(dep.Type, visited, resolved);
+            Visit(dep.Type, visited, resolved, skippedSeederTypes);
         }
 
         resolved.Add(seeder);
+    }
+
+    private HashSet<Type> GetExplicitlySkippedSeederTypes()
+    {
+        return _seederMap.Values
+            .Select(seeder => seeder.GetType())
+            .Where(type => type.IsDefined(typeof(SkipSeedingAttribute), false))
+            .ToHashSet();
+    }
+
+    private HashSet<Type> ResolveSkippedSeederTypes(IReadOnlySet<Type> explicitlySkipped)
+    {
+        var skipped = explicitlySkipped.ToHashSet();
+
+        if (skipped.Count == 0)
+        {
+            return skipped;
+        }
+
+        var changed = true;
+        while (changed)
+        {
+            changed = false;
+
+            foreach (var entry in _seederMap)
+            {
+                var seederType = entry.Key;
+                var seeder = entry.Value;
+
+                if (skipped.Contains(seederType))
+                {
+                    continue;
+                }
+
+                if (seeder.Dependencies.Any(skipped.Contains))
+                {
+                    skipped.Add(seederType);
+                    changed = true;
+                }
+            }
+        }
+
+        return skipped;
     }
 }
