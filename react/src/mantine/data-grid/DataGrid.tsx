@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
 import {
   Table,
   ScrollArea,
@@ -62,6 +63,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   searchable = true,
   searchPlaceholder = 'Search...',
   onSearch,
+  toolbarRightSection,
   refreshable = true,
   onRefresh,
   sortable = true,
@@ -570,17 +572,30 @@ export function DataGrid<T extends Record<string, unknown>>({
     return (
       <Group gap="xs" justify="center">
         {visibleActions.map(action => (
-          <ActionIcon
-            key={action.key}
-            size="sm"
-            variant={action.variant || 'light'}
-            color={action.color || 'gray'}
-            disabled={action.disabled?.(record)}
-            onClick={() => action.onClick(record)}
-            title={action.label}
-          >
-            {action.icon}
-          </ActionIcon>
+          action.icon ? (
+            <ActionIcon
+              key={action.key}
+              size="sm"
+              variant={action.variant || 'light'}
+              color={action.color || 'gray'}
+              disabled={action.disabled?.(record)}
+              onClick={() => action.onClick(record)}
+              title={action.label}
+            >
+              {action.icon}
+            </ActionIcon>
+          ) : (
+            <Button
+              key={action.key}
+              size="compact-xs"
+              variant={action.variant || 'light'}
+              color={action.color || 'gray'}
+              disabled={action.disabled?.(record)}
+              onClick={() => action.onClick(record)}
+            >
+              {action.label}
+            </Button>
+          )
         ))}
       </Group>
     );
@@ -610,7 +625,7 @@ export function DataGrid<T extends Record<string, unknown>>({
           <Table.Td>
             <Checkbox
               checked={isSelected}
-              onChange={(event) => handleRowSelection(key, event.currentTarget.checked)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
             />
           </Table.Td>
         )}
@@ -682,7 +697,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                   ) : null
                 }
                 value={state.searchText}
-                onChange={(event) => handleSearch(event.currentTarget.value)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => handleSearch(event.currentTarget.value)}
                 onKeyDown={handleKeyDown}
                 style={{ minWidth: 300 }}
               />
@@ -708,6 +723,8 @@ export function DataGrid<T extends Record<string, unknown>>({
                 Reset Filters
               </Button>
             )}
+
+            {toolbarRightSection}
           </Group>
         </Flex>
       </Paper>
@@ -728,7 +745,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     <Checkbox
                       checked={state.selectedRows.length === data.length && data.length > 0}
                       indeterminate={state.selectedRows.length > 0 && state.selectedRows.length < data.length}
-                      onChange={(event) => handleSelectAll(event.currentTarget.checked)}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
                     />
                   </Table.Th>
                 )}
@@ -771,7 +788,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     
                     {/* Resize Handle */}
                     <Box
-                      onMouseDown={(e) => handleResizeStart(e, column)}
+                      onMouseDown={(e: ReactMouseEvent<HTMLDivElement>) => handleResizeStart(e, column)}
                       style={{
                         position: 'absolute',
                         right: 0,
@@ -785,10 +802,10 @@ export function DataGrid<T extends Record<string, unknown>>({
                         transition: 'border-color 0.2s',
                         zIndex: 1,
                       }}
-                      onMouseEnter={(e) => {
+                      onMouseEnter={(e: ReactMouseEvent<HTMLDivElement>) => {
                         e.currentTarget.style.borderRightColor = 'var(--mantine-color-blue-6)';
                       }}
-                      onMouseLeave={(e) => {
+                      onMouseLeave={(e: ReactMouseEvent<HTMLDivElement>) => {
                         e.currentTarget.style.borderRightColor = 'transparent';
                       }}
                     />
@@ -836,7 +853,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                       label: String(size) 
                     })) || ['10', '25', '50', '100']}
                     value={String(pagination.pageSize)}
-                    onChange={(value) => onPageChange?.(1, Number(value) || 10)}
+                    onChange={(value: string | null) => onPageChange?.(1, Number(value) || 10)}
                     style={{ 
                       width: 80,
                       textAlign: 'right'
@@ -852,7 +869,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               <Pagination
                 total={Math.ceil(pagination.total / pagination.pageSize)}
                 value={pagination.current}
-                onChange={(page) => onPageChange?.(page, pagination.pageSize)}
+                onChange={(page: number) => onPageChange?.(page, pagination.pageSize)}
                 size="sm"
               />
             </Group>

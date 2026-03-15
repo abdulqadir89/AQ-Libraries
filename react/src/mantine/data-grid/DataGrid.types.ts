@@ -4,6 +4,7 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   key: string;
   title: string;
   dataIndex: keyof T;
+  cardRole?: 'title' | 'details';
   type?: 'string' | 'number' | 'date' | 'boolean' | 'enum';
   width?: number | string;
   minWidth?: number; // Minimum width in pixels (default: 100)
@@ -95,6 +96,7 @@ export interface DataGridProps<T = Record<string, unknown>> {
   searchable?: boolean;
   searchPlaceholder?: string;
   onSearch?: (searchText: string) => void;
+  toolbarRightSection?: ReactNode;
   
   // Refresh
   refreshable?: boolean;
@@ -132,6 +134,110 @@ export interface DataGridProps<T = Record<string, unknown>> {
   selectedRows?: string[];
   onSelectionChange?: (selectedRowKeys: string[]) => void;
   rowKey?: keyof T | ((record: T) => string);
+}
+
+export type GridViewMode = 'table' | 'card';
+
+export interface DataGridToolbarConfig {
+  showSearch?: boolean;
+  showCreate?: boolean;
+  showRefresh?: boolean;
+  showOptions?: boolean;
+}
+
+export interface FilterPreset {
+  key: string;
+  label: string;
+  conditions: FilterCondition[];
+  operator?: LogicalOperator;
+}
+
+export interface SortPreset {
+  key: string;
+  label: string;
+  conditions: SortCondition[];
+}
+
+export interface CardImageConfig<T = Record<string, unknown>> {
+  dataIndex?: keyof T;
+  height?: number;
+  fit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  alt?: string;
+  render?: (record: T, index: number) => ReactNode;
+}
+
+export interface CardLayoutConfig {
+  base?: number;
+  xs?: number;
+  sm?: number;
+  md?: number;
+  lg?: number;
+  xl?: number;
+}
+
+export interface CardDataGridProps<T = Record<string, unknown>> {
+  gridId?: string;
+  data: T[];
+  loading?: boolean;
+  columns: DataGridColumn<T>[];
+  mode?: GridMode;
+  specialModeConfig?: SpecialModeConfig;
+  actions?: ActionButton<T>[];
+  showActions?: boolean;
+  pagination?: PaginationConfig;
+  onPageChange?: (page: number, pageSize: number) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  onSearch?: (searchText: string) => void;
+  toolbarRightSection?: ReactNode;
+  refreshable?: boolean;
+  onRefresh?: () => void;
+  sortable?: boolean;
+  onSortChange?: (sortExpression: string) => void;
+  onCreate?: () => void;
+  createButtonText?: string;
+  createButtonIcon?: ReactNode;
+  onEdit?: (record: T) => void;
+  onView?: (record: T) => void;
+  onDetails?: (record: T) => void;
+  onDelete?: (record: T) => void;
+  deleteConfirmTitle?: string;
+  deleteConfirmContent?: string;
+  selectable?: boolean;
+  selectedRows?: string[];
+  onSelectionChange?: (selectedRowKeys: string[]) => void;
+  rowKey?: keyof T | ((record: T) => string);
+  onFilterChange?: (conditions: FilterCondition[], operator?: LogicalOperator) => void;
+  filterPresets?: FilterPreset[];
+  sortPresets?: SortPreset[];
+  initialFilterConditions?: FilterCondition[];
+  initialFilterOperator?: LogicalOperator;
+  initialSortConditions?: SortCondition[];
+  onFilterExpressionChange?: (filterExpression: string) => void;
+  toolbarConfig?: DataGridToolbarConfig;
+  cardLayout?: CardLayoutConfig;
+  cardImage?: CardImageConfig<T>;
+  cardTitle?: (record: T, index: number) => ReactNode;
+  cardSubtitle?: (record: T, index: number) => ReactNode;
+  renderCard?: (record: T, index: number) => ReactNode;
+  emptyStateText?: string;
+}
+
+export interface DataGridSwitchProps {
+  value: GridViewMode;
+  onChange: (value: GridViewMode) => void;
+  tableLabel?: string;
+  cardLabel?: string;
+}
+
+export interface DataGridViewSwitcherProps<T = Record<string, unknown>> {
+  viewMode: GridViewMode;
+  onViewModeChange: (value: GridViewMode) => void;
+  showSwitch?: boolean;
+  switchTableLabel?: string;
+  switchCardLabel?: string;
+  tableProps: DataGridProps<T>;
+  cardProps?: Partial<CardDataGridProps<T>>;
 }
 
 export interface DataGridState {
