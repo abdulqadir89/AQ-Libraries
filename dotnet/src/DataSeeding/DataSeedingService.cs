@@ -195,7 +195,7 @@ public class DataSeedingService<TSeederType>
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, 
+            _logger.LogError(ex,
                 "❌ {SeederType} seeding FAILED after {Duration:mm\\:ss\\.fff}",
                 _seederTypeName, stopwatch.Elapsed);
 
@@ -292,7 +292,7 @@ public class DataSeedingService<TSeederType>
         visited.Add(type);
 
         var seeder = _seederMap[type];
-        
+
         // Get dependencies and sort by priority
         var dependencies = seeder.Dependencies
             .Select(dep => new { Type = dep, Seeder = _seederMap.TryGetValue(dep, out var s) ? s : null })

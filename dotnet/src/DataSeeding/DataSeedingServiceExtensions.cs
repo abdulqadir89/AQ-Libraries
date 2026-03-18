@@ -20,8 +20,8 @@ public static class DataSeedingServiceExtensions
         params Assembly[] assemblies)
         where TSeederType : ISeederType
     {
-        var assembliesToScan = assemblies.Length > 0 
-            ? assemblies 
+        var assembliesToScan = assemblies.Length > 0
+            ? assemblies
             : new[] { Assembly.GetCallingAssembly() };
 
         var seederInterfaceType = typeof(IDataSeeder<TSeederType>);
@@ -39,7 +39,7 @@ public static class DataSeedingServiceExtensions
         }
 
         services.AddScoped<DataSeedingService<TSeederType>>();
-        
+
         return services;
     }
 
