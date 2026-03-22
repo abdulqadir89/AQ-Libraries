@@ -138,6 +138,42 @@ public abstract class StateMachineInstance : Entity
     {
         return CurrentState!.Category == StateMachineStateCategory.Final;
     }
+
+    /// <summary>
+    /// Migrates this instance to a new state machine definition using the mapping stored in
+    /// <see cref="StateMachineDefinition.PreviousVersionStateMapping"/>.
+    /// State IDs — not names — are used to resolve the current state in the new definition,
+    /// since names are mutable but IDs are stable.
+    /// </summary>
+    /// <param name="newDefinition">
+    /// The target definition to migrate to. Must have a <see cref="StateMachineDefinition.PreviousVersionStateMapping"/>
+    /// entry for the current <see cref="CurrentStateId"/>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="newDefinition"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the current state ID has no entry in the definition's mapping, or the mapped
+    /// target state does not exist in the new definition.
+    /// </exception>
+    public void MigrateToDefinition(StateMachineDefinition newDefinition)
+    {
+        if (newDefinition is null) throw new ArgumentNullException(nameof(newDefinition));
+
+        var mapping = newDefinition.PreviousVersionStateMapping;
+
+        if (!mapping.TryGetValue(CurrentStateId, out var newStateId))
+            throw new InvalidOperationException(
+                $"No mapping found for current state ID '{CurrentStateId}' in the target definition's PreviousVersionStateMapping.");
+
+        var newState = newDefinition.States.FirstOrDefault(s => s.Id == newStateId)
+            ?? throw new InvalidOperationException(
+                $"Mapped target state ID '{newStateId}' does not exist in the target definition.");
+
+        DefinitionId = newDefinition.Id;
+        Definition = newDefinition;
+        CurrentStateId = newState.Id;
+        CurrentState = newState;
+        LastTransitionAt = DateTimeOffset.UtcNow;
+    }
 }
 
 

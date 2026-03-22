@@ -37,6 +37,14 @@ public abstract class StateMachineDefinition : Entity
 
     public StateMachineDefinitionStatus Status { get; private set; }
 
+    /// <summary>
+    /// Maps previous-version state IDs to this version's state IDs.
+    /// Populated on a new version to enable migrating instances from the previous definition.
+    /// Multiple previous-version state IDs may point to the same target state ID.
+    /// States in this version that no previous state maps to are valid and require no entry.
+    /// </summary>
+    public Dictionary<Guid, Guid> PreviousVersionStateMapping { get; private set; } = [];
+
     // EF Core constructor
     protected StateMachineDefinition() { }
 
@@ -270,6 +278,49 @@ public abstract class StateMachineDefinition : Entity
         }
 
         return errors;
+    }
+
+    /// <summary>
+    /// Sets the mapping from previous-version state IDs to this version's state IDs.
+    /// Only allowed on Draft definitions.
+    /// </summary>
+    public void SetPreviousVersionStateMapping(IReadOnlyDictionary<Guid, Guid> mapping)
+    {
+        if (Status != StateMachineDefinitionStatus.Draft)
+            throw new InvalidOperationException("State mapping can only be set on draft definitions.");
+
+        PreviousVersionStateMapping = mapping is null ? [] : new Dictionary<Guid, Guid>(mapping);
+    }
+
+    /// <summary>
+    /// Validates that <see cref="PreviousVersionStateMapping"/> is complete and consistent against
+    /// <paramref name="previousVersion"/>.
+    /// Rules:
+    ///   - Every state in <paramref name="previousVersion"/> must have an entry in the mapping.
+    ///   - Every mapped target state ID must exist in this definition.
+    ///   - Multiple previous-version states may map to the same target (many-to-one allowed).
+    /// </summary>
+    public IEnumerable<string> ValidatePreviousVersionMapping(StateMachineDefinition previousVersion)
+    {
+        if (previousVersion is null)
+        {
+            yield return "Previous version definition is required.";
+            yield break;
+        }
+
+        var currentStateIds = States.Select(s => s.Id).ToHashSet();
+
+        foreach (var state in previousVersion.States)
+        {
+            if (!PreviousVersionStateMapping.ContainsKey(state.Id))
+                yield return $"Previous version state '{state.Name}' (ID: {state.Id}) has no mapping entry.";
+        }
+
+        foreach (var (_, targetStateId) in PreviousVersionStateMapping)
+        {
+            if (!currentStateIds.Contains(targetStateId))
+                yield return $"Mapped target state ID '{targetStateId}' does not exist in this definition.";
+        }
     }
 
     public void SetStatus(StateMachineDefinitionStatus status)
