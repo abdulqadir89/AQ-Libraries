@@ -15,6 +15,8 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
     public Guid? UpdatedById { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
     public int Revision { get; private set; }
+    public bool IsActive { get; private set; }
+
     /// <summary>
     /// Gets the collection of domain events raised by this entity.
     /// </summary>
@@ -95,12 +97,20 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
         Revision++;
     }
 
+    public void SetIsActive(bool isActive) => IsActive = isActive;
+
+    public virtual void EvaluateIsActive()
+    {
+        // Default implementation does nothing, override in derived classes to implement custom logic for determining IsActive status
+    }
+
     /// <summary>
     /// Lifecycle method called when the entity is added to the repository. Can be used to perform actions like raising domain events.
     /// Note: This is called every time the entity is added to the repository, even if it's already persisted. Use with caution.
     /// </summary>
     public virtual void OnAdd()
     {
+        EvaluateIsActive();
     }
 
     /// <summary> Lifecycle method called when the entity is updated. Can be used to perform actions like raising domain events.
@@ -108,6 +118,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
     /// </summary>
     public virtual void OnUpdate()
     {
+        EvaluateIsActive();
     }
 
     /// <summary>
