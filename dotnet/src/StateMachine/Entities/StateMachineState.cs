@@ -28,7 +28,6 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
-        StateMachineDefinition = definition;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
         Category = category;

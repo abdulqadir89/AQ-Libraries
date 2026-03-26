@@ -58,7 +58,6 @@ public class StateMachineTrigger : Entity
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
-        StateMachineDefinition = definition;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
         Type = type;

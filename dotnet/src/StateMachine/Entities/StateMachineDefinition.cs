@@ -101,14 +101,25 @@ public abstract class StateMachineDefinition : Entity
         // Copy all transitions with their requirements and descriptions
         foreach (var transition in _transitions)
         {
-            // Find the corresponding states and triggers in the new definition
-            var newFromState = transition.FromState != null
-                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.FromState.Name)
+            // Find corresponding states and triggers by name in the new definition.
+            // Nav props may not be loaded; resolve names via ID lookup in the source collections.
+            var sourceFromStateName = transition.FromStateId.HasValue
+                ? _states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)?.Name
                 : null;
-            var newToState = transition.ToState != null
-                ? newDefinition._states.FirstOrDefault(s => s.Name == transition.ToState.Name)
+            var sourceToStateName = transition.ToStateId.HasValue
+                ? _states.FirstOrDefault(s => s.Id == transition.ToStateId.Value)?.Name
                 : null;
-            var newTrigger = newDefinition._triggers.FirstOrDefault(t => t.Name == transition.Trigger!.Name);
+            var sourceTriggerName = _triggers.FirstOrDefault(t => t.Id == transition.TriggerId)?.Name;
+
+            var newFromState = sourceFromStateName != null
+                ? newDefinition._states.FirstOrDefault(s => s.Name == sourceFromStateName)
+                : null;
+            var newToState = sourceToStateName != null
+                ? newDefinition._states.FirstOrDefault(s => s.Name == sourceToStateName)
+                : null;
+            var newTrigger = sourceTriggerName != null
+                ? newDefinition._triggers.FirstOrDefault(t => t.Name == sourceTriggerName)
+                : null;
 
             if (newTrigger != null)
             {
@@ -153,7 +164,10 @@ public abstract class StateMachineDefinition : Entity
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggersFromState(StateMachineState state)
     {
-        return GetTransitionsFromState(state).Select(t => t.Trigger!).Distinct();
+        return GetTransitionsFromState(state)
+            .Select(t => _triggers.FirstOrDefault(tr => tr.Id == t.TriggerId))
+            .OfType<StateMachineTrigger>()
+            .Distinct();
     }
 
     /// <summary>
@@ -169,13 +183,13 @@ public abstract class StateMachineDefinition : Entity
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
-            var fromStateName = transition.FromState != null
-                ? SanitizeStateName(transition.FromState.Name)
+            var fromStateName = transition.FromStateId.HasValue
+                ? SanitizeStateName(_states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)?.Name ?? string.Empty)
                 : "[*]";
-            var toStateName = transition.ToState != null
-                ? SanitizeStateName(transition.ToState.Name)
+            var toStateName = transition.ToStateId.HasValue
+                ? SanitizeStateName(_states.FirstOrDefault(s => s.Id == transition.ToStateId.Value)?.Name ?? string.Empty)
                 : "[*]";
-            var triggerName = transition.Trigger!.Name;
+            var triggerName = _triggers.FirstOrDefault(t => t.Id == transition.TriggerId)?.Name ?? string.Empty;
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
 
@@ -352,7 +366,6 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
         int version = 1)
         : base(initialStateName, version)
     {
-        Entity = entity;
         EntityId = entity.Id;
     }
 
@@ -373,7 +386,6 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
             throw new InvalidOperationException("Cannot create new version without an initial state.");
 
         var newDefinition = new StateMachineDefinition<TEntity>(Entity!, InitialState.Name, version);
-        newDefinition.SetEntity(Entity!);
 
         CopyDefinitionDataTo(newDefinition);
 

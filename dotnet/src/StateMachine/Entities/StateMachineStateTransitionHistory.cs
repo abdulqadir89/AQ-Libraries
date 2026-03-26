@@ -37,14 +37,10 @@ public abstract class StateMachineStateTransitionHistory : Entity
         bool isForced,
         string? reason)
     {
-        StateMachineInstance = instance ?? throw new ArgumentNullException(nameof(instance));
-        StateMachineInstanceId = instance.Id;
-        FromStateId = fromState?.Id ?? throw new ArgumentNullException(nameof(fromState));
-        FromState = fromState;
-        ToStateId = toState?.Id ?? throw new ArgumentNullException(nameof(toState));
-        ToState = toState;
+        StateMachineInstanceId = (instance ?? throw new ArgumentNullException(nameof(instance))).Id;
+        FromStateId = (fromState ?? throw new ArgumentNullException(nameof(fromState))).Id;
+        ToStateId = (toState ?? throw new ArgumentNullException(nameof(toState))).Id;
         TriggerId = trigger?.Id;
-        Trigger = trigger;
         IsForced = isForced;
         Reason = reason;
         TransitionedAt = DateTimeOffset.UtcNow;

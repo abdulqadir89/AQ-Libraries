@@ -24,11 +24,9 @@ public abstract class StateMachineInstance : Entity
         StateMachineDefinition definition)
     {
         DefinitionId = definition?.Id ?? throw new ArgumentNullException(nameof(definition));
-        Definition = definition;
 
         // Set current state to the definition's initial state
         var initialState = definition.InitialState ?? throw new InvalidOperationException("Definition must have an initial state.");
-        CurrentState = initialState;
         CurrentStateId = initialState.Id;
     }
 
@@ -75,7 +73,8 @@ public abstract class StateMachineInstance : Entity
 
         return Definition!.Transitions
             .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
-            .Select(t => t.Trigger!)
+            .Select(t => Definition.Triggers.FirstOrDefault(tr => tr.Id == t.TriggerId))
+            .OfType<StateMachineTrigger>()
             .Distinct();
     }
 
@@ -194,6 +193,9 @@ public class StateMachineInstance<TEntity> : StateMachineInstance
         StateMachineDefinition definition,
         TEntity entity) : base(definition)
     {
+        // Special case: Entity nav prop is set here because EntityId has no corresponding
+        // FK assignment path for the generic TEntity (no IEntity constraint).
+        // EF Core will override this on load.
         Entity = entity;
     }
 

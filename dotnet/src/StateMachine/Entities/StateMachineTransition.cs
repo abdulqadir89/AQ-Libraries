@@ -34,12 +34,9 @@ public class StateMachineTransition : Entity
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
-        FromState = fromState;
         FromStateId = fromState?.Id;
-        ToState = toState;
         ToStateId = toState?.Id;
-        Trigger = trigger ?? throw new ArgumentNullException(nameof(trigger));
-        TriggerId = trigger.Id;
+        TriggerId = (trigger ?? throw new ArgumentNullException(nameof(trigger))).Id;
         Description = description?.Trim();
         Requirements = requirements;
     }
