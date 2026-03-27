@@ -69,6 +69,22 @@ public abstract class StateMachineDefinition : Entity
     public abstract StateMachineDefinition CreateNewVersion(int version);
 
     /// <summary>
+    /// Adds a trigger to this definition. For use by derived classes only.
+    /// </summary>
+    protected void AddTrigger(StateMachineTrigger trigger)
+    {
+        _triggers.Add(trigger);
+    }
+
+    /// <summary>
+    /// Adds a transition to this definition. For use by derived classes only.
+    /// </summary>
+    protected void AddTransition(StateMachineTransition transition)
+    {
+        _transitions.Add(transition);
+    }
+
+    /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
     /// </summary>
     protected void CopyDefinitionDataTo(StateMachineDefinition newDefinition)
@@ -90,6 +106,10 @@ public abstract class StateMachineDefinition : Entity
         // Copy all triggers
         foreach (var trigger in _triggers)
         {
+            // Skip triggers already present by name in the new definition (e.g. auto-added in constructor)
+            if (newDefinition._triggers.Any(t => t.Name == trigger.Name))
+                continue;
+
             var newTrigger = StateMachineTrigger.Create(
                 newDefinition,
                 trigger.Name,
@@ -123,6 +143,10 @@ public abstract class StateMachineDefinition : Entity
 
             if (newTrigger != null)
             {
+                // Skip transitions whose trigger is already represented (e.g. auto-added global triggers)
+                if (newDefinition._transitions.Any(t => t.TriggerId == newTrigger.Id))
+                    continue;
+
                 var newTransition = StateMachineTransition.Create(
                     newDefinition,
                     newFromState,
@@ -183,6 +207,10 @@ public abstract class StateMachineDefinition : Entity
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
+            // Skip global triggers (null→null) — they don't change state and are listed separately
+            if (!transition.FromStateId.HasValue && !transition.ToStateId.HasValue)
+                continue;
+
             var fromStateName = transition.FromStateId.HasValue
                 ? SanitizeStateName(_states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)?.Name ?? string.Empty)
                 : "[*]";
@@ -221,7 +249,32 @@ public abstract class StateMachineDefinition : Entity
             diagram.AppendLine($"    style {currentStateName} fill:#f9f,stroke:#333,stroke-width:2px");
         }
 
+        var globalTriggers = GetGlobalTriggers().Select(t => t.Name).Distinct().OrderBy(n => n).ToList();
+        if (globalTriggers.Count > 0)
+        {
+            diagram.AppendLine();
+            diagram.AppendLine("%% Global Triggers (no state change)");
+            foreach (var triggerName in globalTriggers)
+            {
+                diagram.AppendLine($"%% - {triggerName}");
+            }
+        }
+
         return diagram.ToString();
+    }
+
+    /// <summary>
+    /// Returns all triggers that have no state change (null→null transitions).
+    /// These are available in all states and are excluded from the flow diagram.
+    /// </summary>
+    public IEnumerable<StateMachineTrigger> GetGlobalTriggers()
+    {
+        var globalTriggerIds = _transitions
+            .Where(t => !t.FromStateId.HasValue && !t.ToStateId.HasValue)
+            .Select(t => t.TriggerId)
+            .ToHashSet();
+
+        return _triggers.Where(t => globalTriggerIds.Contains(t.Id));
     }
 
     /// <summary>
