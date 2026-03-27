@@ -2,7 +2,7 @@ namespace AQ.Abstractions;
 
 public interface IHasActiveFlag
 {
-    bool IsActive { get; set; }
+    bool IsActive { get; }
     
     abstract void EvaluateIsActive();
 
