@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Abstractions\AQ.Abstractions.csproj" />
     <ProjectReference Include="..\Events\Domain\AQ.Events.Domain.csproj" />
   </ItemGroup>
 

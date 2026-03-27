@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Abstractions\AQ.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Entities\AQ.Entities.csproj" />
     <ProjectReference Include="..\Domain\AQ.Events.Domain.csproj" />
     <ProjectReference Include="..\Integration\AQ.Events.Integration.csproj" />
   </ItemGroup>

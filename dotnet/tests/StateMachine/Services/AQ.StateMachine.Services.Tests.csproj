@@ -27,7 +27,7 @@
     <ProjectReference Include="..\..\..\src\StateMachine\Services\AQ.StateMachine.Services.csproj" />
     <ProjectReference Include="..\..\..\src\StateMachine\Entities\AQ.StateMachine.Entities.csproj" />
     <ProjectReference Include="..\..\..\src\Utilities\Results\AQ.Utilities.Results.csproj" />
-    <ProjectReference Include="..\..\..\src\Abstractions\AQ.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Entities\AQ.Entities.csproj" />
   </ItemGroup>
 
 </Project>

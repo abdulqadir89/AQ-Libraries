@@ -1,4 +1,4 @@
-﻿namespace AQ.Abstractions;
+namespace AQ.Abstractions;
 
 public interface IUser<TUserId>
 {
