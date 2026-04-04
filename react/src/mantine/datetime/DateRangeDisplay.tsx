@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Text, Tooltip } from '@mantine/core';
 import type { DateRangeDto } from '../../utils/DateTimeOffsetUtils';
 import {
@@ -68,7 +69,7 @@ export function DateRangeDisplay({
 
     return (
       <Tooltip label={tooltipLabel} withArrow position="top" multiline>
-        <Text {...textProps} style={{ cursor: 'help', ...textProps?.style }}>
+        <Text {...textProps} style={{ cursor: 'help', ...((textProps as { style?: CSSProperties })?.style) }}>
           {compactValue}
         </Text>
       </Tooltip>
@@ -101,7 +102,7 @@ export function DateRangeDisplay({
 
   return (
     <Tooltip label={tooltipLabel} withArrow position="top" multiline>
-      <Text {...textProps} style={{ cursor: 'help', ...textProps?.style }}>
+      <Text {...textProps} style={{ cursor: 'help', ...((textProps as { style?: CSSProperties })?.style) }}>
         {displayValue}
       </Text>
     </Tooltip>

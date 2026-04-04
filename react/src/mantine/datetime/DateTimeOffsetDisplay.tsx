@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Text, Tooltip } from '@mantine/core';
 import { formatDateTimeOffset, formatDateTimeOffsetWithOriginal } from '../../utils/DateTimeOffsetUtils';
 
@@ -52,7 +53,7 @@ export function DateTimeOffsetDisplay({
 
   return (
     <Tooltip label={tooltipLabel} withArrow position="top">
-      <Text {...textProps} style={{ cursor: 'help', ...textProps?.style }}>
+      <Text {...textProps} style={{ cursor: 'help', ...((textProps as { style?: CSSProperties })?.style) }}>
         {formattedValue}
       </Text>
     </Tooltip>

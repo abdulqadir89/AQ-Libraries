@@ -644,10 +644,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           <DateInput
             value={draft.value ? new Date(String(draft.value)) : null}
             placeholder="Pick date"
-            onChange={(value: Date | null) => {
+            onChange={(value) => {
               handleFilterDraftChange(draft.id, (current) => ({
                 ...current,
-                value: value ? value.toISOString().split('T')[0] : '',
+                value: value ? String(value) : '',
               }));
             }}
             clearable
