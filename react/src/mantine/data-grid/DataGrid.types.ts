@@ -5,7 +5,7 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   title: string;
   dataIndex: keyof T;
   cardRole?: 'title' | 'details';
-  type?: 'string' | 'number' | 'date' | 'boolean' | 'enum';
+  type?: 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'markdown';
   width?: number | string;
   minWidth?: number; // Minimum width in pixels (default: 100)
   maxWidth?: number; // Maximum width in pixels

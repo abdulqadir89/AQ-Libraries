@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styles from './DataGrid.module.css';
 import type { ChangeEvent } from 'react';
 import {
   ActionIcon,
@@ -533,6 +534,17 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         return '-';
       }
 
+      if (column.type === 'markdown') {
+        const markdownValue = value as { html?: string };
+        const html = markdownValue?.html ?? '';
+        return (
+          <Box
+            className={styles.markdownCell}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        );
+      }
+
       return String(value);
     },
     []
@@ -702,18 +714,32 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           )}
 
           <Group justify="space-between" align="flex-start">
-            <Stack gap={2}>
-              <Text component="div" fw={600} lineClamp={2}>
-                {cardTitle
-                  ? cardTitle(record, index)
-                  : cardTitleColumn
-                    ? renderFieldValue(cardTitleColumn, record, index)
-                    : 'Item'}
-              </Text>
+            <Stack gap={2} style={{ flex: 1 }}>
+              {cardTitleColumn?.type === 'markdown' ? (
+                <Box>
+                  {cardTitle
+                    ? cardTitle(record, index)
+                    : cardTitleColumn
+                      ? renderFieldValue(cardTitleColumn, record, index)
+                      : 'Item'}
+                </Box>
+              ) : (
+                <Text component="div" fw={600} lineClamp={2}>
+                  {cardTitle
+                    ? cardTitle(record, index)
+                    : cardTitleColumn
+                      ? renderFieldValue(cardTitleColumn, record, index)
+                      : 'Item'}
+                </Text>
+              )}
               {cardSubtitle ? (
                 <Text c="dimmed">{cardSubtitle(record, index)}</Text>
+              ) : cardDetailsColumn?.type === 'markdown' ? (
+                <Box style={{ color: 'var(--mantine-color-gray-6)' }}>
+                  {renderFieldValue(cardDetailsColumn, record, index)}
+                </Box>
               ) : cardDetailsColumn ? (
-                <Box>{renderFieldValue(cardDetailsColumn, record, index)}</Box>
+                <Text c="dimmed">{renderFieldValue(cardDetailsColumn, record, index)}</Text>
               ) : null}
             </Stack>
             {selectable && (

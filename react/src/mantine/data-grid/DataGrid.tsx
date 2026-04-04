@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import styles from './DataGrid.module.css';
 import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
 import {
   Table,
@@ -607,11 +608,22 @@ export function DataGrid<T extends Record<string, unknown>>({
     record: T, 
     index: number
   ) => {
-    const cellContent = column.render
-      ? column.render(record[column.dataIndex], record, index)
-      : String(record[column.dataIndex] || '');
-    
-    return cellContent;
+    if (column.render) {
+      return column.render(record[column.dataIndex], record, index);
+    }
+
+    if (column.type === 'markdown') {
+      const value = record[column.dataIndex] as { html?: string } | null | undefined;
+      const html = value?.html ?? '';
+      return (
+        <Box
+          className={styles.markdownCell}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    }
+
+    return String(record[column.dataIndex] || '');
   }, []);
 
   // Table rows
