@@ -6,4 +6,6 @@
 public abstract record DomainEvent(Guid AggregateId) : IDomainEvent
 {
     public DateTimeOffset OccurredOn { get; } = DateTimeOffset.UtcNow;
+    public Guid? UserId { get; set; }
+
 }

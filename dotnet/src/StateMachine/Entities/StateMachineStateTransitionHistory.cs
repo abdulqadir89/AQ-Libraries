@@ -26,6 +26,8 @@ public abstract class StateMachineStateTransitionHistory : Entity
     public DateTimeOffset? RevertedAt { get; private set; }
     public bool IsReverted => RevertedAt.HasValue;
 
+    public string? Metadata { get; private set; }
+
     // EF Core constructor
     protected StateMachineStateTransitionHistory() { }
 
@@ -47,6 +49,8 @@ public abstract class StateMachineStateTransitionHistory : Entity
     }
 
 
+
+    public void SetMetadata(string? metadata) => Metadata = metadata;
 
     /// <summary>
     /// Gets a formatted description of the transition.

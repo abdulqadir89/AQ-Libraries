@@ -15,4 +15,10 @@ public interface IDomainEvent
     /// The unique identifier of the aggregate that raised this event.
     /// </summary>
     Guid AggregateId { get; }
+
+    /// <summary>
+    /// The identifier of the user who caused this event, if applicable.
+    /// This can be set by the application when raising the event.
+    /// </summary>
+    Guid? UserId { get; set; }
 }
