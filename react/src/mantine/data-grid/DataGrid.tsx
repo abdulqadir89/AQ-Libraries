@@ -342,7 +342,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     },
   ];
 
-  const finalActions = actions || defaultActions;
+  const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
 
   // State for search debouncing
   const [debouncedSearchText] = useDebouncedValue(state.searchText, 500);

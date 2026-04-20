@@ -347,7 +347,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     ]
   );
 
-  const finalActions = actions || defaultActions;
+  const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
 
   const availableFilterColumns = useMemo(
     () => columns.filter((column) => column.filterable !== false),
@@ -739,7 +739,11 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                   {renderFieldValue(cardDetailsColumn, record, index)}
                 </Box>
               ) : cardDetailsColumn ? (
-                <Text c="dimmed">{renderFieldValue(cardDetailsColumn, record, index)}</Text>
+                cardDetailsColumn.render ? (
+                  renderFieldValue(cardDetailsColumn, record, index)
+                ) : (
+                  <Text component="div" c="dimmed">{renderFieldValue(cardDetailsColumn, record, index)}</Text>
+                )
               ) : null}
             </Stack>
             {selectable && (
