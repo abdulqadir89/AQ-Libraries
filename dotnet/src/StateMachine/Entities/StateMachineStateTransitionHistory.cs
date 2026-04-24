@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AQ.Abstractions;
 using AQ.Entities;
 
@@ -28,6 +29,11 @@ public abstract class StateMachineStateTransitionHistory : Entity
 
     public string? Metadata { get; private set; }
 
+    private static readonly JsonSerializerOptions MetadataSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     // EF Core constructor
     protected StateMachineStateTransitionHistory() { }
 
@@ -48,9 +54,26 @@ public abstract class StateMachineStateTransitionHistory : Entity
         TransitionedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Appends a typed metadata entry to this transition. Metadata is stored as a JSON array
+    /// so multiple entries of different types can coexist on a single transition.
+    /// </summary>
+    public void AppendMetadataEntry<T>(string type, T data) where T : notnull
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(type);
 
+        var entries = string.IsNullOrEmpty(Metadata)
+            ? []
+            : JsonSerializer.Deserialize<List<StateMachineMetadataEntry>>(Metadata, MetadataSerializerOptions) ?? [];
 
-    public void SetMetadata(string? metadata) => Metadata = metadata;
+        entries.Add(new StateMachineMetadataEntry(type, JsonSerializer.SerializeToElement(data, MetadataSerializerOptions)));
+        Metadata = JsonSerializer.Serialize(entries, MetadataSerializerOptions);
+    }
+
+    /// <summary>
+    /// Removes all metadata entries from this transition.
+    /// </summary>
+    public void ClearMetadata() => Metadata = null;
 
     /// <summary>
     /// Gets a formatted description of the transition.
