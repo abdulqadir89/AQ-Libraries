@@ -8,14 +8,12 @@ using System.Security.Cryptography;
 
 namespace AQ.Identity.OpenIddict.KeyManagement;
 
-public class SigningKeyManager
+public class SigningKeyManager : ISigningKeyManager
 {
     private readonly IIdentityDbContext _context;
     private readonly IDataProtectionProvider _dataProtectionProvider;
     private readonly ILogger<SigningKeyManager> _logger;
     private readonly KeyManagementOptions _options;
-    private SigningKey? _activeKey;
-    private IReadOnlyList<SigningKey>? _validationKeys;
 
     public SigningKeyManager(
         IIdentityDbContext context,
@@ -27,68 +25,30 @@ public class SigningKeyManager
         _dataProtectionProvider = dataProtectionProvider;
         _logger = logger;
         _options = options;
-
-        InitializeKeys();
     }
 
-    public SigningKey GetActiveSigningKey()
+    public async Task<SigningKey> GetActiveKeyAsync(CancellationToken cancellationToken)
     {
-        if (_activeKey == null)
+        var activeKey = _context.SigningKeys
+            .Where(k => !k.IsRetired && !k.IsExpired)
+            .OrderByDescending(k => k.CreatedAt)
+            .FirstOrDefault();
+
+        if (activeKey == null)
         {
             throw new InvalidOperationException("No active signing key available.");
         }
-        return _activeKey;
+
+        return activeKey;
     }
 
-    public IReadOnlyList<SigningKey> GetValidationKeys()
+    public async Task<bool> NewerKeyExistsAsync(DateTimeOffset expiresAfter, CancellationToken cancellationToken)
     {
-        return _validationKeys ?? [];
+        return _context.SigningKeys
+            .Any(k => !k.IsRetired && k.ExpiresAt > expiresAfter);
     }
 
-    public void RotateNow()
-    {
-        GenerateNewSigningKey();
-        InitializeKeys();
-    }
-
-    private void InitializeKeys()
-    {
-        var allKeys = _context.SigningKeys
-            .Where(k => !k.IsRetired)
-            .OrderByDescending(k => k.CreatedAt)
-            .ToList();
-
-        if (!allKeys.Any())
-        {
-            GenerateNewSigningKey();
-            allKeys = _context.SigningKeys
-                .Where(k => !k.IsRetired)
-                .OrderByDescending(k => k.CreatedAt)
-                .ToList();
-        }
-
-        _activeKey = allKeys.FirstOrDefault(k => !k.IsExpired);
-        if (_activeKey == null)
-        {
-            throw new InvalidOperationException("No non-expired signing key available.");
-        }
-
-        var daysUntilExpiry = (_activeKey.ExpiresAt - DateTimeOffset.UtcNow).TotalDays;
-        if (daysUntilExpiry <= 30)
-        {
-            _logger.LogInformation("Active signing key expires in {Days} days. Generating new key.", daysUntilExpiry);
-            GenerateNewSigningKey();
-
-            allKeys = _context.SigningKeys
-                .Where(k => !k.IsRetired)
-                .OrderByDescending(k => k.CreatedAt)
-                .ToList();
-        }
-
-        _validationKeys = allKeys.Where(k => !k.IsExpired).ToList();
-    }
-
-    public void GenerateNewSigningKey()
+    public async Task<SigningKey> GenerateAndPersistKeyAsync(CancellationToken cancellationToken)
     {
         using (var rsa = new RSACryptoServiceProvider(2048))
         {
@@ -102,18 +62,58 @@ public class SigningKeyManager
             var signingKey = new SigningKey(keyId, encryptedXml, expiresAt);
 
             _context.SigningKeys.Add(signingKey);
-            _context.SaveChangesAsync().GetAwaiter().GetResult();
-
-            var auditEntry = new AuditEntry(
-                AuditEntry.Actions.KeyRotated,
-                userId: null,
-                ip: null,
-                ua: null);
-            _context.AuditLog.Add(auditEntry);
-            _context.SaveChangesAsync().GetAwaiter().GetResult();
+            await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Generated new RSA signing key {KeyId} expiring at {ExpiresAt}", keyId, expiresAt);
+            return signingKey;
         }
+    }
+
+    public async Task AddAuditEntryAsync(AuditEntry auditEntry, CancellationToken cancellationToken)
+    {
+        _context.AuditLog.Add(auditEntry);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RetireExpiredKeysAsync(CancellationToken cancellationToken)
+    {
+        var expiredKeys = _context.SigningKeys
+            .Where(k => k.IsExpired && !k.IsRetired)
+            .ToList();
+
+        foreach (var key in expiredKeys)
+        {
+            key.RetiredAt = DateTimeOffset.UtcNow;
+        }
+
+        if (expiredKeys.Any())
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Retired {Count} expired signing keys", expiredKeys.Count);
+        }
+    }
+
+    public SigningKey GetActiveSigningKey()
+    {
+        return GetActiveKeyAsync(CancellationToken.None).Result;
+    }
+
+    public IReadOnlyList<SigningKey> GetValidationKeys()
+    {
+        return _context.SigningKeys
+            .Where(k => !k.IsRetired && !k.IsExpired)
+            .OrderByDescending(k => k.CreatedAt)
+            .ToList();
+    }
+
+    public void RotateNow()
+    {
+        GenerateAndPersistKeyAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    private void GenerateNewSigningKey()
+    {
+        GenerateAndPersistKeyAsync(CancellationToken.None).GetAwaiter().GetResult();
     }
 }
 

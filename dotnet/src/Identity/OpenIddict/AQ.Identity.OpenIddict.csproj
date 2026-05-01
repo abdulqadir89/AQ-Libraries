@@ -19,6 +19,9 @@
     <PackageReference Include="OpenIddict.Validation" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
     <PackageReference Include="FastEndpoints" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Enrichers.Environment" />
   </ItemGroup>
 
 </Project>

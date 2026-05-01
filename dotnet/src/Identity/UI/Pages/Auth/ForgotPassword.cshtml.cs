@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Abstractions;
@@ -9,6 +10,7 @@ using AQ.Identity.Core.Entities;
 
 namespace AQ.Identity.UI.Pages.Auth;
 
+[EnableRateLimiting("auth_endpoints")]
 public class ForgotPasswordModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;

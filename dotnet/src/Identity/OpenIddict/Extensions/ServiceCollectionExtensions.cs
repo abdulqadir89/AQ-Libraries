@@ -2,17 +2,27 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Handlers;
+using AQ.Identity.OpenIddict.Health;
 using AQ.Identity.OpenIddict.KeyManagement;
+using AQ.Identity.OpenIddict.Middleware;
 using AQ.Identity.OpenIddict.Seeding;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Validation;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AQ.Identity.OpenIddict.Extensions;
@@ -87,6 +97,16 @@ public static class ServiceCollectionExtensions
                 validationOptions.UseLocalServer();
                 validationOptions.UseAspNetCore();
 
+                if (options.Google != null)
+                {
+                    services.AddAuthentication()
+                        .AddGoogle(o =>
+                        {
+                            o.ClientId = options.Google.ClientId;
+                            o.ClientSecret = options.Google.ClientSecret;
+                        });
+                }
+
                 // Register inline handler to reject tokens for inactive users
                 validationOptions.AddEventHandler<OpenIddictValidationEvents.ValidateTokenContext>(builder =>
                     builder.UseInlineHandler(async context =>
@@ -126,6 +146,34 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ILogger<ClientSeeder>>(),
             clients));
 
+        services.AddRateLimiter(opts =>
+        {
+            opts.AddFixedWindowLimiter("auth_endpoints", config =>
+            {
+                config.PermitLimit = 5;
+                config.Window = TimeSpan.FromMinutes(1);
+                config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                config.QueueLimit = 0;
+            });
+
+            opts.AddFixedWindowLimiter("token_endpoint", config =>
+            {
+                config.PermitLimit = 20;
+                config.Window = TimeSpan.FromMinutes(1);
+                config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                config.QueueLimit = 0;
+            });
+
+            opts.RejectionStatusCode = 429;
+            opts.OnRejected = async (context, _) =>
+            {
+                context.HttpContext.Response.StatusCode = 429;
+                context.HttpContext.Response.ContentType = "application/json";
+                var errorResponse = JsonSerializer.Serialize(new { error = "Rate limit exceeded" });
+                await context.HttpContext.Response.WriteAsync(errorResponse);
+            };
+        });
+
         if (options.Google != null)
         {
             services.AddAuthentication()
@@ -136,14 +184,38 @@ public static class ServiceCollectionExtensions
                 });
         }
 
+        services.AddHealthChecks()
+            .AddCheck<IdentityDbHealthCheck<TContext>>("identity_db", tags: ["live"])
+            .AddCheck<IdentityMigrationHealthCheck<TContext>>("identity_migrations", tags: ["ready"]);
+
         return services;
     }
 
     public static IApplicationBuilder UseAqIdentity(this IApplicationBuilder app)
     {
+        app.UseMiddleware<RequestIdMiddleware>();
+        app.UseMiddleware<SecurityHeadersMiddleware>();
+        app.UseMiddleware<TokenEndpointRateLimitingMiddleware>();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
 
         return app;
+    }
+
+    public static IEndpointRouteBuilder MapAqIdentityHealthChecks(
+        this IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("live"),
+        });
+
+        endpoints.MapHealthChecks("/health/ready", new HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("ready"),
+        });
+
+        return endpoints;
     }
 }
