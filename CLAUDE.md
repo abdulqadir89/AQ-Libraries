@@ -1,22 +1,25 @@
-# CLAUDE.md
+# AQ-Libraries
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Monorepo of reusable DDD/utility libraries for .NET, plus a React component library built on Mantine.
+
+Sub-folder CLAUDE.md files contain layer-specific rules:
+
+| Layer | Location | CLAUDE.md |
+|-------|----------|-----------|
+| .NET libraries | `dotnet/` | [dotnet/CLAUDE.md](dotnet/CLAUDE.md) |
+| React components | `react/` | [react/CLAUDE.md](react/CLAUDE.md) |
 
 ## Repository Overview
 
-This is a monorepo containing reusable domain-driven design (DDD) and utility libraries for .NET, plus a React component library. The focus is on providing well-designed, composable building blocks for applications.
+- **dotnet/** — C# library suite (DDD building blocks, state machine, utilities, event infrastructure)
+  - `src/` — Library implementations
+  - `tests/` — Unit tests mirroring source structure
+  - `AQ.sln` — Solution file
 
-### Directory Structure
-
-- **dotnet/** - Main C# library suite
-  - `src/` - Library implementations
-  - `tests/` - Unit tests organized to mirror source structure
-  - `AQ.sln` - Solution file for the entire .NET ecosystem
-
-- **react/** - TypeScript React component library
+- **react/** — TypeScript React component library (`@AQ/react-components`)
   - Built on Mantine v8+ with TypeScript
-  - Requires React 19+, React DOM 19+, TanStack Query v5+
-  - Type definitions via TypeScript
+  - Source-only package (no build step); consumed via tsconfig alias in ELS web
+  - Requires React 19+, Mantine 8+, TanStack Query v5+
 
 ## Quick Commands
 
