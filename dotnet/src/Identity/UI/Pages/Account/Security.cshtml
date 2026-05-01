@@ -1,0 +1,103 @@
+@page
+@model AQ.Identity.UI.Pages.Account.SecurityModel
+@{
+    ViewData["Title"] = "Security";
+    Layout = "_AccountLayout";
+}
+
+<section>
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Security Settings</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <p class="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mb-6">
+            @TempData["Success"]
+        </p>
+    }
+
+    <!-- Change Password Section -->
+    <div class="mb-8">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Change Password</h3>
+
+        <form method="post" asp-page-handler="ChangePassword" asp-antiforgery="true">
+            <div class="mb-4">
+                <label for="currentPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Current Password
+                </label>
+                <input type="password" id="currentPassword" name="CurrentPassword"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required />
+                @if (ModelState["CurrentPassword"]?.Errors.Count > 0)
+                {
+                    <p role="alert" class="text-sm text-red-600 dark:text-red-400 mt-1">@ModelState["CurrentPassword"]?.Errors[0].ErrorMessage</p>
+                }
+            </div>
+
+            <div class="mb-4">
+                <label for="newPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    New Password
+                </label>
+                <input type="password" id="newPassword" name="NewPassword"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required />
+                @if (ModelState["NewPassword"]?.Errors.Count > 0)
+                {
+                    <p role="alert" class="text-sm text-red-600 dark:text-red-400 mt-1">@ModelState["NewPassword"]?.Errors[0].ErrorMessage</p>
+                }
+            </div>
+
+            <div class="mb-6">
+                <label for="confirmPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Confirm New Password
+                </label>
+                <input type="password" id="confirmPassword" name="ConfirmNewPassword"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required />
+                @if (ModelState["ConfirmNewPassword"]?.Errors.Count > 0)
+                {
+                    <p role="alert" class="text-sm text-red-600 dark:text-red-400 mt-1">@ModelState["ConfirmNewPassword"]?.Errors[0].ErrorMessage</p>
+                }
+            </div>
+
+            @if (ModelState[""]?.Errors.Count > 0)
+            {
+                @foreach (var error in ModelState[""]?.Errors ?? [])
+                {
+                    <p role="alert" class="text-sm text-red-600 dark:text-red-400 mb-4">@error.ErrorMessage</p>
+                }
+            }
+
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Update Password
+            </button>
+        </form>
+    </div>
+
+    <!-- MFA Section -->
+    <div class="mb-8 pt-8 border-t border-slate-200 dark:border-slate-700">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Two-Factor Authentication</h3>
+
+        @if (Model.TwoFactorEnabled)
+        {
+            <div class="mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-green-700 dark:text-green-400 font-medium">Two-factor authentication is on</span>
+                </div>
+            </div>
+
+            <a href="/Auth/Mfa/Disable" class="inline-block border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
+                Disable 2FA
+            </a>
+        }
+        else
+        {
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Two-factor authentication is off</p>
+
+            <a href="/Auth/Mfa/Setup" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                Enable 2FA
+            </a>
+        }
+    </div>
+
+</section>

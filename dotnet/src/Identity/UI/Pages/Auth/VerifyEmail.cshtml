@@ -1,0 +1,39 @@
+@page "/auth/verify-email"
+@model VerifyEmailModel
+@{
+    ViewData["Title"] = "Email verification";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+@if (Model.IsVerified)
+{
+    <div class="text-center">
+        <div class="mb-4">
+            <svg class="inline-block w-12 h-12 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Your email is confirmed</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">You can now sign in to your account.</p>
+        <a href="/auth/login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block">Sign in</a>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <div class="mb-4">
+            <svg class="inline-block w-12 h-12 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+        </div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Link has expired</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">This verification link has expired or is invalid. Request a new one below.</p>
+        <form method="get" asp-page="/Auth/VerifyEmailSent" asp-route-email="@Model.Email" class="mb-4">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">Request a new link</button>
+        </form>
+        <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Back to sign in</a>
+    </div>
+}
