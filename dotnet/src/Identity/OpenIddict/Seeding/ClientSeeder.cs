@@ -52,6 +52,12 @@ public class ClientSeeder : IHostedService
 
         foreach (var clientConfig in _clients)
         {
+            if (string.IsNullOrEmpty(clientConfig?.ClientId))
+            {
+                _logger.LogWarning("Skipping client with missing ClientId");
+                continue;
+            }
+
             var existingClient = await _applicationManager.FindByClientIdAsync(clientConfig.ClientId, cancellationToken);
 
             if (existingClient != null)

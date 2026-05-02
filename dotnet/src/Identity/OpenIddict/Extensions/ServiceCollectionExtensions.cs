@@ -77,18 +77,13 @@ public static class ServiceCollectionExtensions
                 }
                 else
                 {
-                    var signingKeyManager = services.BuildServiceProvider().GetRequiredService<SigningKeyManager>();
-                    var activeKey = signingKeyManager.GetActiveSigningKey();
-                    serverOptions.AddSigningKey(activeKey.ToSecurityKey());
-
-                    foreach (var validationKey in signingKeyManager.GetValidationKeys())
-                    {
-                        if (validationKey.Id != activeKey.Id)
-                        {
-                            serverOptions.AddSigningKey(validationKey.ToSecurityKey());
-                        }
-                    }
+                    serverOptions.AddDevelopmentEncryptionCertificate();
+                    serverOptions.AddDevelopmentSigningCertificate();
                 }
+
+                serverOptions.SetAuthorizationEndpointUris("/connect/authorize");
+                serverOptions.SetTokenEndpointUris("/connect/token");
+                serverOptions.SetUserInfoEndpointUris("/connect/userinfo");
 
                 serverOptions.UseAspNetCore();
             })
