@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -10,7 +9,6 @@ using OpenIddict.Server.AspNetCore;
 
 namespace AQ.Identity.UI.Pages.Auth;
 
-[EnableRateLimiting("auth_endpoints")]
 public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
@@ -69,7 +67,7 @@ public class LoginModel : PageModel
                 return Redirect(ReturnUrl);
             }
 
-            return RedirectToPage("/Index");
+            return RedirectToPage("/Apps/Index");
         }
 
         ModelState.AddModelError(string.Empty, "Incorrect email or password");

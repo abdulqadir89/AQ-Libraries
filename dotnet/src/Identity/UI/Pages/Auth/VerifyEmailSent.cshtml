@@ -26,5 +26,5 @@
 </form>
 
 <p class="text-sm text-center text-slate-600 dark:text-slate-400 mt-6">
-    Already signed up? <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Sign in</a>
+    Already signed up? <a href="/auth/login@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">Sign in</a>
 </p>

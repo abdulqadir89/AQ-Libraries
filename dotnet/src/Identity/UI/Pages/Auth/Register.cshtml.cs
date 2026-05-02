@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Abstractions;
@@ -10,7 +9,6 @@ using AQ.Identity.Core.Entities;
 
 namespace AQ.Identity.UI.Pages.Auth;
 
-[EnableRateLimiting("auth_endpoints")]
 public class RegisterModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -18,6 +16,9 @@ public class RegisterModel : PageModel
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IOptions<AqIdentityOptions> _options;
     private readonly ILogger<RegisterModel> _logger;
+
+    [BindProperty]
+    public string? ReturnUrl { get; set; }
 
     [BindProperty]
     public string FullName { get; set; } = default!;
@@ -45,8 +46,9 @@ public class RegisterModel : PageModel
         _logger = logger;
     }
 
-    public void OnGet()
+    public void OnGet(string? returnUrl)
     {
+        ReturnUrl = returnUrl;
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -98,12 +100,9 @@ public class RegisterModel : PageModel
         try
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var verificationUrl = Url.Page(
-                "/Auth/ConfirmEmail",
-                pageHandler: null,
-                values: new { userId = user.Id, code = token },
-                protocol: Request.Scheme,
-                host: Request.Host.ToUriComponent()) ?? string.Empty;
+
+            var issuer = _options.Value.Issuer ?? "http://localhost:5001";
+            var verificationUrl = $"{issuer}/auth/verify-email?userId={Uri.EscapeDataString(user.Id.ToString())}&code={Uri.EscapeDataString(token)}";
 
             var emailMessage = _emailTemplateService.BuildVerificationEmail(
                 user.Email!,
@@ -119,6 +118,6 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Auth/VerifyEmailSent", new { email = Email });
+        return RedirectToPage("/Auth/VerifyEmailSent", new { email = Email, returnUrl = ReturnUrl });
     }
 }

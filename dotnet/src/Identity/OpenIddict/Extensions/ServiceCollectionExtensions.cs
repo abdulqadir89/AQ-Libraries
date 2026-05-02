@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -21,8 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Validation;
-using System.Text.Json;
-using System.Threading.RateLimiting;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AQ.Identity.OpenIddict.Extensions;
@@ -38,6 +35,8 @@ public static class ServiceCollectionExtensions
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders();
+
+        services.ConfigureApplicationCookie(o => o.LoginPath = "/auth/login");
 
         services.Configure<IdentityOptions>(identityOptions =>
         {
@@ -65,7 +64,7 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetAccessTokenLifetime(options.Tokens.AccessToken);
                 serverOptions.SetRefreshTokenLifetime(options.Tokens.RefreshToken);
 
-                serverOptions.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess, "manage_api");
+                serverOptions.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess, "manage_api", "els_api");
 
                 serverOptions.AcceptAnonymousClients();
                 serverOptions.DisableAccessTokenEncryption();
@@ -85,7 +84,9 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetTokenEndpointUris("/connect/token");
                 serverOptions.SetUserInfoEndpointUris("/connect/userinfo");
 
-                serverOptions.UseAspNetCore();
+                serverOptions.UseAspNetCore()
+                    .DisableTransportSecurityRequirement()
+                    .EnableAuthorizationEndpointPassthrough();
             })
             .AddValidation(validationOptions =>
             {
@@ -134,40 +135,13 @@ public static class ServiceCollectionExtensions
                     .RequireClaim(Claims.Private.Scope, "manage_api"));
         });
 
+        services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
         services.AddSingleton<SigningKeyManager>();
         services.AddHostedService<ClientSeeder>(sp => new ClientSeeder(
             sp.GetRequiredService<IOpenIddictApplicationManager>(),
             sp.GetRequiredService<IOpenIddictScopeManager>(),
             sp.GetRequiredService<ILogger<ClientSeeder>>(),
             clients));
-
-        services.AddRateLimiter(opts =>
-        {
-            opts.AddFixedWindowLimiter("auth_endpoints", config =>
-            {
-                config.PermitLimit = 5;
-                config.Window = TimeSpan.FromMinutes(1);
-                config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                config.QueueLimit = 0;
-            });
-
-            opts.AddFixedWindowLimiter("token_endpoint", config =>
-            {
-                config.PermitLimit = 20;
-                config.Window = TimeSpan.FromMinutes(1);
-                config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                config.QueueLimit = 0;
-            });
-
-            opts.RejectionStatusCode = 429;
-            opts.OnRejected = async (context, _) =>
-            {
-                context.HttpContext.Response.StatusCode = 429;
-                context.HttpContext.Response.ContentType = "application/json";
-                var errorResponse = JsonSerializer.Serialize(new { error = "Rate limit exceeded" });
-                await context.HttpContext.Response.WriteAsync(errorResponse);
-            };
-        });
 
         if (options.Google != null)
         {
@@ -190,8 +164,6 @@ public static class ServiceCollectionExtensions
     {
         app.UseMiddleware<RequestIdMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
-        app.UseMiddleware<TokenEndpointRateLimitingMiddleware>();
-        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
 

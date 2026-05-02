@@ -6,6 +6,7 @@ public class IdentityClientConfig
     public string DisplayName { get; set; } = default!;
     public string Type { get; set; } = "public";
     public string? ClientSecret { get; set; }
+    public bool RequirePkce { get; set; } = false;
     public List<string> RedirectUris { get; set; } = [];
     public List<string> PostLogoutRedirectUris { get; set; } = [];
     public List<string> Scopes { get; set; } = [];

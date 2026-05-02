@@ -1,0 +1,22 @@
+@page "/apps"
+@model AQ.Identity.UI.Pages.Apps.AppsIndexModel
+@{
+    ViewData["Title"] = "Choose an app";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">Where to next?</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-8">Select an application to continue</p>
+
+<div class="space-y-3">
+    @foreach (var app in Model.Apps)
+    {
+        <a href="@app.HomeUrl"
+           class="flex items-center justify-between w-full px-5 py-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition group">
+            <span class="text-sm font-medium text-slate-900 dark:text-slate-100">@app.Name</span>
+            <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+        </a>
+    }
+</div>

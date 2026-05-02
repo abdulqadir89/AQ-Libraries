@@ -24,6 +24,9 @@ public class VerifyEmailSentModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Email { get; set; } = default!;
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
     public string? RateLimitMessage { get; set; }
 
     public VerifyEmailSentModel(
@@ -81,12 +84,9 @@ public class VerifyEmailSentModel : PageModel
         try
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var verificationUrl = Url.Page(
-                "/Auth/VerifyEmail",
-                pageHandler: null,
-                values: new { userId = user.Id, code = token },
-                protocol: Request.Scheme,
-                host: Request.Host.ToUriComponent()) ?? string.Empty;
+
+            var issuer = _options.Value.Issuer ?? "http://localhost:5001";
+            var verificationUrl = $"{issuer}/auth/verify-email?userId={Uri.EscapeDataString(user.Id.ToString())}&code={Uri.EscapeDataString(token)}";
 
             var emailMessage = _emailTemplateService.BuildVerificationEmail(
                 user.Email!,

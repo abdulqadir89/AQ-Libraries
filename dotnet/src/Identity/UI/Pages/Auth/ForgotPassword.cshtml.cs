@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Abstractions;
@@ -10,7 +9,6 @@ using AQ.Identity.Core.Entities;
 
 namespace AQ.Identity.UI.Pages.Auth;
 
-[EnableRateLimiting("auth_endpoints")]
 public class ForgotPasswordModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -54,12 +52,9 @@ public class ForgotPasswordModel : PageModel
             try
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var resetUrl = Url.Page(
-                    "/Auth/ResetPassword",
-                    pageHandler: null,
-                    values: new { userId = user.Id, code = token },
-                    protocol: Request.Scheme,
-                    host: Request.Host.ToUriComponent()) ?? string.Empty;
+
+                var issuer = _options.Value.Issuer ?? "http://localhost:5001";
+                var resetUrl = $"{issuer}/auth/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&code={Uri.EscapeDataString(token)}";
 
                 var emailMessage = _emailTemplateService.BuildPasswordResetEmail(
                     user.Email!,

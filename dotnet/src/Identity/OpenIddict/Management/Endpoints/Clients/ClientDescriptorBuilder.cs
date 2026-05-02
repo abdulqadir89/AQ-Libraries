@@ -15,6 +15,11 @@ internal static class ClientDescriptorBuilder
             ClientType = config.Type,
         };
 
+        if (config.RequirePkce)
+        {
+            descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
+        }
+
         if (!string.IsNullOrEmpty(config.ClientSecret))
         {
             descriptor.ClientSecret = config.ClientSecret;
