@@ -36,6 +36,18 @@ XYZ DbContext
 
 Each identity server is isolated: separate codebase, separate database, separate deployment. No cross-platform coupling.
 
+### Single canonical user ID across all platforms
+
+The identity server's `ApplicationUser.Id` (a `Guid`) is the **only** user ID needed. There are no "external IDs" or mapping fields:
+
+- Identity server issues a JWT with `sub = ApplicationUser.Id`
+- ELS API extracts `sub` and uses it directly as `User.Id`
+- XYZ API does the same — same user ID, same identity
+- No `EntraId`, `ExternalId`, or lookup tables needed
+- All audit logs, permissions, and relationships use this single ID
+
+This means every `User` entity in every app has the same `Id` as the identity server. When a user authenticates, their ID is immediately valid across all platforms.
+
 ### Why this beats Entra External ID for this use case
 
 | Pain point with Entra | How the library model fixes it |
@@ -45,6 +57,7 @@ Each identity server is isolated: separate codebase, separate database, separate
 | Microsoft-proprietary webhook JSON contract | No contract — it's a method call |
 | Three Azure app registrations per environment | Zero Azure config; clients defined in `config/clients.json` |
 | Claims embedded at issuance, can be stale | Same `claims_version` + revocation mechanism works identically |
+| User ID mapping across systems is complex | Single canonical ID: `ApplicationUser.Id` is used everywhere |
 
 ### Shared database instance, separate logical databases
 
@@ -52,8 +65,8 @@ ELS uses one Postgres server. `ELS.Identity` adds a **second database** on the s
 
 ```
 Postgres server
-  ├── els_core      ← CoreDbContext (existing)
-  └── els_identity  ← IdentityDbContext (new, owned by ELS.Identity)
+  ├── els_core      ← CoreDbContext (existing, User.Id matches ApplicationUser.Id)
+  └── els_identity  ← IdentityDbContext (new, owned by ELS.Identity, ApplicationUser.Id)
 ```
 
 The library is DB-provider agnostic: it ships EF Core abstractions. Each host app wires in Npgsql, SQL Server, or SQLite.
@@ -241,7 +254,8 @@ dotnet/src/Identity/
 > public interface IClaimsEnricher
 > {
 >     /// Called during token issuance. Return additional claims to merge into the JWT.
->     /// subject: the IdP's user ID (Guid, maps to ApplicationUser.Id)
+>     /// subject: the user's canonical ID (Guid) — this is ApplicationUser.Id, and also the user ID
+>     ///          used in the host app's domain model (e.g., User.Id in ELS).
 >     /// clientId: the OIDC client application ID
 >     /// Returning an empty dictionary is valid (no extra claims).
 >     /// Never throw — return empty dict on error and log internally.
@@ -249,6 +263,7 @@ dotnet/src/Identity/
 >         Guid subject, string clientId, IEnumerable<string> scopes, CancellationToken ct);
 > }
 > ```
+> **Important:** The `subject` parameter IS the user ID used throughout the host app. No mapping or linking needed.
 >
 > **`IEmailService`**:
 > ```csharp
@@ -809,16 +824,16 @@ All pages follow these rules — include them verbatim at the top of every agent
 >     public async Task<IReadOnlyDictionary<string, string>> EnrichAsync(
 >         Guid subject, string clientId, IEnumerable<string> scopes, CancellationToken ct)
 >     {
->         // subject is ApplicationUser.Id — map to ELS User via ExternalId
->         // (ApplicationUser.Id == ELS User.ExternalId — set on first registration)
+>         // subject is the canonical user ID — same as User.Id in ELS
 >         var user = await db.Users
 >             .AsNoTracking()
 >             .Include(u => u.WorkspaceMemberships)
->             .FirstOrDefaultAsync(u => u.ExternalId == subject, ct);
+>             .FirstOrDefaultAsync(u => u.Id == subject, ct);
 >
 >         if (user is null)
 >         {
->             logger.LogWarning("No ELS user found for identity subject {Subject}", subject);
+>             // User not yet registered in ELS (new identity, hasn't called ELS API yet)
+>             logger.LogDebug("ELS user not found for identity subject {Subject}; returning empty claims", subject);
 >             return ImmutableDictionary<string, string>.Empty;
 >         }
 >
@@ -840,7 +855,7 @@ All pages follow these rules — include them verbatim at the top of every agent
 > }
 > ```
 >
-> Note: first-time registration flow — when a user registers in `ELS.Identity`, `ELS.ClaimsEnricher` will not find an ELS user yet (they haven't enrolled in ELS). The enricher returns empty claims for new users. The ELS API's existing auto-registration logic (creating a user on first authenticated API call) handles creating the ELS user record and linking it by `ExternalId`. Ensure `User.ExternalId` is set to `ApplicationUser.Id` during that auto-registration.
+> **Key point:** The `subject` parameter IS the user's ID — no external ID mapping needed. If the ELS user doesn't exist yet (first sign-in before any API call), return empty claims and log at Debug level (not a warning — it's expected for new users).
 
 ### 11.4 — Program.cs
 
@@ -887,9 +902,11 @@ All pages follow these rules — include them verbatim at the top of every agent
 >    ```
 > 2. Remove `AddMicrosoftGraph`, `AddInMemoryTokenCaches`, `EnableTokenAcquisitionToCallDownstreamApi`, and the `EntraClaimsProvider` policy.
 > 3. Delete `ClaimsProviderEndpoint.cs` and its request/response models — the enrichment is now in-process in `ELS.Identity`.
-> 4. Rename `User.EntraId` → `User.ExternalId` (property rename + EF migration for column rename: `RenameColumn("EntraId", "users", "ExternalId")`). Update all references.
+> 4. **Remove `User.EntraId` field entirely** — no longer needed. The JWT `sub` claim is the canonical user ID and matches `User.Id` directly. Remove any references to `EntraId` in the codebase. No migration needed if the column is not used.
 > 5. In `appsettings.json`: remove `AzureAd` and `CustomExtensions` sections. Add `Identity: { Issuer: "http://localhost:5001", Audience: "els_api" }`.
 > 6. `ClaimsRevocationMiddleware`, all authorization handlers, all endpoints — no changes.
+>
+> **Auto-registration note:** When a user hits the ELS API with a valid JWT from `ELS.Identity`, their `sub` claim is their canonical ID. If `User.Id` doesn't exist yet, auto-create the user with `Id = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value)`. This ensures `User.Id` always matches the identity server's user ID.
 
 ### 11.6 — ELS Web and Mobile
 
@@ -1027,7 +1044,7 @@ All pages follow these rules — include them verbatim at the top of every agent
 | 11.2 | `ElsIdentityDbContext` + migrations | 11.1 | 2h |
 | 11.3 | `ElsClaimsEnricher` | 11.2 | 2h |
 | 11.4 | `Program.cs` wiring | 11.1–11.3 | 1h |
-| 11.5 | ELS API changes (JWT swap, rename EntraId) | 11.4 | 2h |
+| 11.5 | ELS API changes (JWT swap, **remove EntraId, use canonical ID**) | 11.4 | 2h |
 | 11.6 | ELS web + mobile changes | 11.4 | 4h |
 | 11.7 | Docker Compose update | 11.4 | 1h |
 | 12 | Unit + integration tests | all | 6h |
@@ -1046,3 +1063,45 @@ Each phase section contains a **"Prompt for agent"** block. To use it:
 5. For UI phases, start the server and verify the page in a browser before marking done.
 
 Parallel execution: phases 1.1, 1.2, and 1.3 can run in parallel. Phases 3.x and 4.x can be parallelised after Phase 2.1 is done. Phase 11 can only start after Phase 2 is complete and stable.
+
+---
+
+## Canonical User ID Pattern
+
+**Important architectural decision implemented after Phases 0–11.3:**
+
+The identity server's `ApplicationUser.Id` (a `Guid`) is the **single source of truth** for user identity across all platforms. There is no external ID mapping:
+
+### Before (wrong):
+```csharp
+// Identity server
+ApplicationUser.Id = Guid A
+
+// ELS
+User.Id = Guid B
+User.ExternalId = Guid A  ← mapping field, prone to inconsistency
+```
+
+### After (correct):
+```csharp
+// Identity server
+ApplicationUser.Id = Guid A
+
+// ELS
+User.Id = Guid A  ← same canonical ID, no mapping
+```
+
+### Benefits:
+- ✅ Single ID across all platforms
+- ✅ No lookup/mapping overhead
+- ✅ Simpler domain model
+- ✅ Clearer semantics: "this user ID is valid everywhere"
+- ✅ Auto-registration is trivial: use the JWT's `sub` claim directly as `User.Id`
+
+### Implementation notes:
+- Remove `User.EntraId` / `User.ExternalId` fields entirely
+- Update `ElsClaimsEnricher` to query by `User.Id == subject` (not `ExternalId == subject`)
+- Delete `ClaimsProviderEndpoint.cs` — enrichment is now in-process in `ELS.Identity`
+- JWT `sub` claim is extracted directly and used as the user ID
+
+**For detailed migration steps, see** `d:\Repositories\ELS\docs\canonical-user-id-updates.md`
