@@ -47,6 +47,7 @@ internal static class ClientDescriptorBuilder
         descriptor.Permissions.Add(Permissions.Endpoints.Token);
         descriptor.Permissions.Add(Permissions.Endpoints.Introspection);
         descriptor.Permissions.Add(Permissions.Endpoints.Revocation);
+        descriptor.Permissions.Add(Permissions.Endpoints.EndSession);
 
         return descriptor;
     }

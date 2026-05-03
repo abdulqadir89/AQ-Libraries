@@ -47,7 +47,7 @@ public class AuthorizationController(
 
         identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
                 .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
-                .SetClaim(Claims.Name, await userManager.GetUserNameAsync(user));
+                .SetClaim(Claims.Name, user.FullName);
 
         identity.SetScopes(request.GetScopes());
         identity.SetDestinations(GetDestinations);
@@ -59,11 +59,14 @@ public class AuthorizationController(
     [HttpPost("~/connect/logout")]
     public async Task<IActionResult> Logout()
     {
+        var request = HttpContext.GetOpenIddictServerRequest();
+
         await signInManager.SignOutAsync();
 
+        var redirectUri = request?.PostLogoutRedirectUri ?? "/";
         return SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-            properties: new AuthenticationProperties { RedirectUri = "/" });
+            properties: new AuthenticationProperties { RedirectUri = redirectUri });
     }
 
     private static IEnumerable<string> GetDestinations(Claim claim)

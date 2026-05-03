@@ -83,10 +83,12 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetAuthorizationEndpointUris("/connect/authorize");
                 serverOptions.SetTokenEndpointUris("/connect/token");
                 serverOptions.SetUserInfoEndpointUris("/connect/userinfo");
+                serverOptions.SetEndSessionEndpointUris("/connect/logout");
 
                 serverOptions.UseAspNetCore()
                     .DisableTransportSecurityRequirement()
-                    .EnableAuthorizationEndpointPassthrough();
+                    .EnableAuthorizationEndpointPassthrough()
+                    .EnableEndSessionEndpointPassthrough();
             })
             .AddValidation(validationOptions =>
             {
