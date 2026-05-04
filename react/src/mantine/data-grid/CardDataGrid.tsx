@@ -224,6 +224,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
   const onSearchRef = useRef(onSearch);
   const isInitialMount = useRef(true);
+  const suppressNextSearch = useRef(false);
 
   useEffect(() => {
     onSearchRef.current = onSearch;
@@ -240,6 +241,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      return;
+    }
+    if (suppressNextSearch.current) {
+      suppressNextSearch.current = false;
       return;
     }
     onSearchRef.current?.(debouncedSearchText);
@@ -397,15 +402,14 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   );
 
   const handleRefresh = useCallback(() => {
+    suppressNextSearch.current = true;
     setSearchText('');
     setFilterDrafts([]);
     setSortConditions([]);
     setSelectedFilterPreset(null);
     setSelectedSortPreset(null);
-    applyStateToParent([], filterOperator, []);
-    onSearchRef.current?.('');
     onRefresh?.();
-  }, [applyStateToParent, filterOperator, onRefresh]);
+  }, [onRefresh]);
 
   const handleClearFilters = useCallback(() => {
     setFilterDrafts([]);

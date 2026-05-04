@@ -118,43 +118,20 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Resizing state
   const resizingColumn = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
-  // Calculate dynamic width for a column based on content
   const calculateDynamicWidth = useCallback((column: DataGridColumn<T>): number => {
     const DEFAULT_MIN_WIDTH = 100;
-    const PADDING = 40; // Extra padding for sort icons, filter icons, etc.
-    const CHAR_WIDTH = 8; // Approximate character width in pixels
-    
-    // Start with minWidth or default
+    const PADDING = 40;
+    const CHAR_WIDTH = 8;
+
     let width = column.minWidth || DEFAULT_MIN_WIDTH;
-    
-    // Measure header text
-    const headerLength = column.title.length * CHAR_WIDTH + PADDING;
-    width = Math.max(width, headerLength);
-    
-    // Measure content in first 50 visible rows
-    const rowsToMeasure = data.slice(0, 50);
-    for (const record of rowsToMeasure) {
-      const value = record[column.dataIndex];
-      let contentLength = 0;
-      
-      if (column.render) {
-        // For rendered content, estimate based on string representation
-        const rendered = String(value || '');
-        contentLength = rendered.length * CHAR_WIDTH;
-      } else {
-        contentLength = String(value || '').length * CHAR_WIDTH;
-      }
-      
-      width = Math.max(width, contentLength + PADDING);
-    }
-    
-    // Apply maxWidth constraint if specified
+    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING);
+
     if (column.maxWidth) {
       width = Math.min(width, column.maxWidth);
     }
-    
+
     return Math.round(width);
-  }, [data]);
+  }, []);
 
   // Initialize column widths
   // Use a stable signature (key + explicit width) to avoid recalculating on
@@ -164,19 +141,17 @@ export function DataGrid<T extends Record<string, unknown>>({
 
   useEffect(() => {
     const initialWidths: Record<string, number> = {};
-    
+
     columns.forEach(column => {
       if (column.width) {
-        // Use explicit width if provided
         initialWidths[column.key] = typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
       } else {
-        // Calculate dynamic width
         initialWidths[column.key] = calculateDynamicWidth(column);
       }
     });
-    
+
     setColumnWidths(initialWidths);
-  }, [columnSignature, calculateDynamicWidth]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [columnSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle column resize move
   const handleResizeMove = useCallback((e: MouseEvent) => {
@@ -347,51 +322,42 @@ export function DataGrid<T extends Record<string, unknown>>({
   // State for search debouncing
   const [debouncedSearchText] = useDebouncedValue(state.searchText, 500);
 
-  // Track initial mount to prevent onSearch('') on mount
   const isInitialMount = useRef(true);
+  const suppressNextSearch = useRef(false);
 
-  // Keep a stable ref to the latest onSearch so the debounce effect
-  // doesn't need onSearch in its deps (avoids infinite loop when parent
-  // passes an inline function that changes reference on every render).
   const onSearchRef = useRef(onSearch);
   useEffect(() => { onSearchRef.current = onSearch; });
 
-  // Handle search
   const handleSearch = useCallback((value: string) => {
     setState(prev => ({ ...prev, searchText: value }));
   }, []);
 
-  // Handle clear search
   const handleClearSearch = useCallback(() => {
     setState(prev => ({ ...prev, searchText: '' }));
     onSearchRef.current?.('');
   }, []);
 
-  // Handle Enter key for immediate search
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       onSearchRef.current?.(state.searchText);
     }
   }, [state.searchText]);
 
-  // Call onSearch when debounced value changes (skip initial mount).
-  // Intentionally excludes onSearch from deps — use onSearchRef instead
-  // to avoid an infinite loop when parent passes a new function reference each render.
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
+    if (suppressNextSearch.current) {
+      suppressNextSearch.current = false;
+      return;
+    }
     onSearchRef.current?.(debouncedSearchText);
   }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle refresh
   const handleRefresh = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      searchText: '', 
-      columnFilters: {} 
-    }));
+    suppressNextSearch.current = true;
+    setState(prev => ({ ...prev, searchText: '', columnFilters: {} }));
     setSortConditions([]);
     onRefresh?.();
   }, [onRefresh]);
