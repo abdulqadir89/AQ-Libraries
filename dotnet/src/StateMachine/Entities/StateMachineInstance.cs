@@ -139,6 +139,13 @@ public abstract class StateMachineInstance : Entity
     }
 
     /// <summary>
+    /// Raises a domain event signalling that a transition completed.
+    /// Call this from the transition service after a successful transition, before saving.
+    /// </summary>
+    public void RaiseTransitionedEvent(Guid definitionId, int definitionVersion, Guid toStateId)
+        => AddDomainEvent(new StateMachineTransitionedEvent(Id, definitionId, definitionVersion, toStateId));
+
+    /// <summary>
     /// Migrates this instance to a new state machine definition using the mapping stored in
     /// <see cref="StateMachineDefinition.PreviousVersionStateMapping"/>.
     /// State IDs — not names — are used to resolve the current state in the new definition,
