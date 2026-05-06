@@ -149,12 +149,9 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
-        services.AddSingleton<SigningKeyManager>();
-        services.AddHostedService<ClientSeeder>(sp => new ClientSeeder(
-            sp.GetRequiredService<IOpenIddictApplicationManager>(),
-            sp.GetRequiredService<IOpenIddictScopeManager>(),
-            sp.GetRequiredService<ILogger<ClientSeeder>>(),
-            clients));
+        services.AddScoped<SigningKeyManager>();
+        services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());
+        services.AddHostedService<ClientSeeder>();
 
         if (options.Google != null)
         {

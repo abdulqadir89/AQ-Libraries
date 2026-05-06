@@ -1,5 +1,6 @@
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
@@ -9,25 +10,26 @@ namespace AQ.Identity.OpenIddict.Seeding;
 
 public class ClientSeeder : IHostedService
 {
-    private readonly IOpenIddictApplicationManager _applicationManager;
-    private readonly IOpenIddictScopeManager _scopeManager;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ClientSeeder> _logger;
     private readonly IReadOnlyList<IdentityClientConfig> _clients;
 
     public ClientSeeder(
-        IOpenIddictApplicationManager applicationManager,
-        IOpenIddictScopeManager scopeManager,
+        IServiceProvider serviceProvider,
         ILogger<ClientSeeder> logger,
         IReadOnlyList<IdentityClientConfig> clients)
     {
-        _applicationManager = applicationManager;
-        _scopeManager = scopeManager;
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _clients = clients;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        using var diScope = _serviceProvider.CreateScope();
+        var applicationManager = diScope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+        var scopeManager = diScope.ServiceProvider.GetRequiredService<IOpenIddictScopeManager>();
+
         var standardScopes = new[] { Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess };
         var customScopes = _clients
             .SelectMany(c => c.Scopes)
@@ -37,7 +39,7 @@ public class ClientSeeder : IHostedService
 
         foreach (var scope in standardScopes.Concat(customScopes))
         {
-            var existingScope = await _scopeManager.FindByNameAsync(scope, cancellationToken);
+            var existingScope = await scopeManager.FindByNameAsync(scope, cancellationToken);
             if (existingScope == null)
             {
                 var scopeDescriptor = new OpenIddictScopeDescriptor
@@ -45,7 +47,7 @@ public class ClientSeeder : IHostedService
                     Name = scope,
                     DisplayName = scope
                 };
-                await _scopeManager.CreateAsync(scopeDescriptor, cancellationToken);
+                await scopeManager.CreateAsync(scopeDescriptor, cancellationToken);
                 _logger.LogInformation("Created scope: {Scope}", scope);
             }
         }
@@ -58,16 +60,16 @@ public class ClientSeeder : IHostedService
                 continue;
             }
 
-            var existingClient = await _applicationManager.FindByClientIdAsync(clientConfig.ClientId, cancellationToken);
+            var existingClient = await applicationManager.FindByClientIdAsync(clientConfig.ClientId, cancellationToken);
 
             if (existingClient != null)
             {
-                await UpdateClientAsync(existingClient, clientConfig, cancellationToken);
+                await UpdateClientAsync(existingClient, clientConfig, applicationManager, cancellationToken);
                 _logger.LogInformation("Updated OpenIddict client: {ClientId}", clientConfig.ClientId);
             }
             else
             {
-                await CreateClientAsync(clientConfig, cancellationToken);
+                await CreateClientAsync(clientConfig, applicationManager, cancellationToken);
                 _logger.LogInformation("Created OpenIddict client: {ClientId}", clientConfig.ClientId);
             }
         }
@@ -75,15 +77,15 @@ public class ClientSeeder : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private async Task CreateClientAsync(IdentityClientConfig config, CancellationToken cancellationToken)
+    private async Task CreateClientAsync(IdentityClientConfig config, IOpenIddictApplicationManager applicationManager, CancellationToken cancellationToken)
     {
         var descriptor = ClientDescriptorBuilder.Build(config);
-        await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        await applicationManager.CreateAsync(descriptor, cancellationToken);
     }
 
-    private async Task UpdateClientAsync(object existingClient, IdentityClientConfig config, CancellationToken cancellationToken)
+    private async Task UpdateClientAsync(object existingClient, IdentityClientConfig config, IOpenIddictApplicationManager applicationManager, CancellationToken cancellationToken)
     {
         var descriptor = ClientDescriptorBuilder.Build(config);
-        await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
+        await applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
     }
 }
