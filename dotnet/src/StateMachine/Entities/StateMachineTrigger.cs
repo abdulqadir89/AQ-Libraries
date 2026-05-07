@@ -46,6 +46,8 @@ public class StateMachineTrigger : Entity
     [Searchable]
     public string? Description { get; private set; }
     public StateMachineTriggerType Type { get; private set; }
+    public bool IsRecordsOnly { get; private set; }
+    public string? EventType { get; private set; }
 
     // EF Core constructor
     private StateMachineTrigger() { }
@@ -54,13 +56,17 @@ public class StateMachineTrigger : Entity
         StateMachineDefinition definition,
         string name,
         string? description = null,
-        StateMachineTriggerType type = StateMachineTriggerType.Manual)
+        StateMachineTriggerType type = StateMachineTriggerType.Manual,
+        bool isRecordsOnly = false,
+        string? eventType = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
         Type = type;
+        IsRecordsOnly = isRecordsOnly;
+        EventType = eventType;
     }
 
     /// <summary>
@@ -70,22 +76,26 @@ public class StateMachineTrigger : Entity
         StateMachineDefinition definition,
         string name,
         string? description = null,
-        StateMachineTriggerType type = StateMachineTriggerType.Manual)
+        StateMachineTriggerType type = StateMachineTriggerType.Manual,
+        bool isRecordsOnly = false,
+        string? eventType = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
 
-        return new StateMachineTrigger(definition, name.Trim(), description?.Trim(), type);
+        return new StateMachineTrigger(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType);
     }
 
     /// <summary>
-    /// Updates the trigger's name, description and type.
+    /// Updates the trigger's name, description, type, and metadata.
     /// </summary>
     public void Update(
         string? name = null,
         string? description = null,
-        StateMachineTriggerType? type = null)
+        StateMachineTriggerType? type = null,
+        bool? isRecordsOnly = null,
+        string? eventType = null)
     {
         if (!string.IsNullOrWhiteSpace(name))
             Name = name.Trim();
@@ -94,6 +104,12 @@ public class StateMachineTrigger : Entity
 
         if (type.HasValue)
             Type = type.Value;
+
+        if (isRecordsOnly.HasValue)
+            IsRecordsOnly = isRecordsOnly.Value;
+
+        if (eventType != null)
+            EventType = eventType;
     }
 
     public override string ToString() => $"{Name} ({Type})";

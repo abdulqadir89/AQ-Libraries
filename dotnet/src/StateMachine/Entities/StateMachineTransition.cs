@@ -108,14 +108,15 @@ public class StateMachineTransition : Entity
     public bool RequiresUserData => GetRequiredDataTypes().Any();
 
     /// <summary>
-    /// Indicates whether this transition changes state (has both from and to states).
+    /// Indicates whether this transition changes state (has both from and to state IDs).
+    /// Uses IDs instead of nav props to avoid issues with unloaded entities.
     /// </summary>
-    public bool ChangesState => FromState != null && ToState != null;
+    public bool ChangesState => FromStateId.HasValue && ToStateId.HasValue;
 
     /// <summary>
     /// Indicates whether this is a trigger-only transition (no state change).
     /// </summary>
-    public bool IsTriggerOnly => FromState == null || ToState == null;
+    public bool IsTriggerOnly => !ChangesState;
 
     /// <summary>
     /// Adds a requirement to this transition.

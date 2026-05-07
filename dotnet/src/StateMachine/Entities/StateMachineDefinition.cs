@@ -114,7 +114,9 @@ public abstract class StateMachineDefinition : Entity
                 newDefinition,
                 trigger.Name,
                 trigger.Description,
-                trigger.Type);
+                trigger.Type,
+                trigger.IsRecordsOnly,
+                trigger.EventType);
             newDefinition._triggers.Add(newTrigger);
         }
 
@@ -184,14 +186,19 @@ public abstract class StateMachineDefinition : Entity
     }
 
     /// <summary>
-    /// Gets all available triggers from a specific state.
+    /// Gets all available triggers from a specific state (including IsRecordsOnly triggers available everywhere).
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetAvailableTriggersFromState(StateMachineState state)
     {
-        return GetTransitionsFromState(state)
+        // Triggers from transitions in this state
+        var stateSpecificTriggers = GetTransitionsFromState(state)
             .Select(t => _triggers.FirstOrDefault(tr => tr.Id == t.TriggerId))
-            .OfType<StateMachineTrigger>()
-            .Distinct();
+            .OfType<StateMachineTrigger>();
+
+        // Always-available IsRecordsOnly triggers
+        var recordsOnlyTriggers = GetGlobalTriggers();
+
+        return stateSpecificTriggers.Concat(recordsOnlyTriggers).Distinct();
     }
 
     /// <summary>
@@ -207,8 +214,9 @@ public abstract class StateMachineDefinition : Entity
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
         {
-            // Skip global triggers (null→null) — they don't change state and are listed separately
-            if (!transition.FromStateId.HasValue && !transition.ToStateId.HasValue)
+            // Skip IsRecordsOnly triggers — they don't change state and are listed separately
+            var trigger = _triggers.FirstOrDefault(t => t.Id == transition.TriggerId);
+            if (trigger?.IsRecordsOnly == true)
                 continue;
 
             var fromStateName = transition.FromStateId.HasValue
@@ -264,17 +272,12 @@ public abstract class StateMachineDefinition : Entity
     }
 
     /// <summary>
-    /// Returns all triggers that have no state change (null→null transitions).
-    /// These are available in all states and are excluded from the flow diagram.
+    /// Returns all triggers marked as IsRecordsOnly.
+    /// These are available in all states and record history without state changes.
     /// </summary>
     public IEnumerable<StateMachineTrigger> GetGlobalTriggers()
     {
-        var globalTriggerIds = _transitions
-            .Where(t => !t.FromStateId.HasValue && !t.ToStateId.HasValue)
-            .Select(t => t.TriggerId)
-            .ToHashSet();
-
-        return _triggers.Where(t => globalTriggerIds.Contains(t.Id));
+        return _triggers.Where(t => t.IsRecordsOnly);
     }
 
     /// <summary>
@@ -336,9 +339,11 @@ public abstract class StateMachineDefinition : Entity
             errors.Add($"Orphaned states found: {string.Join(", ", orphanedStates.Select(s => s.Name))}");
         }
 
-        // Check for unused triggers
+        // Check for unused triggers (IsRecordsOnly triggers don't need transitions, so exclude them)
         var usedTriggers = _transitions.Select(t => t.TriggerId).ToHashSet();
-        var unusedTriggers = _triggers.Where(t => !usedTriggers.Contains(t.Id)).ToList();
+        var unusedTriggers = _triggers
+            .Where(t => !t.IsRecordsOnly && !usedTriggers.Contains(t.Id))
+            .ToList();
         if (unusedTriggers.Any())
         {
             errors.Add($"Unused triggers found: {string.Join(", ", unusedTriggers.Select(t => t.Name))}");
