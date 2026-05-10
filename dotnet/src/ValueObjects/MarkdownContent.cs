@@ -3,6 +3,8 @@ using Markdig;
 
 namespace AQ.ValueObjects;
 
+public enum ContentFormat { Html, Markdown }
+
 /// <summary>
 /// DTO for MarkdownContent responses in API endpoints.
 /// Contains both the raw markdown and the rendered HTML.
