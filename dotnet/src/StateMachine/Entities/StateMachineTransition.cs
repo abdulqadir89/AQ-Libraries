@@ -21,6 +21,17 @@ public class StateMachineTransition : Entity
 
     public IEnumerable<IStateMachineTransitionRequirement>? Requirements { get; private set; }
 
+    public string PublishEventTypesJson { get; private set; } = "[]";
+
+    /// <summary>
+    /// Gets the list of event type keys that this transition will publish when it executes.
+    /// </summary>
+    public IReadOnlyList<string> PublishEventTypes
+    {
+        get => JsonSerializer.Deserialize<List<string>>(PublishEventTypesJson) ?? [];
+        private set => PublishEventTypesJson = JsonSerializer.Serialize(value);
+    }
+
     // EF Core constructor
     private StateMachineTransition() { }
 
@@ -30,7 +41,8 @@ public class StateMachineTransition : Entity
         StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
+        IEnumerable<string>? publishEventTypes = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
@@ -39,6 +51,8 @@ public class StateMachineTransition : Entity
         TriggerId = (trigger ?? throw new ArgumentNullException(nameof(trigger))).Id;
         Description = description?.Trim();
         Requirements = requirements;
+        if (publishEventTypes is not null)
+            PublishEventTypes = publishEventTypes.ToList();
     }
 
     /// <summary>
@@ -50,7 +64,8 @@ public class StateMachineTransition : Entity
         StateMachineState? toState,
         StateMachineTrigger trigger,
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
+        IEnumerable<string>? publishEventTypes = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (trigger == null)
@@ -62,7 +77,8 @@ public class StateMachineTransition : Entity
             toState,
             trigger,
             description?.Trim(),
-            requirements);
+            requirements,
+            publishEventTypes);
     }
 
     /// <summary>
@@ -70,10 +86,13 @@ public class StateMachineTransition : Entity
     /// </summary>
     public void Update(
         string? description = null,
-        IEnumerable<IStateMachineTransitionRequirement>? requirements = null)
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
+        IEnumerable<string>? publishEventTypes = null)
     {
         Description = description?.Trim();
         Requirements = requirements;
+        if (publishEventTypes is not null)
+            PublishEventTypes = publishEventTypes.ToList();
     }
 
     /// <summary>
@@ -108,14 +127,15 @@ public class StateMachineTransition : Entity
     public bool RequiresUserData => GetRequiredDataTypes().Any();
 
     /// <summary>
-    /// Indicates whether this transition changes state (has both from and to states).
+    /// Indicates whether this transition changes state (has both from and to state IDs).
+    /// Uses IDs instead of nav props to avoid issues with unloaded entities.
     /// </summary>
-    public bool ChangesState => FromState != null && ToState != null;
+    public bool ChangesState => FromStateId.HasValue && ToStateId.HasValue;
 
     /// <summary>
     /// Indicates whether this is a trigger-only transition (no state change).
     /// </summary>
-    public bool IsTriggerOnly => FromState == null || ToState == null;
+    public bool IsTriggerOnly => !ChangesState;
 
     /// <summary>
     /// Adds a requirement to this transition.

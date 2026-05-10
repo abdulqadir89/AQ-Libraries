@@ -71,11 +71,15 @@ public abstract class StateMachineInstance : Entity
         if (CurrentState?.Category == StateMachineStateCategory.Final)
             return [];
 
-        return Definition!.Transitions
-            .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
+        // Get transitions from current state, plus global IsRecordsOnly triggers
+        var stateSpecificTransitions = Definition!.Transitions
+            .Where(t => t.FromStateId == CurrentStateId)
             .Select(t => Definition.Triggers.FirstOrDefault(tr => tr.Id == t.TriggerId))
-            .OfType<StateMachineTrigger>()
-            .Distinct();
+            .OfType<StateMachineTrigger>();
+
+        var recordsOnlyTriggers = Definition.GetGlobalTriggers();
+
+        return stateSpecificTransitions.Concat(recordsOnlyTriggers).Distinct();
     }
 
     /// <summary>
@@ -87,7 +91,8 @@ public abstract class StateMachineInstance : Entity
         if (CurrentState?.Category == StateMachineStateCategory.Final)
             return [];
 
-        return Definition!.Transitions.Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null);
+        // Only return transitions from current state (not IsRecordsOnly triggers — they have no transition)
+        return Definition!.Transitions.Where(t => t.FromStateId == CurrentStateId);
     }
 
     /// <summary>
@@ -100,7 +105,7 @@ public abstract class StateMachineInstance : Entity
             return [];
 
         return Definition!.Transitions
-            .Where(t => (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id)
+            .Where(t => t.FromStateId == CurrentStateId && t.TriggerId == trigger.Id)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
     }
@@ -112,7 +117,7 @@ public abstract class StateMachineInstance : Entity
     public IEnumerable<IStateMachineTransitionRequirement> GetAllRequirementsFromCurrentState()
     {
         return Definition!.Transitions
-            .Where(t => t.FromStateId == CurrentStateId || t.FromStateId == null)
+            .Where(t => t.FromStateId == CurrentStateId)
             .SelectMany(t => t.Requirements ?? [])
             .Distinct();
     }
@@ -126,8 +131,30 @@ public abstract class StateMachineInstance : Entity
         if (trigger == null)
             return [];
 
-        return Definition!.Transitions.Where(t =>
-            (t.FromStateId == CurrentStateId || t.FromStateId == null) && t.TriggerId == trigger.Id);
+        return Definition!.Transitions.Where(t => t.FromStateId == CurrentStateId && t.TriggerId == trigger.Id);
+    }
+
+    /// <summary>
+    /// Resolves a trigger to find the matching transition from the current state.
+    /// If trigger is IsRecordsOnly, returns null for transition and true for isRecordsOnly.
+    /// If trigger is not IsRecordsOnly and no transition is found, throws an exception.
+    /// </summary>
+    public (StateMachineTransition? transition, bool isRecordsOnly) ResolveTransition(StateMachineTrigger trigger)
+    {
+        if (trigger == null)
+            throw new ArgumentNullException(nameof(trigger));
+
+        if (trigger.IsRecordsOnly)
+            return (null, true);
+
+        var match = GetTransitionsForTrigger(trigger).FirstOrDefault();
+
+        if (match is null)
+            throw new InvalidOperationException(
+                $"Trigger '{trigger.Name}' has no transition defined from state '{CurrentState?.Name}'. " +
+                "Ensure the state machine definition is correctly configured.");
+
+        return (match, false);
     }
 
     /// <summary>
@@ -137,6 +164,13 @@ public abstract class StateMachineInstance : Entity
     {
         return CurrentState!.Category == StateMachineStateCategory.Final;
     }
+
+    /// <summary>
+    /// Raises a domain event signalling that a transition completed.
+    /// Call this from the transition service after a successful transition, before saving.
+    /// </summary>
+    public void RaiseTransitionedEvent(Guid definitionId, int definitionVersion, Guid toStateId)
+        => AddDomainEvent(new StateMachineTransitionedEvent(Id, definitionId, definitionVersion, toStateId));
 
     /// <summary>
     /// Migrates this instance to a new state machine definition using the mapping stored in
