@@ -28,6 +28,18 @@ export interface ActionButton<T = Record<string, unknown>> {
   disabled?: (record: T) => boolean;
 }
 
+export interface BulkAction {
+  key: string;
+  label: string;
+  icon?: ReactNode;
+  color?: string;
+  onClick: (selectedKeys: string[]) => void;
+  confirm?: {
+    title: string;
+    content: string;
+  };
+}
+
 // Grid mode configurations
 export type GridMode = 'view' | 'action' | 'special';
 
@@ -134,6 +146,9 @@ export interface DataGridProps<T = Record<string, unknown>> {
   selectedRows?: string[];
   onSelectionChange?: (selectedRowKeys: string[]) => void;
   rowKey?: keyof T | ((record: T) => string);
+
+  // Bulk actions (shown in toolbar when records are selected)
+  bulkActions?: BulkAction[];
 }
 
 export type GridViewMode = 'table' | 'card';
@@ -180,10 +195,6 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   data: T[];
   loading?: boolean;
   columns: DataGridColumn<T>[];
-  mode?: GridMode;
-  specialModeConfig?: SpecialModeConfig;
-  actions?: ActionButton<T>[];
-  showActions?: boolean;
   pagination?: PaginationConfig;
   onPageChange?: (page: number, pageSize: number) => void;
   searchable?: boolean;
@@ -197,12 +208,6 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   onCreate?: () => void;
   createButtonText?: string;
   createButtonIcon?: ReactNode;
-  onEdit?: (record: T) => void;
-  onView?: (record: T) => void;
-  onDetails?: (record: T) => void;
-  onDelete?: (record: T) => void;
-  deleteConfirmTitle?: string;
-  deleteConfirmContent?: string;
   selectable?: boolean;
   selectedRows?: string[];
   onSelectionChange?: (selectedRowKeys: string[]) => void;
@@ -221,6 +226,12 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   cardSubtitle?: (record: T, index: number) => ReactNode;
   renderCard?: (record: T, index: number) => ReactNode;
   emptyStateText?: string;
+
+  // Card-specific interaction
+  onCardClick?: (record: T) => void;
+
+  // Bulk actions (shown in toolbar when records are selected)
+  bulkActions?: BulkAction[];
 }
 
 export interface DataGridSwitchProps {

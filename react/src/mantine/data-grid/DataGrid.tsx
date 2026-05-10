@@ -8,6 +8,7 @@ import {
   TextInput,
   ActionIcon,
   Button,
+  Menu,
   Pagination,
   Select,
   Text,
@@ -34,9 +35,11 @@ import {
   IconSelector,
   IconListDetails,
   IconFilterOff,
+  IconStack2,
   IconX,
 } from '@tabler/icons-react';
 import type {
+  BulkAction,
   DataGridProps,
   DataGridState,
   DataGridColumn,
@@ -87,6 +90,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   onSelectionChange,
   rowKey = 'id',
   onFilterChange,
+  bulkActions,
 }: DataGridProps<T>) {
   const [state, setState] = useState<ExtendedDataGridState>({
     searchText: '',
@@ -258,7 +262,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'overview',
       label: 'Overview',
-      icon: <IconEye size={16} />,
+      icon: <IconEye size={18} />,
       color: 'blue',
       variant: 'light',
       onClick: (record) => onView?.(record),
@@ -271,7 +275,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'details',
       label: 'Details',
-      icon: <IconListDetails size={16} />,
+      icon: <IconListDetails size={18} />,
       color: 'cyan',
       variant: 'light',
       onClick: (record) => onDetails?.(record),
@@ -284,7 +288,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'edit',
       label: 'Edit',
-      icon: <IconEdit size={16} />,
+      icon: <IconEdit size={18} />,
       color: 'orange',
       variant: 'light',
       onClick: (record) => onEdit?.(record),
@@ -297,7 +301,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'delete',
       label: 'Delete',
-      icon: <IconTrash size={16} />,
+      icon: <IconTrash size={18} />,
       color: 'red',
       variant: 'light',
       onClick: (record) => {
@@ -518,15 +522,37 @@ export function DataGrid<T extends Record<string, unknown>>({
       : <IconChevronDown size={14} />;
   }, [sortConditions]);
 
-  // Handle select all
+  // Handle select all — union/subtract only current page to preserve cross-page selections
   const handleSelectAll = useCallback((checked: boolean) => {
+    const currentPageKeys = data.map(record => getRowKey(record));
     const newSelection = checked
-      ? data.map(record => getRowKey(record))
-      : [];
-    
+      ? [...new Set([...state.selectedRows, ...currentPageKeys])]
+      : state.selectedRows.filter(key => !currentPageKeys.includes(key));
+
     setState(prev => ({ ...prev, selectedRows: newSelection }));
     onSelectionChange?.(newSelection);
-  }, [data, onSelectionChange, getRowKey]);
+  }, [data, state.selectedRows, onSelectionChange, getRowKey]);
+
+  // Handle bulk action execution
+  const handleBulkAction = useCallback((action: BulkAction) => {
+    const execute = () => {
+      action.onClick(state.selectedRows);
+      setState(prev => ({ ...prev, selectedRows: [] }));
+      onSelectionChange?.([]);
+    };
+
+    if (action.confirm) {
+      modals.openConfirmModal({
+        title: action.confirm.title,
+        children: <Text size="sm">{action.confirm.content}</Text>,
+        labels: { confirm: 'Confirm', cancel: 'Cancel' },
+        confirmProps: { color: action.color || 'blue' },
+        onConfirm: execute,
+      });
+    } else {
+      execute();
+    }
+  }, [state.selectedRows, onSelectionChange]);
 
   // Render action buttons
   const renderActions = useCallback((record: T) => {
@@ -542,7 +568,7 @@ export function DataGrid<T extends Record<string, unknown>>({
           action.icon ? (
             <ActionIcon
               key={action.key}
-              size="sm"
+              size="md"
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={action.disabled?.(record)}
@@ -599,23 +625,26 @@ export function DataGrid<T extends Record<string, unknown>>({
 
     return (
       <Table.Tr key={key} bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}>
-        {selectable && (
-          <Table.Td>
-            <Checkbox
-              checked={isSelected}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
-            />
-          </Table.Td>
-        )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Td
             key={String(column.key)}
-            style={{ 
+            style={{
               width: columnWidths[column.key] || column.width,
               textAlign: column.align || 'left'
             }}
           >
-            {renderCellContent(column, record, index)}
+            {selectable && colIndex === 0 ? (
+              <Group gap="xs" wrap="nowrap">
+                <Checkbox
+                  size="xs"
+                  checked={isSelected}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
+                />
+                {renderCellContent(column, record, index)}
+              </Group>
+            ) : (
+              renderCellContent(column, record, index)
+            )}
           </Table.Td>
         ))}
         {showActions && finalActions.length > 0 && (
@@ -653,6 +682,28 @@ export function DataGrid<T extends Record<string, unknown>>({
           <Group>
             {/* Create Button - mode-aware */}
             {renderCreateButton()}
+
+            {bulkActions && bulkActions.length > 0 && state.selectedRows.length > 0 && (
+              <Menu shadow="md" withinPortal>
+                <Menu.Target>
+                  <Button variant="light" color="blue" leftSection={<IconStack2 size={16} />}>
+                    Bulk Actions ({state.selectedRows.length})
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {bulkActions.map((action) => (
+                    <Menu.Item
+                      key={action.key}
+                      color={action.color}
+                      leftSection={action.icon}
+                      onClick={() => handleBulkAction(action)}
+                    >
+                      {action.label}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+            )}
           </Group>
 
           <Group>
@@ -718,25 +769,24 @@ export function DataGrid<T extends Record<string, unknown>>({
           >
             <Table.Thead>
               <Table.Tr>
-                {selectable && (
-                  <Table.Th>
-                    <Checkbox
-                      checked={state.selectedRows.length === data.length && data.length > 0}
-                      indeterminate={state.selectedRows.length > 0 && state.selectedRows.length < data.length}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
-                    />
-                  </Table.Th>
-                )}
-                {columns.map((column) => (
+                {columns.map((column, colIndex) => (
                   <Table.Th
                     key={String(column.key)}
-                    style={{ 
+                    style={{
                       width: columnWidths[column.key] || column.width,
                       textAlign: column.align || 'left',
                       position: 'relative',
                     }}
                   >
                     <Group gap="xs" justify={column.align === 'center' ? 'center' : column.align === 'right' ? 'flex-end' : 'flex-start'}>
+                      {selectable && colIndex === 0 && (
+                        <Checkbox
+                          size="xs"
+                          checked={data.length > 0 && data.every(record => state.selectedRows.includes(getRowKey(record)))}
+                          indeterminate={data.some(record => state.selectedRows.includes(getRowKey(record))) && !data.every(record => state.selectedRows.includes(getRowKey(record)))}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
+                        />
+                      )}
                       {column.sortable && sortable ? (
                         <UnstyledButton
                           onClick={() => handleSort(String(column.dataIndex))}

@@ -3,7 +3,6 @@ import styles from './DataGrid.module.css';
 import type { ChangeEvent } from 'react';
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
   Card,
@@ -12,6 +11,7 @@ import {
   Group,
   Image,
   LoadingOverlay,
+  Menu,
   Modal,
   MultiSelect,
   Pagination,
@@ -27,27 +27,24 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
   IconAdjustmentsHorizontal,
-  IconEdit,
-  IconEye,
   IconFilterOff,
-  IconListDetails,
   IconPlus,
   IconRefresh,
   IconSearch,
+  IconStack2,
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
 import { FilterExpressionBuilder } from '../../utils/FilterExpressionBuilder';
 import { SortExpressionBuilder } from '../../utils/SortExpressionBuilder';
 import type {
-  ActionButton,
+  BulkAction,
   CardDataGridProps,
   DataGridColumn,
   FilterCondition,
   FilterOperator,
   LogicalOperator,
   SortCondition,
-  SpecialModeConfig,
 } from './DataGrid.types';
 
 interface FilterDraft extends FilterCondition {
@@ -167,10 +164,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   data = [],
   loading = false,
   columns = [],
-  mode = 'action',
-  specialModeConfig,
-  actions,
-  showActions = true,
   pagination,
   onPageChange,
   searchable = true,
@@ -184,12 +177,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   onCreate,
   createButtonText = 'Create',
   createButtonIcon,
-  onEdit,
-  onView,
-  onDetails,
-  onDelete,
-  deleteConfirmTitle = 'Confirm Delete',
-  deleteConfirmContent = 'Are you sure you want to delete this item? This action cannot be undone.',
   selectable = false,
   selectedRows,
   onSelectionChange,
@@ -208,6 +195,8 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   cardSubtitle,
   renderCard,
   emptyStateText = 'No data available',
+  onCardClick,
+  bulkActions,
 }: CardDataGridProps<T>) {
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText] = useDebouncedValue(searchText, 500);
@@ -249,110 +238,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     }
     onSearchRef.current?.(debouncedSearchText);
   }, [debouncedSearchText]);
-
-  const getButtonConfig = useCallback(
-    (buttonKey: string) => {
-      switch (mode) {
-        case 'view':
-          return {
-            overview: { visible: true, disabled: false },
-            details: { visible: true, disabled: false },
-            edit: { visible: false, disabled: false },
-            delete: { visible: false, disabled: false },
-            create: { visible: false, disabled: false },
-          }[buttonKey] || { visible: false, disabled: false };
-        case 'special': {
-          const config = specialModeConfig?.[buttonKey as keyof SpecialModeConfig];
-          if (config && 'visible' in config) {
-            return {
-              visible: config.visible !== false,
-              disabled: config.disabled || false,
-            };
-          }
-          return { visible: true, disabled: false };
-        }
-        default:
-          return { visible: true, disabled: false };
-      }
-    },
-    [mode, specialModeConfig]
-  );
-
-  const defaultActions: ActionButton<T>[] = useMemo(
-    () => [
-      {
-        key: 'overview',
-        label: 'Overview',
-        icon: <IconEye size={16} />,
-        color: 'blue',
-        variant: 'light',
-        onClick: (record) => onView?.(record),
-        visible: () => {
-          const config = getButtonConfig('overview');
-          return config.visible && !!onView;
-        },
-        disabled: () => getButtonConfig('overview').disabled,
-      },
-      {
-        key: 'details',
-        label: 'Details',
-        icon: <IconListDetails size={16} />,
-        color: 'cyan',
-        variant: 'light',
-        onClick: (record) => onDetails?.(record),
-        visible: () => {
-          const config = getButtonConfig('details');
-          return config.visible && !!onDetails;
-        },
-        disabled: () => getButtonConfig('details').disabled,
-      },
-      {
-        key: 'edit',
-        label: 'Edit',
-        icon: <IconEdit size={16} />,
-        color: 'orange',
-        variant: 'light',
-        onClick: (record) => onEdit?.(record),
-        visible: () => {
-          const config = getButtonConfig('edit');
-          return config.visible && !!onEdit;
-        },
-        disabled: () => getButtonConfig('edit').disabled,
-      },
-      {
-        key: 'delete',
-        label: 'Delete',
-        icon: <IconTrash size={16} />,
-        color: 'red',
-        variant: 'light',
-        onClick: (record) => {
-          modals.openConfirmModal({
-            title: deleteConfirmTitle,
-            children: <Text size="sm">{deleteConfirmContent}</Text>,
-            labels: { confirm: 'Delete', cancel: 'Cancel' },
-            confirmProps: { color: 'red' },
-            onConfirm: () => onDelete?.(record),
-          });
-        },
-        visible: () => {
-          const config = getButtonConfig('delete');
-          return config.visible && !!onDelete;
-        },
-        disabled: () => getButtonConfig('delete').disabled,
-      },
-    ],
-    [
-      onView,
-      onDetails,
-      onEdit,
-      onDelete,
-      deleteConfirmTitle,
-      deleteConfirmContent,
-      getButtonConfig,
-    ]
-  );
-
-  const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
 
   const availableFilterColumns = useMemo(
     () => columns.filter((column) => column.filterable !== false),
@@ -520,11 +405,37 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
-      const nextSelection = checked ? data.map((record) => getRowKey(record)) : [];
+      const currentPageKeys = data.map((record) => getRowKey(record));
+      const nextSelection = checked
+        ? [...new Set([...internalSelection, ...currentPageKeys])]
+        : internalSelection.filter((key) => !currentPageKeys.includes(key));
       setInternalSelection(nextSelection);
       onSelectionChange?.(nextSelection);
     },
-    [data, getRowKey, onSelectionChange]
+    [data, getRowKey, internalSelection, onSelectionChange]
+  );
+
+  const handleBulkAction = useCallback(
+    (action: BulkAction) => {
+      const execute = () => {
+        action.onClick(internalSelection);
+        setInternalSelection([]);
+        onSelectionChange?.([]);
+      };
+
+      if (action.confirm) {
+        modals.openConfirmModal({
+          title: action.confirm.title,
+          children: <Text size="sm">{action.confirm.content}</Text>,
+          labels: { confirm: 'Confirm', cancel: 'Cancel' },
+          confirmProps: { color: action.color || 'blue' },
+          onConfirm: execute,
+        });
+      } else {
+        execute();
+      }
+    },
+    [internalSelection, onSelectionChange]
   );
 
   const renderFieldValue = useCallback(
@@ -678,7 +589,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   const cards = data.map((record, index) => {
     const key = getRowKey(record);
     const isSelected = internalSelection.includes(key);
-    const visibleActions = finalActions.filter((action) => !action.visible || action.visible(record));
     const imageUrl = cardImage?.dataIndex ? (record[cardImage.dataIndex] as string | undefined) : undefined;
 
     if (renderCard) {
@@ -695,6 +605,8 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         withBorder
         radius="md"
         shadow="sm"
+        onClick={onCardClick ? () => onCardClick(record) : undefined}
+        className={onCardClick ? styles.clickableCard : undefined}
         style={{
           height: '100%',
           borderColor: isSelected ? 'var(--mantine-color-blue-5)' : undefined,
@@ -754,6 +666,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               <Checkbox
                 checked={isSelected}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
+                onClick={(event) => event.stopPropagation()}
               />
             )}
           </Group>
@@ -768,37 +681,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               </Group>
             ))}
           </Stack>
-
-          {showActions && visibleActions.length > 0 && (
-            <Group gap="xs" mt="sm">
-              {visibleActions.map((action) => (
-                action.icon ? (
-                  <ActionIcon
-                    key={action.key}
-                    size="sm"
-                    variant={action.variant || 'light'}
-                    color={action.color || 'gray'}
-                    disabled={action.disabled?.(record)}
-                    onClick={() => action.onClick(record)}
-                    title={action.label}
-                  >
-                    {action.icon}
-                  </ActionIcon>
-                ) : (
-                  <Button
-                    key={action.key}
-                    size="compact-xs"
-                    variant={action.variant || 'light'}
-                    color={action.color || 'gray'}
-                    disabled={action.disabled?.(record)}
-                    onClick={() => action.onClick(record)}
-                  >
-                    {action.label}
-                  </Button>
-                )
-              ))}
-            </Group>
-          )}
         </Stack>
       </Card>
     );
@@ -811,11 +693,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
       <Paper p="md" mb="md" withBorder>
         <Flex justify="space-between" align="center" wrap="wrap" gap="md">
           <Group>
-            {toolbar.showCreate && onCreate && getButtonConfig('create').visible && (
+            {toolbar.showCreate && onCreate && (
               <Button
                 leftSection={createButtonIcon || <IconPlus size={16} />}
                 onClick={onCreate}
-                disabled={getButtonConfig('create').disabled}
               >
                 {createButtonText}
               </Button>
@@ -824,15 +705,37 @@ export function CardDataGrid<T extends Record<string, unknown>>({
             {selectable && (
               <Checkbox
                 label="Select all"
-                checked={internalSelection.length === data.length && data.length > 0}
-                indeterminate={internalSelection.length > 0 && internalSelection.length < data.length}
+                checked={internalSelection.length > 0 && data.every((record) => internalSelection.includes(getRowKey(record)))}
+                indeterminate={internalSelection.length > 0 && !data.every((record) => internalSelection.includes(getRowKey(record)))}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
               />
+            )}
+
+            {bulkActions && bulkActions.length > 0 && internalSelection.length > 0 && (
+              <Menu shadow="md" withinPortal>
+                <Menu.Target>
+                  <Button variant="light" color="blue" leftSection={<IconStack2 size={16} />}>
+                    Bulk Actions ({internalSelection.length})
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {bulkActions.map((action) => (
+                    <Menu.Item
+                      key={action.key}
+                      color={action.color}
+                      leftSection={action.icon}
+                      onClick={() => handleBulkAction(action)}
+                    >
+                      {action.label}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
             )}
           </Group>
 
           <Group>
-            {toolbar.showSearch && (mode !== 'special' || specialModeConfig?.search?.enabled !== false) && (
+            {toolbar.showSearch && (
               <TextInput
                 placeholder={searchPlaceholder}
                 leftSection={<IconSearch size={16} />}
@@ -961,7 +864,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           <Group justify="space-between">
             <Group>
               <Text fw={600}>Filter conditions</Text>
-              <Badge variant="light">{filterDrafts.length}</Badge>
             </Group>
             <Group>
               <Select
