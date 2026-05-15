@@ -6,6 +6,7 @@ namespace AQ.ValueObjects;
 public enum ContentFormat { Html, Markdown }
 
 /// <summary>
+/// Do not use that unless extremly necessary. Instead return value or html directly depending on the use case using ContentFormat in query param. This is only for cases where both are needed.
 /// DTO for MarkdownContent responses in API endpoints.
 /// Contains both the raw markdown and the rendered HTML.
 /// Use string directly in request objects (only the raw value is needed for input).
