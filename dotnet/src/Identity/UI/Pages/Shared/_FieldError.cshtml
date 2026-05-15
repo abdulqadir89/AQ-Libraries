@@ -1,0 +1,17 @@
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@{
+    var fieldName = ViewData["fieldName"]?.ToString() ?? string.Empty;
+    var modelState = ViewContext.ModelState;
+}
+
+@if (!string.IsNullOrEmpty(fieldName) && !modelState.IsValid && modelState.ContainsKey(fieldName))
+{
+    var modelStateEntry = modelState[fieldName];
+    if (modelStateEntry?.Errors.Count > 0)
+    {
+        var error = modelStateEntry.Errors[0];
+        <p role="alert" class="text-sm text-red-600 dark:text-red-400 mt-1">
+            @(error.ErrorMessage ?? "Validation error")
+        </p>
+    }
+}

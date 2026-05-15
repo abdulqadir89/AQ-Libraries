@@ -50,17 +50,18 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(eventType);
             var handlers = _serviceProvider.GetServices(handlerType);
 
-            // Execute all handlers
+            // Execute all handlers, each in its own scope so they get isolated DbContext instances
             var handlersList = handlers.ToList();
-            var tasks = new List<Task>();
-
-            foreach (var handler in handlersList)
-            {
-                if (handler != null)
+            var tasks = handlersList
+                .Where(h => h != null)
+                .Select(h =>
                 {
-                    tasks.Add(InvokeHandlerAsync(handler, domainEvent, cancellationToken));
-                }
-            }
+                    var scope = _serviceProvider.CreateScope();
+                    // Resolve a fresh instance of this exact handler type from the new scope
+                    var scopedHandler = scope.ServiceProvider.GetService(h!.GetType()) ?? h;
+                    return InvokeHandlerInScopeAsync(scopedHandler, scope, domainEvent, cancellationToken);
+                })
+                .ToList();
 
             await Task.WhenAll(tasks);
 
@@ -72,6 +73,14 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             _logger.LogError(ex, "Error dispatching domain event: {EventType}. Event data: {EventData}",
                 eventType.Name, JsonSerializer.Serialize(domainEvent));
             throw;
+        }
+    }
+
+    private async Task InvokeHandlerInScopeAsync(object handler, IServiceScope scope, IDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        using (scope)
+        {
+            await InvokeHandlerAsync(handler, domainEvent, cancellationToken);
         }
     }
 

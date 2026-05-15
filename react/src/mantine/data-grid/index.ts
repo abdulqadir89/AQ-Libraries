@@ -10,6 +10,7 @@ export type { ColumnFilterRef, ColumnFilterProps } from './ColumnFilter';
 export type {
   DataGridColumn,
   ActionButton,
+  BulkAction,
   GridMode,
   SpecialModeButtonConfig,
   SpecialModeConfig,

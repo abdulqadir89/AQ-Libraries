@@ -1,0 +1,27 @@
+@page "/auth/logout"
+@model LogoutModel
+@using Microsoft.AspNetCore.Identity
+@{
+    ViewData["Title"] = "Sign out";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="text-center">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Sign out of @Model.AppName?</h2>
+
+        <form method="post" asp-antiforgery="true" class="space-y-3">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">Sign out</button>
+        </form>
+
+        <a href="javascript:history.back()" class="w-full border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors inline-block">Cancel</a>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">You are not currently signed in.</p>
+        <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Go to sign in</a>
+    </div>
+}

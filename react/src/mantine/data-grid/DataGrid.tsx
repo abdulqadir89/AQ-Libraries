@@ -8,6 +8,7 @@ import {
   TextInput,
   ActionIcon,
   Button,
+  Menu,
   Pagination,
   Select,
   Text,
@@ -34,9 +35,11 @@ import {
   IconSelector,
   IconListDetails,
   IconFilterOff,
+  IconStack2,
   IconX,
 } from '@tabler/icons-react';
 import type {
+  BulkAction,
   DataGridProps,
   DataGridState,
   DataGridColumn,
@@ -87,6 +90,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   onSelectionChange,
   rowKey = 'id',
   onFilterChange,
+  bulkActions,
 }: DataGridProps<T>) {
   const [state, setState] = useState<ExtendedDataGridState>({
     searchText: '',
@@ -118,43 +122,20 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Resizing state
   const resizingColumn = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
-  // Calculate dynamic width for a column based on content
   const calculateDynamicWidth = useCallback((column: DataGridColumn<T>): number => {
     const DEFAULT_MIN_WIDTH = 100;
-    const PADDING = 40; // Extra padding for sort icons, filter icons, etc.
-    const CHAR_WIDTH = 8; // Approximate character width in pixels
-    
-    // Start with minWidth or default
+    const PADDING = 40;
+    const CHAR_WIDTH = 8;
+
     let width = column.minWidth || DEFAULT_MIN_WIDTH;
-    
-    // Measure header text
-    const headerLength = column.title.length * CHAR_WIDTH + PADDING;
-    width = Math.max(width, headerLength);
-    
-    // Measure content in first 50 visible rows
-    const rowsToMeasure = data.slice(0, 50);
-    for (const record of rowsToMeasure) {
-      const value = record[column.dataIndex];
-      let contentLength = 0;
-      
-      if (column.render) {
-        // For rendered content, estimate based on string representation
-        const rendered = String(value || '');
-        contentLength = rendered.length * CHAR_WIDTH;
-      } else {
-        contentLength = String(value || '').length * CHAR_WIDTH;
-      }
-      
-      width = Math.max(width, contentLength + PADDING);
-    }
-    
-    // Apply maxWidth constraint if specified
+    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING);
+
     if (column.maxWidth) {
       width = Math.min(width, column.maxWidth);
     }
-    
+
     return Math.round(width);
-  }, [data]);
+  }, []);
 
   // Initialize column widths
   // Use a stable signature (key + explicit width) to avoid recalculating on
@@ -164,19 +145,17 @@ export function DataGrid<T extends Record<string, unknown>>({
 
   useEffect(() => {
     const initialWidths: Record<string, number> = {};
-    
+
     columns.forEach(column => {
       if (column.width) {
-        // Use explicit width if provided
         initialWidths[column.key] = typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
       } else {
-        // Calculate dynamic width
         initialWidths[column.key] = calculateDynamicWidth(column);
       }
     });
-    
+
     setColumnWidths(initialWidths);
-  }, [columnSignature, calculateDynamicWidth]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [columnSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle column resize move
   const handleResizeMove = useCallback((e: MouseEvent) => {
@@ -283,7 +262,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'overview',
       label: 'Overview',
-      icon: <IconEye size={16} />,
+      icon: <IconEye size={18} />,
       color: 'blue',
       variant: 'light',
       onClick: (record) => onView?.(record),
@@ -296,7 +275,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'details',
       label: 'Details',
-      icon: <IconListDetails size={16} />,
+      icon: <IconListDetails size={18} />,
       color: 'cyan',
       variant: 'light',
       onClick: (record) => onDetails?.(record),
@@ -309,7 +288,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'edit',
       label: 'Edit',
-      icon: <IconEdit size={16} />,
+      icon: <IconEdit size={18} />,
       color: 'orange',
       variant: 'light',
       onClick: (record) => onEdit?.(record),
@@ -322,7 +301,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     {
       key: 'delete',
       label: 'Delete',
-      icon: <IconTrash size={16} />,
+      icon: <IconTrash size={18} />,
       color: 'red',
       variant: 'light',
       onClick: (record) => {
@@ -347,51 +326,42 @@ export function DataGrid<T extends Record<string, unknown>>({
   // State for search debouncing
   const [debouncedSearchText] = useDebouncedValue(state.searchText, 500);
 
-  // Track initial mount to prevent onSearch('') on mount
   const isInitialMount = useRef(true);
+  const suppressNextSearch = useRef(false);
 
-  // Keep a stable ref to the latest onSearch so the debounce effect
-  // doesn't need onSearch in its deps (avoids infinite loop when parent
-  // passes an inline function that changes reference on every render).
   const onSearchRef = useRef(onSearch);
   useEffect(() => { onSearchRef.current = onSearch; });
 
-  // Handle search
   const handleSearch = useCallback((value: string) => {
     setState(prev => ({ ...prev, searchText: value }));
   }, []);
 
-  // Handle clear search
   const handleClearSearch = useCallback(() => {
     setState(prev => ({ ...prev, searchText: '' }));
     onSearchRef.current?.('');
   }, []);
 
-  // Handle Enter key for immediate search
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       onSearchRef.current?.(state.searchText);
     }
   }, [state.searchText]);
 
-  // Call onSearch when debounced value changes (skip initial mount).
-  // Intentionally excludes onSearch from deps — use onSearchRef instead
-  // to avoid an infinite loop when parent passes a new function reference each render.
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
+    if (suppressNextSearch.current) {
+      suppressNextSearch.current = false;
+      return;
+    }
     onSearchRef.current?.(debouncedSearchText);
   }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle refresh
   const handleRefresh = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      searchText: '', 
-      columnFilters: {} 
-    }));
+    suppressNextSearch.current = true;
+    setState(prev => ({ ...prev, searchText: '', columnFilters: {} }));
     setSortConditions([]);
     onRefresh?.();
   }, [onRefresh]);
@@ -552,15 +522,37 @@ export function DataGrid<T extends Record<string, unknown>>({
       : <IconChevronDown size={14} />;
   }, [sortConditions]);
 
-  // Handle select all
+  // Handle select all — union/subtract only current page to preserve cross-page selections
   const handleSelectAll = useCallback((checked: boolean) => {
+    const currentPageKeys = data.map(record => getRowKey(record));
     const newSelection = checked
-      ? data.map(record => getRowKey(record))
-      : [];
-    
+      ? [...new Set([...state.selectedRows, ...currentPageKeys])]
+      : state.selectedRows.filter(key => !currentPageKeys.includes(key));
+
     setState(prev => ({ ...prev, selectedRows: newSelection }));
     onSelectionChange?.(newSelection);
-  }, [data, onSelectionChange, getRowKey]);
+  }, [data, state.selectedRows, onSelectionChange, getRowKey]);
+
+  // Handle bulk action execution
+  const handleBulkAction = useCallback((action: BulkAction) => {
+    const execute = () => {
+      action.onClick(state.selectedRows);
+      setState(prev => ({ ...prev, selectedRows: [] }));
+      onSelectionChange?.([]);
+    };
+
+    if (action.confirm) {
+      modals.openConfirmModal({
+        title: action.confirm.title,
+        children: <Text size="sm">{action.confirm.content}</Text>,
+        labels: { confirm: 'Confirm', cancel: 'Cancel' },
+        confirmProps: { color: action.color || 'blue' },
+        onConfirm: execute,
+      });
+    } else {
+      execute();
+    }
+  }, [state.selectedRows, onSelectionChange]);
 
   // Render action buttons
   const renderActions = useCallback((record: T) => {
@@ -576,7 +568,7 @@ export function DataGrid<T extends Record<string, unknown>>({
           action.icon ? (
             <ActionIcon
               key={action.key}
-              size="sm"
+              size="md"
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={action.disabled?.(record)}
@@ -633,23 +625,26 @@ export function DataGrid<T extends Record<string, unknown>>({
 
     return (
       <Table.Tr key={key} bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}>
-        {selectable && (
-          <Table.Td>
-            <Checkbox
-              checked={isSelected}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
-            />
-          </Table.Td>
-        )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Td
             key={String(column.key)}
-            style={{ 
+            style={{
               width: columnWidths[column.key] || column.width,
               textAlign: column.align || 'left'
             }}
           >
-            {renderCellContent(column, record, index)}
+            {selectable && colIndex === 0 ? (
+              <Group gap="xs" wrap="nowrap">
+                <Checkbox
+                  size="xs"
+                  checked={isSelected}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => handleRowSelection(key, event.currentTarget.checked)}
+                />
+                {renderCellContent(column, record, index)}
+              </Group>
+            ) : (
+              renderCellContent(column, record, index)
+            )}
           </Table.Td>
         ))}
         {showActions && finalActions.length > 0 && (
@@ -687,6 +682,28 @@ export function DataGrid<T extends Record<string, unknown>>({
           <Group>
             {/* Create Button - mode-aware */}
             {renderCreateButton()}
+
+            {bulkActions && bulkActions.length > 0 && state.selectedRows.length > 0 && (
+              <Menu shadow="md" withinPortal>
+                <Menu.Target>
+                  <Button variant="light" color="blue" leftSection={<IconStack2 size={16} />}>
+                    Bulk Actions ({state.selectedRows.length})
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {bulkActions.map((action) => (
+                    <Menu.Item
+                      key={action.key}
+                      color={action.color}
+                      leftSection={action.icon}
+                      onClick={() => handleBulkAction(action)}
+                    >
+                      {action.label}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+            )}
           </Group>
 
           <Group>
@@ -752,25 +769,24 @@ export function DataGrid<T extends Record<string, unknown>>({
           >
             <Table.Thead>
               <Table.Tr>
-                {selectable && (
-                  <Table.Th>
-                    <Checkbox
-                      checked={state.selectedRows.length === data.length && data.length > 0}
-                      indeterminate={state.selectedRows.length > 0 && state.selectedRows.length < data.length}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
-                    />
-                  </Table.Th>
-                )}
-                {columns.map((column) => (
+                {columns.map((column, colIndex) => (
                   <Table.Th
                     key={String(column.key)}
-                    style={{ 
+                    style={{
                       width: columnWidths[column.key] || column.width,
                       textAlign: column.align || 'left',
                       position: 'relative',
                     }}
                   >
                     <Group gap="xs" justify={column.align === 'center' ? 'center' : column.align === 'right' ? 'flex-end' : 'flex-start'}>
+                      {selectable && colIndex === 0 && (
+                        <Checkbox
+                          size="xs"
+                          checked={data.length > 0 && data.every(record => state.selectedRows.includes(getRowKey(record)))}
+                          indeterminate={data.some(record => state.selectedRows.includes(getRowKey(record))) && !data.every(record => state.selectedRows.includes(getRowKey(record)))}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
+                        />
+                      )}
                       {column.sortable && sortable ? (
                         <UnstyledButton
                           onClick={() => handleSort(String(column.dataIndex))}

@@ -1,0 +1,89 @@
+@page "/auth/mfa/challenge"
+@model ChallengeModel
+@{
+    ViewData["Title"] = "Verify your identity";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">Verify your identity</h2>
+
+<div class="space-y-4">
+    <div class="flex gap-2 border-b border-slate-200 dark:border-slate-700">
+        <button type="button" id="authenticatorTab" aria-selected="true" class="flex-1 px-4 py-3 text-center font-medium text-sm text-slate-700 dark:text-slate-300 border-b-2 border-indigo-600 cursor-pointer transition-colors">
+            Authenticator App
+        </button>
+        <button type="button" id="backupCodeTab" aria-selected="false" class="flex-1 px-4 py-3 text-center font-medium text-sm text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer transition-colors">
+            Backup Code
+        </button>
+    </div>
+
+    @if (ModelState.ContainsKey(string.Empty) && !ModelState.IsValid)
+    {
+        var error = ModelState[string.Empty]?.Errors.FirstOrDefault();
+        if (error != null)
+        {
+            <p role="alert" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                @error.ErrorMessage
+            </p>
+        }
+    }
+
+    <div id="authenticatorSection" class="space-y-4">
+        <form method="post" asp-page-handler="Authenticator" asp-antiforgery="true" class="space-y-4">
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+            <div>
+                <label for="authenticatorCode" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">6-digit code</label>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Enter the code from your authenticator app</p>
+                <input type="text" id="authenticatorCode" name="code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="000000" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-center text-sm tracking-widest text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required />
+            </div>
+
+            <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Verify" } })" />
+        </form>
+    </div>
+
+    <div id="backupCodeSection" class="hidden space-y-4">
+        <form method="post" asp-page-handler="BackupCode" asp-antiforgery="true" class="space-y-4">
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+            <div>
+                <label for="backupCode" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Backup code</label>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Enter one of your backup codes</p>
+                <input type="text" id="backupCode" name="code" placeholder="XXXX-XXXX-XXXX" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm uppercase text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required />
+            </div>
+
+            <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Verify" } })" />
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const authenticatorTab = document.getElementById('authenticatorTab');
+    const backupCodeTab = document.getElementById('backupCodeTab');
+    const authenticatorSection = document.getElementById('authenticatorSection');
+    const backupCodeSection = document.getElementById('backupCodeSection');
+
+    authenticatorTab.addEventListener('click', function() {
+        authenticatorTab.setAttribute('aria-selected', 'true');
+        backupCodeTab.setAttribute('aria-selected', 'false');
+        authenticatorTab.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400', 'hover:text-slate-700', 'dark:hover:text-slate-300');
+        authenticatorTab.classList.add('border-indigo-600', 'text-slate-700', 'dark:text-slate-300');
+        backupCodeTab.classList.remove('border-indigo-600', 'text-slate-700', 'dark:text-slate-300');
+        backupCodeTab.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400', 'hover:text-slate-700', 'dark:hover:text-slate-300');
+        authenticatorSection.classList.remove('hidden');
+        backupCodeSection.classList.add('hidden');
+    });
+
+    backupCodeTab.addEventListener('click', function() {
+        authenticatorTab.setAttribute('aria-selected', 'false');
+        backupCodeTab.setAttribute('aria-selected', 'true');
+        authenticatorTab.classList.remove('border-indigo-600', 'text-slate-700', 'dark:text-slate-300');
+        authenticatorTab.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400', 'hover:text-slate-700', 'dark:hover:text-slate-300');
+        backupCodeTab.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400', 'hover:text-slate-700', 'dark:hover:text-slate-300');
+        backupCodeTab.classList.add('border-indigo-600', 'text-slate-700', 'dark:text-slate-300');
+        authenticatorSection.classList.add('hidden');
+        backupCodeSection.classList.remove('hidden');
+    });
+});
+</script>

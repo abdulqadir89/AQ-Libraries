@@ -1,0 +1,30 @@
+@page "/auth/verify-email-sent"
+@model VerifyEmailSentModel
+@{
+    ViewData["Title"] = "Verify email";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">Check your email</h2>
+
+<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+    <p class="text-sm text-blue-700 dark:text-blue-400">
+        We sent a verification link to <span class="font-semibold">@Model.Email</span>. Check your inbox and spam folder.
+    </p>
+</div>
+
+<form method="post" asp-antiforgery="true">
+    @if (!string.IsNullOrEmpty(Model.RateLimitMessage))
+    {
+        <p role="alert" class="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-4">
+            @Model.RateLimitMessage
+        </p>
+    }
+
+    <input type="hidden" name="email" value="@Model.Email" />
+    <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Resend link" } })" />
+</form>
+
+<p class="text-sm text-center text-slate-600 dark:text-slate-400 mt-6">
+    Already signed up? <a href="/auth/login@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">Sign in</a>
+</p>
