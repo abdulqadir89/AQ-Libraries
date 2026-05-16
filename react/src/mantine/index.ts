@@ -4,3 +4,4 @@ export * from './autocomplete';
 export * from './theme';
 export * from './datetime';
 export * from './address';
+export * from './money';
