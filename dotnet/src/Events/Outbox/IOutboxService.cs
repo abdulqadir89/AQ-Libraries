@@ -10,9 +10,10 @@ public interface IOutboxService
     /// </summary>
     /// <param name="category">The category of events to retrieve (optional, null for all).</param>
     /// <param name="batchSize">Maximum number of events to retrieve.</param>
+    /// <param name="maxRetryAttempts">Exclude events that have reached or exceeded this many attempts (optional, null for no limit).</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of unprocessed outbox events.</returns>
-    Task<List<OutboxEvent>> GetUnprocessedEventsAsync(OutboxEventCategory? category = null, int batchSize = 100, CancellationToken cancellationToken = default);
+    Task<List<OutboxEvent>> GetUnprocessedEventsAsync(OutboxEventCategory? category = null, int batchSize = 100, int? maxRetryAttempts = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Processes a batch of outbox events by dispatching them to their handlers.
