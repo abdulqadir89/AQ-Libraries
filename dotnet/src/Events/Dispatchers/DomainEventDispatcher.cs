@@ -46,41 +46,31 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 
         try
         {
-            // Find all handlers for this domain event type
+            // Find all handler concrete types registered for this event
             var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(eventType);
-            var handlers = _serviceProvider.GetServices(handlerType);
-
-            // Execute all handlers, each in its own scope so they get isolated DbContext instances
-            var handlersList = handlers.ToList();
-            var tasks = handlersList
+            var handlerConcreteTypes = _serviceProvider.GetServices(handlerType)
                 .Where(h => h != null)
-                .Select(h =>
-                {
-                    var scope = _serviceProvider.CreateScope();
-                    // Resolve a fresh instance of this exact handler type from the new scope
-                    var scopedHandler = scope.ServiceProvider.GetService(h!.GetType()) ?? h;
-                    return InvokeHandlerInScopeAsync(scopedHandler, scope, domainEvent, cancellationToken);
-                })
+                .Select(h => h!.GetType())
                 .ToList();
 
-            await Task.WhenAll(tasks);
+            // Execute each handler sequentially in its own scope for an isolated DbContext
+            foreach (var concreteType in handlerConcreteTypes)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var scopedHandler = scope.ServiceProvider.GetServices(handlerType)
+                    .FirstOrDefault(h => h?.GetType() == concreteType);
+                if (scopedHandler is null) continue;
+                await InvokeHandlerAsync(scopedHandler, domainEvent, cancellationToken);
+            }
 
             _logger.LogDebug("Successfully dispatched domain event: {EventType} to {HandlerCount} handlers",
-                eventType.Name, handlersList.Count);
+                eventType.Name, handlerConcreteTypes.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error dispatching domain event: {EventType}. Event data: {EventData}",
                 eventType.Name, JsonSerializer.Serialize(domainEvent));
             throw;
-        }
-    }
-
-    private async Task InvokeHandlerInScopeAsync(object handler, IServiceScope scope, IDomainEvent domainEvent, CancellationToken cancellationToken)
-    {
-        using (scope)
-        {
-            await InvokeHandlerAsync(handler, domainEvent, cancellationToken);
         }
     }
 
