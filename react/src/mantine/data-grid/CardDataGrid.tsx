@@ -196,6 +196,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   renderCard,
   emptyStateText = 'No data available',
   onCardClick,
+  cardHref,
   bulkActions,
 }: CardDataGridProps<T>) {
   const [searchText, setSearchText] = useState('');
@@ -599,14 +600,17 @@ export function CardDataGrid<T extends Record<string, unknown>>({
       );
     }
 
+    const resolvedCardHref = cardHref?.(record);
     return (
       <Card
         key={key}
+        component={resolvedCardHref ? 'a' : undefined}
+        href={resolvedCardHref}
         withBorder
         radius="md"
         shadow="sm"
         onClick={onCardClick ? () => onCardClick(record) : undefined}
-        className={onCardClick ? styles.clickableCard : undefined}
+        className={onCardClick || resolvedCardHref ? styles.clickableCard : undefined}
         style={{
           height: '100%',
           borderColor: isSelected ? 'var(--mantine-color-blue-5)' : undefined,

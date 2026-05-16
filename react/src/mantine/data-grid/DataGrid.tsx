@@ -76,8 +76,11 @@ export function DataGrid<T extends Record<string, unknown>>({
   createButtonText = 'Create',
   createButtonIcon,
   onEdit,
+  editHref,
   onView,
+  viewHref,
   onDetails,
+  detailsHref,
   onDelete,
   deleteConfirmTitle = 'Confirm Delete',
   deleteConfirmContent = 'Are you sure you want to delete this item? This action cannot be undone.',
@@ -265,10 +268,11 @@ export function DataGrid<T extends Record<string, unknown>>({
       icon: <IconEye size={18} />,
       color: 'blue',
       variant: 'light',
-      onClick: (record) => onView?.(record),
+      onClick: onView ? (record) => onView(record) : undefined,
+      href: viewHref,
       visible: () => {
         const config = getButtonConfig('overview');
-        return config.visible && !!onView;
+        return config.visible && (!!onView || !!viewHref);
       },
       disabled: () => getButtonConfig('overview').disabled,
     },
@@ -278,10 +282,11 @@ export function DataGrid<T extends Record<string, unknown>>({
       icon: <IconListDetails size={18} />,
       color: 'cyan',
       variant: 'light',
-      onClick: (record) => onDetails?.(record),
+      onClick: onDetails ? (record) => onDetails(record) : undefined,
+      href: detailsHref,
       visible: () => {
         const config = getButtonConfig('details');
-        return config.visible && !!onDetails;
+        return config.visible && (!!onDetails || !!detailsHref);
       },
       disabled: () => getButtonConfig('details').disabled,
     },
@@ -291,10 +296,11 @@ export function DataGrid<T extends Record<string, unknown>>({
       icon: <IconEdit size={18} />,
       color: 'orange',
       variant: 'light',
-      onClick: (record) => onEdit?.(record),
+      onClick: onEdit ? (record) => onEdit(record) : undefined,
+      href: editHref,
       visible: () => {
         const config = getButtonConfig('edit');
-        return config.visible && !!onEdit;
+        return config.visible && (!!onEdit || !!editHref);
       },
       disabled: () => getButtonConfig('edit').disabled,
     },
@@ -556,7 +562,7 @@ export function DataGrid<T extends Record<string, unknown>>({
 
   // Render action buttons
   const renderActions = useCallback((record: T) => {
-    const visibleActions = finalActions.filter(action => 
+    const visibleActions = finalActions.filter(action =>
       !action.visible || action.visible(record)
     );
 
@@ -564,32 +570,66 @@ export function DataGrid<T extends Record<string, unknown>>({
 
     return (
       <Group gap="xs" justify="center">
-        {visibleActions.map(action => (
-          action.icon ? (
-            <ActionIcon
+        {visibleActions.map(action => {
+          const resolvedHref = typeof action.href === 'function' ? action.href(record) : action.href;
+          const isDisabled = action.disabled?.(record);
+
+          if (action.icon) {
+            return resolvedHref ? (
+              <ActionIcon
+                key={action.key}
+                component="a"
+                href={resolvedHref}
+                size="md"
+                variant={action.variant || 'light'}
+                color={action.color || 'gray'}
+                disabled={isDisabled}
+                title={action.label}
+                onClick={action.onClick ? () => action.onClick!(record) : undefined}
+              >
+                {action.icon}
+              </ActionIcon>
+            ) : (
+              <ActionIcon
+                key={action.key}
+                size="md"
+                variant={action.variant || 'light'}
+                color={action.color || 'gray'}
+                disabled={isDisabled}
+                onClick={() => action.onClick?.(record)}
+                title={action.label}
+              >
+                {action.icon}
+              </ActionIcon>
+            );
+          }
+
+          return resolvedHref ? (
+            <Button
               key={action.key}
-              size="md"
+              component="a"
+              href={resolvedHref}
+              size="compact-xs"
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
-              disabled={action.disabled?.(record)}
-              onClick={() => action.onClick(record)}
-              title={action.label}
+              disabled={isDisabled}
+              onClick={action.onClick ? () => action.onClick!(record) : undefined}
             >
-              {action.icon}
-            </ActionIcon>
+              {action.label}
+            </Button>
           ) : (
             <Button
               key={action.key}
               size="compact-xs"
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
-              disabled={action.disabled?.(record)}
-              onClick={() => action.onClick(record)}
+              disabled={isDisabled}
+              onClick={() => action.onClick?.(record)}
             >
               {action.label}
             </Button>
-          )
-        ))}
+          );
+        })}
       </Group>
     );
   }, [finalActions]);

@@ -23,7 +23,8 @@ export interface ActionButton<T = Record<string, unknown>> {
   icon?: ReactNode;
   color?: string;
   variant?: 'filled' | 'outline' | 'light' | 'subtle' | 'default';
-  onClick: (record: T) => void;
+  onClick?: (record: T) => void;
+  href?: string | ((record: T) => string);
   visible?: (record: T) => boolean;
   disabled?: (record: T) => boolean;
 }
@@ -127,8 +128,11 @@ export interface DataGridProps<T = Record<string, unknown>> {
   createButtonText?: string; // Customizable create button text (default: 'Create')
   createButtonIcon?: ReactNode; // Customizable create button icon (default: IconPlus)
   onEdit?: (record: T) => void;
+  editHref?: (record: T) => string;
   onView?: (record: T) => void;
+  viewHref?: (record: T) => string;
   onDetails?: (record: T) => void; // New separate details action
+  detailsHref?: (record: T) => string;
   
   // Delete confirmation
   onDelete?: (record: T) => void;
@@ -229,6 +233,7 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
 
   // Card-specific interaction
   onCardClick?: (record: T) => void;
+  cardHref?: (record: T) => string;
 
   // Bulk actions (shown in toolbar when records are selected)
   bulkActions?: BulkAction[];
