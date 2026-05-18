@@ -94,6 +94,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   rowKey = 'id',
   onFilterChange,
   bulkActions,
+  actionButtonStyle = 'icon',
 }: DataGridProps<T>) {
   const [state, setState] = useState<ExtendedDataGridState>({
     searchText: '',
@@ -574,7 +575,8 @@ export function DataGrid<T extends Record<string, unknown>>({
           const resolvedHref = typeof action.href === 'function' ? action.href(record) : action.href;
           const isDisabled = action.disabled?.(record);
 
-          if (action.icon) {
+          // icon mode: always render ActionIcon (requires action.icon to exist)
+          if (actionButtonStyle === 'icon' && action.icon) {
             return resolvedHref ? (
               <ActionIcon
                 key={action.key}
@@ -604,6 +606,7 @@ export function DataGrid<T extends Record<string, unknown>>({
             );
           }
 
+          // text mode (or icon mode without icon): render Button with label
           return resolvedHref ? (
             <Button
               key={action.key}
@@ -613,6 +616,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
+              leftSection={action.icon}
               onClick={action.onClick ? () => action.onClick!(record) : undefined}
             >
               {action.label}
@@ -624,6 +628,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
+              leftSection={action.icon}
               onClick={() => action.onClick?.(record)}
             >
               {action.label}

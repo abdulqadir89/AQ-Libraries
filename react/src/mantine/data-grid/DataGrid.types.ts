@@ -153,6 +153,9 @@ export interface DataGridProps<T = Record<string, unknown>> {
 
   // Bulk actions (shown in toolbar when records are selected)
   bulkActions?: BulkAction[];
+
+  // Controls whether action buttons render as icon-only or icon+label
+  actionButtonStyle?: 'icon' | 'text';
 }
 
 export type GridViewMode = 'table' | 'card';
