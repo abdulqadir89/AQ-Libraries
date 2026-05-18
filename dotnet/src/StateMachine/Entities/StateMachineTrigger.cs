@@ -48,6 +48,7 @@ public class StateMachineTrigger : Entity
     public StateMachineTriggerType Type { get; private set; }
     public bool IsRecordsOnly { get; private set; }
     public string? EventType { get; private set; }
+    public string? TriggerMetadataJson { get; private set; }
 
     // EF Core constructor
     private StateMachineTrigger() { }
@@ -58,7 +59,8 @@ public class StateMachineTrigger : Entity
         string? description = null,
         StateMachineTriggerType type = StateMachineTriggerType.Manual,
         bool isRecordsOnly = false,
-        string? eventType = null)
+        string? eventType = null,
+        string? triggerMetadataJson = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
@@ -67,6 +69,7 @@ public class StateMachineTrigger : Entity
         Type = type;
         IsRecordsOnly = isRecordsOnly;
         EventType = eventType;
+        TriggerMetadataJson = triggerMetadataJson;
     }
 
     /// <summary>
@@ -78,13 +81,14 @@ public class StateMachineTrigger : Entity
         string? description = null,
         StateMachineTriggerType type = StateMachineTriggerType.Manual,
         bool isRecordsOnly = false,
-        string? eventType = null)
+        string? eventType = null,
+        string? triggerMetadataJson = null)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
 
-        return new StateMachineTrigger(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType);
+        return new StateMachineTrigger(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType, triggerMetadataJson);
     }
 
     /// <summary>
@@ -95,7 +99,8 @@ public class StateMachineTrigger : Entity
         string? description = null,
         StateMachineTriggerType? type = null,
         bool? isRecordsOnly = null,
-        string? eventType = null)
+        string? eventType = null,
+        string? triggerMetadataJson = null)
     {
         if (!string.IsNullOrWhiteSpace(name))
             Name = name.Trim();
@@ -110,6 +115,9 @@ public class StateMachineTrigger : Entity
 
         if (eventType != null)
             EventType = eventType;
+
+        if (triggerMetadataJson != null)
+            TriggerMetadataJson = triggerMetadataJson;
     }
 
     public override string ToString() => $"{Name} ({Type})";

@@ -14,6 +14,7 @@ public abstract class StateMachineInstance : Entity
     public StateMachineState? CurrentState { get; protected set; }
     public Guid CurrentStateId { get; protected set; }
     public DateTimeOffset? LastTransitionAt { get; protected set; }
+    public DateTimeOffset? CurrentStateEnteredAt { get; protected set; }
 
     public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = [];
 
@@ -28,6 +29,7 @@ public abstract class StateMachineInstance : Entity
         // Set current state to the definition's initial state
         var initialState = definition.InitialState ?? throw new InvalidOperationException("Definition must have an initial state.");
         CurrentStateId = initialState.Id;
+        CurrentStateEnteredAt = DateTimeOffset.UtcNow;
     }
 
 
@@ -57,6 +59,7 @@ public abstract class StateMachineInstance : Entity
         CurrentStateId = targetState.Id;
         CurrentState = targetState;
         LastTransitionAt = DateTimeOffset.UtcNow;
+        CurrentStateEnteredAt = DateTimeOffset.UtcNow;
 
         // Raise domain event for revert operation if needed
     }
@@ -206,6 +209,7 @@ public abstract class StateMachineInstance : Entity
         CurrentStateId = newState.Id;
         CurrentState = newState;
         LastTransitionAt = DateTimeOffset.UtcNow;
+        CurrentStateEnteredAt = DateTimeOffset.UtcNow;
     }
 }
 
