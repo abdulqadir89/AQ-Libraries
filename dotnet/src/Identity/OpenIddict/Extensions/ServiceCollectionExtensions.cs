@@ -151,7 +151,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());
-        services.AddHostedService<ClientSeeder>();
 
         if (options.Google != null)
         {

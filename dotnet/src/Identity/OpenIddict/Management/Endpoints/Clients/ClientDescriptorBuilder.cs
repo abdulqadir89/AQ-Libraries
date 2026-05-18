@@ -4,9 +4,9 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 
-internal static class ClientDescriptorBuilder
+public static class ClientDescriptorBuilder
 {
-    internal static OpenIddictApplicationDescriptor Build(IdentityClientConfig config)
+    public static OpenIddictApplicationDescriptor Build(IdentityClientConfig config)
     {
         var descriptor = new OpenIddictApplicationDescriptor
         {
