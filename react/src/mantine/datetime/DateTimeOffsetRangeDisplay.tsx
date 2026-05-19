@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react';
 import { Text, Tooltip } from '@mantine/core';
 import type { DateTimeOffsetRangeDto } from '../../utils/DateTimeOffsetUtils';
 import {
-  getTimezoneSuffix,
   buildCompactRangeValue,
   buildRangeIntervalTooltip,
   formatDateTimeNoTz,
@@ -53,10 +52,8 @@ export function DateTimeOffsetRangeDisplay({
     return <Text {...textProps}>—</Text>;
   }
 
-  const timezoneSuffix = getTimezoneSuffix(value);
-
   if (compact) {
-    const compactValue = buildCompactRangeValue(value, separator, timezoneSuffix);
+    const compactValue = buildCompactRangeValue(value, separator);
     if (!compactValue) {
       return <Text {...textProps}>—</Text>;
     }
@@ -83,11 +80,11 @@ export function DateTimeOffsetRangeDisplay({
   const endFormatted = value.end ? formatDateTimeNoTz(value.end) : null;
 
   const displayValue = startFormatted && endFormatted
-    ? `${startFormatted}${separator}${endFormatted}${timezoneSuffix}`
+    ? `${startFormatted}${separator}${endFormatted}`
     : startFormatted
-      ? `From ${startFormatted}${timezoneSuffix}`
+      ? `From ${startFormatted}`
       : endFormatted
-        ? `Until ${endFormatted}${timezoneSuffix}`
+        ? `Until ${endFormatted}`
         : '';
 
   if (!displayValue) {

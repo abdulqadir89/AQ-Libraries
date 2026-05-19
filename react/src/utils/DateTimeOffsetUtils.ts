@@ -634,17 +634,17 @@ export function buildCompactRangeValue(
       startDate.getDate() === endDate.getDate();
 
     if (sameDay) {
-      return `${formatDateOnlyNoTz(start)} ${formatTimeOnlyNoTz(start)}${separator}${formatTimeOnlyNoTz(end)}${timezoneSuffix}`;
+      return `${formatDateOnlyNoTz(start)} ${formatTimeOnlyNoTz(start)}${separator}${formatTimeOnlyNoTz(end)}`;
     }
 
-    return `${formatDateTimeNoTz(start)}${separator}${formatDateTimeNoTz(end)}${timezoneSuffix}`;
+    return `${formatDateTimeNoTz(start)}${separator}${formatDateTimeNoTz(end)}`;
   }
 
   if (start) {
-    return `From ${formatDateTimeNoTz(start)}${timezoneSuffix}`;
+    return `From ${formatDateTimeNoTz(start)}`;
   }
 
-  return `Until ${formatDateTimeNoTz(end)}${timezoneSuffix}`;
+  return `Until ${formatDateTimeNoTz(end)}`;
 }
 
 /**

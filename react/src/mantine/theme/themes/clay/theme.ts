@@ -211,8 +211,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                     // Active NavLink light-variant bg: visible warm highlight on dark bg
                     '--mantine-primary-color-light': 'rgba(176, 92, 44, 0.25)',
                     '--mantine-primary-color-light-color': 'var(--els-navbar-text)',
+                    // ActionIcon/default variant on dark navbar: dark background with visible border
+                    '--mantine-color-default': 'rgba(240, 232, 216, 0.08)',
+                    '--mantine-color-default-border': 'rgba(240, 232, 216, 0.2)',
                     // NavLink hover on dark bg: subtle warm tint instead of light grey
-                    '--mantine-color-default-hover': 'rgba(240, 232, 216, 0.08)',
+                    '--mantine-color-default-hover': 'rgba(240, 232, 216, 0.14)',
                 },
             }),
         }),
