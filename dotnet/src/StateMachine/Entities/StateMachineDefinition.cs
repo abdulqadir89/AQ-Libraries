@@ -201,15 +201,14 @@ public abstract class StateMachineDefinition : Entity
         return stateSpecificTriggers.Concat(recordsOnlyTriggers).Distinct();
     }
 
-    /// <summary>
-    /// Generates a Mermaid state diagram representation of the state machine definition.
-    /// </summary>
-    /// <param name="currentState">Optional current state to highlight in the diagram</param>
-    /// <returns>Mermaid diagram as a string</returns>
     public string ToMermaidDiagram(StateMachineState? currentState = null)
     {
         var diagram = new System.Text.StringBuilder();
         diagram.AppendLine("stateDiagram-v2");
+
+        // Synthetic start arrows: [*] --> InitialState
+        foreach (var state in _states.Where(s => s.Category == StateMachineStateCategory.Initial))
+            diagram.AppendLine($"    [*] --> {SanitizeStateName(state.Name)}");
 
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
@@ -219,12 +218,15 @@ public abstract class StateMachineDefinition : Entity
             if (trigger?.IsRecordsOnly == true)
                 continue;
 
-            var fromStateName = transition.FromStateId.HasValue
-                ? SanitizeStateName(_states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)?.Name ?? string.Empty)
-                : "[*]";
-            var toStateName = transition.ToStateId.HasValue
-                ? SanitizeStateName(_states.FirstOrDefault(s => s.Id == transition.ToStateId.Value)?.Name ?? string.Empty)
-                : "[*]";
+            var fromState = transition.FromStateId.HasValue
+                ? _states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)
+                : null;
+            var toState = transition.ToStateId.HasValue
+                ? _states.FirstOrDefault(s => s.Id == transition.ToStateId.Value)
+                : null;
+
+            var fromStateName = fromState != null ? SanitizeStateName(fromState.Name) : "[*]";
+            var toStateName = toState != null ? SanitizeStateName(toState.Name) : "[*]";
             var triggerName = _triggers.FirstOrDefault(t => t.Id == transition.TriggerId)?.Name ?? string.Empty;
 
             diagram.AppendLine($"    {fromStateName} --> {toStateName} : {triggerName}");
@@ -249,12 +251,24 @@ public abstract class StateMachineDefinition : Entity
             }
         }
 
-        // Highlight current state if provided
+        // Synthetic end arrows: FinalState --> [*]
+        foreach (var state in _states.Where(s => s.Category == StateMachineStateCategory.Final))
+            diagram.AppendLine($"    {SanitizeStateName(state.Name)} --> [*]");
+
         if (currentState != null)
         {
             var currentStateName = SanitizeStateName(currentState.Name);
-            diagram.AppendLine($"    %% Highlight current state");
-            diagram.AppendLine($"    style {currentStateName} fill:#f9f,stroke:#333,stroke-width:2px");
+            diagram.AppendLine($"    style {currentStateName} fill:#b2f2e8,stroke:#0ca678,stroke-width:3px");
+
+            var reachableStateIds = _transitions
+                .Where(t => t.FromStateId == currentState.Id && t.ToStateId.HasValue)
+                .Select(t => t.ToStateId!.Value)
+                .ToHashSet();
+
+            foreach (var state in _states.Where(s => reachableStateIds.Contains(s.Id)))
+            {
+                diagram.AppendLine($"    style {SanitizeStateName(state.Name)} fill:#fff3cd,stroke:#ff9800,stroke-width:2px");
+            }
         }
 
         var globalTriggers = GetGlobalTriggers().Select(t => t.Name).Distinct().OrderBy(n => n).ToList();
