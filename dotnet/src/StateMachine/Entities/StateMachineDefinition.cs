@@ -116,15 +116,15 @@ public abstract class StateMachineDefinition : Entity
                 trigger.Description,
                 trigger.Type,
                 trigger.IsRecordsOnly,
-                trigger.EventType);
+                trigger.EventType,
+                trigger.TriggerMetadataJson);
             newDefinition._triggers.Add(newTrigger);
         }
 
-        // Copy all transitions with their requirements and descriptions
+        // Copy all transitions with their requirements, publish events, and descriptions.
+        // Nav props may not be loaded; resolve names via ID lookup in the source collections.
         foreach (var transition in _transitions)
         {
-            // Find corresponding states and triggers by name in the new definition.
-            // Nav props may not be loaded; resolve names via ID lookup in the source collections.
             var sourceFromStateName = transition.FromStateId.HasValue
                 ? _states.FirstOrDefault(s => s.Id == transition.FromStateId.Value)?.Name
                 : null;
@@ -143,21 +143,18 @@ public abstract class StateMachineDefinition : Entity
                 ? newDefinition._triggers.FirstOrDefault(t => t.Name == sourceTriggerName)
                 : null;
 
-            if (newTrigger != null)
-            {
-                // Skip transitions whose trigger is already represented (e.g. auto-added global triggers)
-                if (newDefinition._transitions.Any(t => t.TriggerId == newTrigger.Id))
-                    continue;
+            if (newTrigger == null)
+                continue;
 
-                var newTransition = StateMachineTransition.Create(
-                    newDefinition,
-                    newFromState,
-                    newToState,
-                    newTrigger,
-                    transition.Description,
-                    transition.Requirements);
-                newDefinition._transitions.Add(newTransition);
-            }
+            var newTransition = StateMachineTransition.Create(
+                newDefinition,
+                newFromState,
+                newToState,
+                newTrigger,
+                transition.Description,
+                transition.Requirements,
+                transition.PublishEventTypes);
+            newDefinition._transitions.Add(newTransition);
         }
     }
 
