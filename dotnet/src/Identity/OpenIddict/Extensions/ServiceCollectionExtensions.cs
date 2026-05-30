@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetIssuer(new Uri(options.Issuer, UriKind.Absolute));
                 serverOptions.AllowAuthorizationCodeFlow();
                 serverOptions.AllowRefreshTokenFlow();
+                serverOptions.AllowClientCredentialsFlow();
                 serverOptions.SetAccessTokenLifetime(options.Tokens.AccessToken);
                 serverOptions.SetRefreshTokenLifetime(options.Tokens.RefreshToken);
 

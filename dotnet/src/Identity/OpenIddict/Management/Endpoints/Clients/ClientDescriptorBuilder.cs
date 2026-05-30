@@ -40,14 +40,24 @@ public static class ClientDescriptorBuilder
             descriptor.Permissions.Add(Permissions.Prefixes.Scope + scope);
         }
 
-        descriptor.Permissions.Add(Permissions.GrantTypes.AuthorizationCode);
-        descriptor.Permissions.Add(Permissions.GrantTypes.RefreshToken);
-        descriptor.Permissions.Add(Permissions.ResponseTypes.Code);
-        descriptor.Permissions.Add(Permissions.Endpoints.Authorization);
-        descriptor.Permissions.Add(Permissions.Endpoints.Token);
-        descriptor.Permissions.Add(Permissions.Endpoints.Introspection);
-        descriptor.Permissions.Add(Permissions.Endpoints.Revocation);
-        descriptor.Permissions.Add(Permissions.Endpoints.EndSession);
+        if (string.Equals(config.GrantType, "client_credentials", StringComparison.OrdinalIgnoreCase))
+        {
+            descriptor.Permissions.Add(Permissions.GrantTypes.ClientCredentials);
+            descriptor.Permissions.Add(Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(Permissions.Endpoints.Introspection);
+            descriptor.Permissions.Add(Permissions.Endpoints.Revocation);
+        }
+        else
+        {
+            descriptor.Permissions.Add(Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(Permissions.GrantTypes.RefreshToken);
+            descriptor.Permissions.Add(Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(Permissions.Endpoints.Introspection);
+            descriptor.Permissions.Add(Permissions.Endpoints.Revocation);
+            descriptor.Permissions.Add(Permissions.Endpoints.EndSession);
+        }
 
         return descriptor;
     }
