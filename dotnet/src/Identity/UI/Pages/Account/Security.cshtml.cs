@@ -59,7 +59,7 @@ public class SecurityModel : PageModel
             return Page();
         }
 
-        TempData["Success"] = "Your password has been changed successfully.";
+        TempData["AccountSuccess"] = "Your password has been changed successfully.";
         return RedirectToPage();
     }
 }

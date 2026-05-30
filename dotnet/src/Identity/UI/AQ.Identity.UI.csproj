@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\AQ.Identity.Core.csproj" />
+    <ProjectReference Include="..\OpenIddict\AQ.Identity.OpenIddict.csproj" />
   </ItemGroup>
 
   <ItemGroup>

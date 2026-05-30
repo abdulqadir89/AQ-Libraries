@@ -30,6 +30,9 @@ public class AuditEntry
         public const string UserSessionsRevoked = "UserSessionsRevoked";
         public const string ClientCreated = "ClientCreated";
         public const string ClientUpdated = "ClientUpdated";
+        public const string ClientDeleted = "ClientDeleted";
+        public const string ClientSecretReset = "ClientSecretReset";
+        public const string AdminUserCreated = "AdminUserCreated";
         public const string UserTokensInvalidated = "UserTokensInvalidated";
     }
 

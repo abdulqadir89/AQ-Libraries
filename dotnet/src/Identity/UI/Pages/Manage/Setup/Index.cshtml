@@ -1,0 +1,70 @@
+@page "/setup"
+@model AQ.Identity.UI.Pages.Manage.Setup.SetupAdminModel
+@using AQ.Identity.Core.Configuration
+@using Microsoft.Extensions.Options
+@inject IOptions<AqIdentityOptions> options
+@{
+    ViewData["Title"] = "Initial Setup";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+<div class="text-center mb-6">
+    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 mb-4">
+        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+    </div>
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Welcome to @options.Value.AppName</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create your administrator account to get started</p>
+</div>
+
+@if (!ModelState.IsValid && ModelState.ContainsKey(string.Empty))
+{
+    var error = ModelState[string.Empty]?.Errors.FirstOrDefault();
+    if (error != null)
+    {
+        <div role="alert" class="mb-5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3">
+            @error.ErrorMessage
+        </div>
+    }
+}
+
+<form method="post" class="space-y-4">
+    <div class="space-y-1">
+        <label for="FullName" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</label>
+        <input type="text" id="FullName" asp-for="FullName" autocomplete="name"
+               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+               placeholder="Jane Smith" required />
+        <span asp-validation-for="FullName" class="text-xs text-red-500"></span>
+    </div>
+
+    <div class="space-y-1">
+        <label for="Email" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+        <input type="email" id="Email" asp-for="Email" autocomplete="email"
+               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+               placeholder="admin@example.com" required />
+        <span asp-validation-for="Email" class="text-xs text-red-500"></span>
+    </div>
+
+    <div class="space-y-1">
+        <label for="Password" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+        <input type="password" id="Password" asp-for="Password" autocomplete="new-password"
+               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+               placeholder="••••••••" required minlength="8" />
+        <span asp-validation-for="Password" class="text-xs text-red-500"></span>
+    </div>
+
+    <div class="space-y-1">
+        <label for="ConfirmPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Confirm Password</label>
+        <input type="password" id="ConfirmPassword" asp-for="ConfirmPassword" autocomplete="new-password"
+               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+               placeholder="••••••••" required />
+        <span asp-validation-for="ConfirmPassword" class="text-xs text-red-500 block mt-1">
+            @(ModelState["ConfirmPassword"]?.Errors.FirstOrDefault()?.ErrorMessage)
+        </span>
+    </div>
+
+    <div class="pt-1">
+        <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Create Administrator Account" } })" />
+    </div>
+</form>

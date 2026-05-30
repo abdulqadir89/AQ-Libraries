@@ -1,6 +1,9 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Extensions.Claims;
+using AQ.Identity.OpenIddict.Extensions.Middleware;
+using AQ.Identity.OpenIddict.Extensions.Seeding;
 using AQ.Identity.OpenIddict.Handlers;
 using AQ.Identity.OpenIddict.Health;
 using AQ.Identity.OpenIddict.KeyManagement;
@@ -34,7 +37,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<TContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddClaimsPrincipalFactory<StoredClaimsPrincipalFactory<TContext>>();
 
         services.ConfigureApplicationCookie(o => o.LoginPath = "/auth/login");
 
@@ -110,7 +114,7 @@ public static class ServiceCollectionExtensions
                 validationOptions.AddEventHandler<OpenIddictValidationEvents.ValidateTokenContext>(builder =>
                     builder.UseInlineHandler(async context =>
                     {
-                        var sub = context.Principal?.FindFirst(Claims.Subject)?.Value;
+                        var sub = context.Principal?.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
                         if (sub == null || !Guid.TryParse(sub, out var userId)) return;
 
                         var serviceProvider = context.Transaction.Properties["service_provider"] as IServiceProvider
@@ -140,18 +144,20 @@ public static class ServiceCollectionExtensions
         // Ensure the handler's IIdentityDbContext dependency is resolvable as TContext
         services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<TContext>());
 
-        // Register ManageApi policy
+        // Register ManageApi policy — checks plain claim so it works for both
+        // cookie-authenticated Razor Pages and OpenIddict bearer token endpoints
         services.AddAuthorization(opts =>
         {
             opts.AddPolicy("ManageApi", policy =>
                 policy
                     .RequireAuthenticatedUser()
-                    .RequireClaim(Claims.Private.Scope, "manage_api"));
+                    .RequireClaim("manage_api"));
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());
+        services.AddScoped<ISetupStateService, SetupStateService>();
 
         if (options.Google != null)
         {
@@ -174,6 +180,7 @@ public static class ServiceCollectionExtensions
     {
         app.UseMiddleware<RequestIdMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
+        app.UseMiddleware<SetupGuardMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 

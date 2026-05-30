@@ -8,13 +8,6 @@
 <section>
     <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Profile Settings</h2>
 
-    @if (TempData["Success"] != null)
-    {
-        <p class="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mb-4">
-            @TempData["Success"]
-        </p>
-    }
-
     <form method="post" asp-antiforgery="true">
         <!-- Email Field (Read-only) -->
         <div class="mb-4">

@@ -1,0 +1,117 @@
+@page "/manage/scopes"
+@model AQ.Identity.UI.Pages.Manage.Scopes.ScopesIndexModel
+@{
+    ViewData["Title"] = "Scopes";
+    Layout = "~/Pages/Manage/_ManageLayout.cshtml";
+}
+
+<div class="space-y-6">
+
+    <!-- Existing scopes table -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+        @if (Model.Scopes.Count == 0)
+        {
+            <div class="text-center py-16">
+                <p class="text-sm text-slate-400">No custom scopes defined yet.</p>
+            </div>
+        }
+        else
+        {
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-100 dark:border-slate-800">
+                        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+                        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Display Name</th>
+                        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Claim Types</th>
+                        <th class="px-5 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
+                    @foreach (var scope in Model.Scopes)
+                    {
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="px-5 py-3.5">
+                                <code class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">@scope.Name</code>
+                            </td>
+                            <td class="px-5 py-3.5 text-slate-600 dark:text-slate-400">@scope.DisplayName</td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach (var ct in scope.ClaimTypes)
+                                    {
+                                        <span class="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 px-1.5 py-0.5 rounded font-mono">@ct</span>
+                                    }
+                                    @if (!scope.ClaimTypes.Any())
+                                    {
+                                        <span class="text-xs text-slate-400 italic">none</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <form method="post">
+                                    <input type="hidden" name="id" value="@scope.Id" />
+                                    <button type="submit" asp-page-handler="Delete"
+                                            class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                                            onclick="return confirm('Delete scope \'@scope.Name\'?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <!-- Add scope form -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Add Scope</h2>
+
+        <form method="post" class="space-y-4">
+
+            @if (!ModelState.IsValid)
+            {
+                <div class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3">
+                    @ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage
+                </div>
+            }
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Name <span class="text-red-500">*</span></label>
+                    <input type="text" asp-for="NewName"
+                           class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                           placeholder="my_scope" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Display Name</label>
+                    <input type="text" asp-for="NewDisplayName"
+                           class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                           placeholder="My Scope" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+                <input type="text" asp-for="NewDescription"
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                       placeholder="What this scope grants access to" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Claim Types</label>
+                <input type="text" asp-for="NewClaimTypesRaw"
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                       placeholder="claim_type_1, claim_type_2" />
+                <p class="text-xs text-slate-400">Comma-separated. When this scope is granted, these claim types are included in the token from the user's stored claims.</p>
+            </div>
+
+            <div>
+                <button type="submit" asp-page-handler="Create"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+                    Add Scope
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

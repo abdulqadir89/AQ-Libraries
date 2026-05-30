@@ -1,0 +1,136 @@
+@page "/manage/clients"
+@model AQ.Identity.UI.Pages.Manage.Clients.ClientsIndexModel
+@{
+    ViewData["Title"] = "Clients";
+    Layout = "~/Pages/Manage/_ManageLayout.cshtml";
+}
+
+<div class="flex items-center justify-between mb-6">
+    <p class="text-sm text-slate-500 dark:text-slate-400">@Model.Clients.Count client@(Model.Clients.Count == 1 ? "" : "s") registered</p>
+    <a href="/manage/clients/create"
+       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Client
+    </a>
+</div>
+
+@if (Model.Clients.Count == 0)
+{
+    <div class="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+        <svg class="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+        </svg>
+        <p class="text-sm text-slate-500 dark:text-slate-400">No clients registered yet.</p>
+        <a href="/manage/clients/create" class="mt-3 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Add your first client</a>
+    </div>
+}
+else
+{
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-slate-100 dark:border-slate-800">
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Client ID</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Display Name</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Grant</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Scopes</th>
+                    <th class="px-5 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
+                @foreach (var client in Model.Clients)
+                {
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-5 py-3.5">
+                            <code class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">@client.ClientId</code>
+                        </td>
+                        <td class="px-5 py-3.5 text-slate-800 dark:text-slate-200 font-medium">@client.DisplayName</td>
+                        <td class="px-5 py-3.5">
+                            @if (client.ClientType == "confidential")
+                            {
+                                <span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    Confidential
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center gap-1 text-xs font-medium bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+                                    Public
+                                </span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
+                            @(client.GrantType == "client_credentials" ? "Client Credentials" : "Auth Code")
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <div class="flex flex-wrap gap-1">
+                                @foreach (var scope in client.Scopes.Take(3))
+                                {
+                                    <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">@scope</span>
+                                }
+                                @if (client.Scopes.Count > 3)
+                                {
+                                    <span class="text-xs text-slate-400">+@(client.Scopes.Count - 3) more</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center gap-2 justify-end">
+                                <a href="/manage/clients/@Uri.EscapeDataString(client.ClientId)/edit"
+                                   class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Edit</a>
+                                <span class="text-slate-200 dark:text-slate-700">|</span>
+                                <button type="button"
+                                        class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400"
+                                        onclick="confirmDelete('@client.ClientId', '@Html.Raw(client.DisplayName.Replace("'", "\\'"))')">
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Delete confirmation modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-6 w-full max-w-sm">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-white mb-1">Delete Client</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Are you sure you want to delete:</p>
+        <p id="deleteClientName" class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4"></p>
+        <p class="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 mb-5">
+            This will immediately revoke all tokens issued to this client. This action cannot be undone.
+        </p>
+        <form method="post" id="deleteForm">
+            <input type="hidden" name="clientId" id="deleteClientId" />
+            <div class="flex gap-3">
+                <button type="button" onclick="closeDeleteModal()"
+                        class="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" asp-page-handler="Delete"
+                        class="flex-1 text-sm font-medium bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmDelete(clientId, displayName) {
+    document.getElementById('deleteClientId').value = clientId;
+    document.getElementById('deleteClientName').textContent = displayName + ' (' + clientId + ')';
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>

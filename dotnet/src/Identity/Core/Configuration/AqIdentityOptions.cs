@@ -10,4 +10,5 @@ public class AqIdentityOptions
     public KeyManagementOptions Keys { get; set; } = new();
     public EmailOptions Email { get; set; } = new();
     public GoogleOptions? Google { get; set; }
+    public AdminUserOptions? AdminUser { get; set; }
 }

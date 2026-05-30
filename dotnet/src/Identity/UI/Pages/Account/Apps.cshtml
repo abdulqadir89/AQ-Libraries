@@ -1,0 +1,55 @@
+@page "/account/apps"
+@model AQ.Identity.UI.Pages.Account.AccountAppsModel
+@{
+    ViewData["Title"] = "Connected Apps";
+    Layout = "_AccountLayout";
+}
+
+<div class="space-y-6">
+    <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Connected Apps</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Applications that have active access to your account. Revoking removes their tokens immediately.</p>
+    </div>
+
+    @if (Model.Apps.Count == 0)
+    {
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 py-16 text-center">
+            <svg class="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            <p class="text-sm text-slate-400">No apps connected yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+            @foreach (var app in Model.Apps)
+            {
+                <div class="flex items-center justify-between px-5 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                            <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                                @(app.DisplayName.Length > 0 ? app.DisplayName[0].ToString().ToUpper() : "?")
+                            </span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">@app.DisplayName</p>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                <code class="font-mono">@app.ClientId</code>
+                                · Last used @app.LastUsed.ToString("d MMM yyyy")
+                            </p>
+                        </div>
+                    </div>
+                    <form method="post">
+                        <input type="hidden" name="appId" value="@app.AppId" />
+                        <button type="submit" asp-page-handler="Revoke"
+                                onclick="return confirm('Revoke access for \'@Html.Raw(app.DisplayName.Replace("'", "\\'"))\'? The app will need to sign in again.')"
+                                class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors border border-red-200 dark:border-red-800 px-2.5 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30">
+                            Revoke
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+</div>

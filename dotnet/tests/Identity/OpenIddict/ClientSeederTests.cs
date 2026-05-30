@@ -1,6 +1,7 @@
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Seeding;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -15,17 +16,28 @@ public class ClientSeederTests
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly ILogger<ClientSeeder> _logger;
+    private readonly IServiceProvider _serviceProvider;
 
     public ClientSeederTests()
     {
         _applicationManager = Substitute.For<IOpenIddictApplicationManager>();
         _scopeManager = Substitute.For<IOpenIddictScopeManager>();
         _logger = Substitute.For<ILogger<ClientSeeder>>();
+
+        var scope = Substitute.For<IServiceScope>();
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        _serviceProvider = Substitute.For<IServiceProvider>();
+
+        _serviceProvider.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
+        scopeFactory.CreateScope().Returns(scope);
+        scope.ServiceProvider.Returns(_serviceProvider);
+        _serviceProvider.GetService(typeof(IOpenIddictApplicationManager)).Returns(_applicationManager);
+        _serviceProvider.GetService(typeof(IOpenIddictScopeManager)).Returns(_scopeManager);
     }
 
     private ClientSeeder CreateSeeder(IReadOnlyList<IdentityClientConfig> clients)
     {
-        return new ClientSeeder(_applicationManager, _scopeManager, _logger, clients);
+        return new ClientSeeder(_serviceProvider, _logger, clients);
     }
 
     [Fact]

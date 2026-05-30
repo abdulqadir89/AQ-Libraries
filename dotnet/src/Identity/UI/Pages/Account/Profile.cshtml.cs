@@ -63,7 +63,7 @@ public class ProfileModel : PageModel
             return Page();
         }
 
-        TempData["Success"] = "Your profile has been updated successfully.";
+        TempData["AccountSuccess"] = "Your profile has been updated successfully.";
         return RedirectToPage();
     }
 }
