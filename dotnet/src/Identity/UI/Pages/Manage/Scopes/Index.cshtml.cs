@@ -84,7 +84,8 @@ public class ScopesIndexModel(
 
     private async Task LoadScopesAsync()
     {
-        Scopes = await context.IdentityScopes
+        // Scopes with claim mappings (managed in IdentityScopes table)
+        var managedScopes = await context.IdentityScopes
             .AsNoTracking()
             .OrderBy(s => s.Name)
             .Select(s => new ScopeRow
@@ -99,6 +100,26 @@ public class ScopesIndexModel(
                     .ToList()
             })
             .ToListAsync(HttpContext.RequestAborted);
+
+        var managedNames = managedScopes.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // OpenIddict-registered scopes not yet in IdentityScopes (no claim mappings)
+        var oidcScopes = scopeManager.ListAsync(cancellationToken: HttpContext.RequestAborted);
+        await foreach (var scope in oidcScopes)
+        {
+            var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
+            if (name == null || managedNames.Contains(name)) continue;
+
+            var displayName = await scopeManager.GetDisplayNameAsync(scope, HttpContext.RequestAborted);
+            managedScopes.Add(new ScopeRow
+            {
+                Name = name,
+                DisplayName = displayName ?? name,
+                IsOidcOnly = true
+            });
+        }
+
+        Scopes = [.. managedScopes.OrderBy(s => s.Name)];
     }
 
     private static List<string> ParseLines(string raw) =>
@@ -115,4 +136,5 @@ public class ScopeRow
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public List<string> ClaimTypes { get; set; } = [];
+    public bool IsOidcOnly { get; set; }
 }

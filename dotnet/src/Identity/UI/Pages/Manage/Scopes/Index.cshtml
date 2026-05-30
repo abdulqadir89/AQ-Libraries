@@ -12,7 +12,7 @@
         @if (Model.Scopes.Count == 0)
         {
             <div class="text-center py-16">
-                <p class="text-sm text-slate-400">No custom scopes defined yet.</p>
+                <p class="text-sm text-slate-400">No scopes defined yet.</p>
             </div>
         }
         else
@@ -31,7 +31,13 @@
                     {
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <td class="px-5 py-3.5">
-                                <code class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">@scope.Name</code>
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">@scope.Name</code>
+                                    @if (scope.IsOidcOnly)
+                                    {
+                                        <span class="text-xs text-slate-400 dark:text-slate-500 italic">built-in</span>
+                                    }
+                                </div>
                             </td>
                             <td class="px-5 py-3.5 text-slate-600 dark:text-slate-400">@scope.DisplayName</td>
                             <td class="px-5 py-3.5">
@@ -47,14 +53,17 @@
                                 </div>
                             </td>
                             <td class="px-5 py-3.5 text-right">
-                                <form method="post">
-                                    <input type="hidden" name="id" value="@scope.Id" />
-                                    <button type="submit" asp-page-handler="Delete"
-                                            class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                                            onclick="return confirm('Delete scope \'@scope.Name\'?')">
-                                        Delete
-                                    </button>
-                                </form>
+                                @if (!scope.IsOidcOnly)
+                                {
+                                    <form method="post">
+                                        <input type="hidden" name="id" value="@scope.Id" />
+                                        <button type="submit" asp-page-handler="Delete"
+                                                class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                                                onclick="return confirm('Delete scope \'@scope.Name\'?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }

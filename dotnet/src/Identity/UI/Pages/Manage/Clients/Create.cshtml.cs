@@ -13,6 +13,7 @@ namespace AQ.Identity.UI.Pages.Manage.Clients;
 [Authorize(Policy = "ManageApi")]
 public class CreateClientModel(
     IOpenIddictApplicationManager applicationManager,
+    IOpenIddictScopeManager scopeManager,
     IIdentityDbContext context) : PageModel
 {
     [BindProperty] public string ClientId { get; set; } = string.Empty;
@@ -26,16 +27,16 @@ public class CreateClientModel(
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string ServiceAccountClaimsRaw { get; set; } = string.Empty;
 
-    public List<IdentityScope> AvailableScopes { get; set; } = [];
+    public List<ScopeOption> AvailableScopes { get; set; } = [];
 
     public async Task OnGetAsync()
     {
-        AvailableScopes = await context.IdentityScopes.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        AvailableScopes = await LoadScopesAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        AvailableScopes = await context.IdentityScopes.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        AvailableScopes = await LoadScopesAsync();
 
         if (Type == "confidential" && string.IsNullOrWhiteSpace(ClientSecret))
             ModelState.AddModelError(nameof(ClientSecret), "Client secret is required for confidential clients.");
@@ -114,6 +115,28 @@ public class CreateClientModel(
         return result;
     }
 
+    private async Task<List<ScopeOption>> LoadScopesAsync()
+    {
+        var managed = await context.IdentityScopes
+            .AsNoTracking()
+            .OrderBy(s => s.Name)
+            .Select(s => new ScopeOption(s.Name, s.DisplayName ?? s.Name))
+            .ToListAsync(HttpContext.RequestAborted);
+
+        var managedNames = managed.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var oidcScopes = scopeManager.ListAsync(cancellationToken: HttpContext.RequestAborted);
+        await foreach (var scope in oidcScopes)
+        {
+            var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
+            if (name == null || managedNames.Contains(name)) continue;
+            var displayName = await scopeManager.GetDisplayNameAsync(scope, HttpContext.RequestAborted);
+            managed.Add(new ScopeOption(name, displayName ?? name));
+        }
+
+        return [.. managed.OrderBy(s => s.Name)];
+    }
+
     private static string? ValidateRedirectUris(List<string> uris)
     {
         foreach (var raw in uris)
@@ -129,3 +152,5 @@ public class CreateClientModel(
         return null;
     }
 }
+
+public record ScopeOption(string Name, string DisplayName);

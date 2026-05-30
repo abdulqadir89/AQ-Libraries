@@ -13,6 +13,7 @@ namespace AQ.Identity.UI.Pages.Manage.Clients;
 [Authorize(Policy = "ManageApi")]
 public class EditClientModel(
     IOpenIddictApplicationManager applicationManager,
+    IOpenIddictScopeManager scopeManager,
     IIdentityDbContext context) : PageModel
 {
     [BindProperty(SupportsGet = true)] public string ClientId { get; set; } = string.Empty;
@@ -25,12 +26,12 @@ public class EditClientModel(
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string ServiceAccountClaimsRaw { get; set; } = string.Empty;
 
-    public List<IdentityScope> AvailableScopes { get; set; } = [];
+    public List<ScopeOption> AvailableScopes { get; set; } = [];
     public bool IsConfidential { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
-        AvailableScopes = await context.IdentityScopes.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        AvailableScopes = await LoadScopesAsync();
 
         var existing = await applicationManager.FindByClientIdAsync(ClientId, HttpContext.RequestAborted);
         if (existing == null) return NotFound();
@@ -64,7 +65,7 @@ public class EditClientModel(
 
     public async Task<IActionResult> OnPostAsync()
     {
-        AvailableScopes = await context.IdentityScopes.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        AvailableScopes = await LoadScopesAsync();
 
         var existing = await applicationManager.FindByClientIdAsync(ClientId, HttpContext.RequestAborted);
         if (existing == null) return NotFound();
@@ -148,6 +149,28 @@ public class EditClientModel(
                 result[line[..idx].Trim()] = line[(idx + 1)..].Trim();
         }
         return result;
+    }
+
+    private async Task<List<ScopeOption>> LoadScopesAsync()
+    {
+        var managed = await context.IdentityScopes
+            .AsNoTracking()
+            .OrderBy(s => s.Name)
+            .Select(s => new ScopeOption(s.Name, s.DisplayName ?? s.Name))
+            .ToListAsync(HttpContext.RequestAborted);
+
+        var managedNames = managed.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var oidcScopes = scopeManager.ListAsync(cancellationToken: HttpContext.RequestAborted);
+        await foreach (var scope in oidcScopes)
+        {
+            var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
+            if (name == null || managedNames.Contains(name)) continue;
+            var displayName = await scopeManager.GetDisplayNameAsync(scope, HttpContext.RequestAborted);
+            managed.Add(new ScopeOption(name, displayName ?? name));
+        }
+
+        return [.. managed.OrderBy(s => s.Name)];
     }
 
     private static string? ValidateRedirectUris(List<string> uris)
