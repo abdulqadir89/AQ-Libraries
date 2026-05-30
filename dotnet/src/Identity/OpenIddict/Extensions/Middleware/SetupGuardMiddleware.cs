@@ -13,6 +13,7 @@ public class SetupGuardMiddleware(RequestDelegate next)
         "/favicon.ico",
         "/connect/",
         "/auth/",
+        "/api/",
     ];
 
     public async Task InvokeAsync(HttpContext context, ISetupStateService setupState)
