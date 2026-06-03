@@ -207,6 +207,149 @@ public class DataSeedingService<TSeederType>
     }
 
     /// <summary>
+    /// Seeds only the named seeders (matched by class name, case-insensitive), resolving their dependencies first.
+    /// </summary>
+    public async Task<Result> SeedNamedAsync(IReadOnlyList<string> names, Func<SeederProgress, Task>? onProgress = null)
+    {
+        var normalizedNames = names.Select(n => n.Trim().ToLowerInvariant()).ToHashSet();
+
+        var requested = _seederMap
+            .Where(kv => normalizedNames.Contains(kv.Key.Name.ToLowerInvariant()))
+            .Select(kv => kv.Value)
+            .ToList();
+
+        var unknown = normalizedNames
+            .Except(_seederMap.Keys.Select(k => k.Name.ToLowerInvariant()))
+            .ToList();
+
+        if (unknown.Count > 0)
+            _logger.LogWarning("Unknown seeder names requested: {Names}", string.Join(", ", unknown));
+
+        if (requested.Count == 0)
+            return Result.Failure(new Error(ErrorType.General, "NoSeedersFound", "None of the requested seeder names matched registered seeders."));
+
+        // Collect dependencies transitively
+        var toRun = new HashSet<Type>();
+        foreach (var seeder in requested)
+            CollectWithDependencies(seeder.GetType(), toRun);
+
+        var ordered = ResolveOrderForTypes(toRun);
+
+        _logger.LogInformation("Running {Count} seeders (including dependencies): {Names}",
+            ordered.Count, string.Join(", ", ordered.Select(s => s.GetType().Name)));
+
+        return await RunSeedersAsync(ordered, onProgress);
+    }
+
+    private void CollectWithDependencies(Type type, HashSet<Type> collected)
+    {
+        if (!collected.Add(type)) return;
+        if (!_seederMap.TryGetValue(type, out var seeder)) return;
+
+        foreach (var dep in seeder.Dependencies)
+            CollectWithDependencies(dep, collected);
+    }
+
+    private List<IDataSeeder<TSeederType>> ResolveOrderForTypes(IReadOnlySet<Type> types)
+    {
+        var resolved = new List<IDataSeeder<TSeederType>>();
+        var visited = new HashSet<Type>();
+
+        var sorted = types
+            .Where(_seederMap.ContainsKey)
+            .Select(t => _seederMap[t])
+            .OrderBy(s => s.Priority);
+
+        foreach (var seeder in sorted)
+            VisitForTypes(seeder.GetType(), visited, resolved, types);
+
+        return resolved;
+    }
+
+    private void VisitForTypes(Type type, HashSet<Type> visited, List<IDataSeeder<TSeederType>> resolved, IReadOnlySet<Type> allowed)
+    {
+        if (!allowed.Contains(type) || visited.Contains(type)) return;
+        visited.Add(type);
+
+        var seeder = _seederMap[type];
+        foreach (var dep in seeder.Dependencies.Where(allowed.Contains).OrderBy(d => _seederMap.TryGetValue(d, out var s) ? s.Priority : 0))
+            VisitForTypes(dep, visited, resolved, allowed);
+
+        resolved.Add(seeder);
+    }
+
+    private async Task<Result> RunSeedersAsync(List<IDataSeeder<TSeederType>> ordered, Func<SeederProgress, Task>? onProgress)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                var seeder = ordered[i];
+                var seederName = seeder.GetType().Name;
+                _logger.LogInformation("[{Index}/{Total}] Starting {SeederType} seeder: {SeederName}",
+                    i + 1, ordered.Count, _seederTypeName, seederName);
+
+                if (seeder is IBatchDataSeeder<TSeederType> batchSeeder)
+                {
+                    var totalBatches = batchSeeder.GetBatchCount();
+                    for (int batch = 1; batch <= totalBatches; batch++)
+                    {
+                        var batchSw = System.Diagnostics.Stopwatch.StartNew();
+                        try
+                        {
+                            var items = await batchSeeder.SeedBatchAsync(batch);
+                            batchSw.Stop();
+                            var progress = new SeederProgress(seederName, batch, totalBatches, items, batch == totalBatches, true, null, batchSw.Elapsed);
+                            _logger.LogInformation("✓ [{SeederName}] Batch {Batch}/{Total} - Items: {Items}, Duration: {Duration:mm\\:ss\\.fff}", seederName, batch, totalBatches, items, batchSw.Elapsed);
+                            if (onProgress != null) await onProgress(progress);
+                        }
+                        catch (Exception ex)
+                        {
+                            batchSw.Stop();
+                            var errorMsg = $"Batch {batch}/{totalBatches} failed: {ex.Message}";
+                            var progress = new SeederProgress(seederName, batch, totalBatches, 0, false, false, errorMsg, batchSw.Elapsed);
+                            _logger.LogError(ex, "✗ [{SeederName}] Batch {Batch}/{Total} FAILED", seederName, batch, totalBatches);
+                            if (onProgress != null) await onProgress(progress);
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+                    var seederSw = System.Diagnostics.Stopwatch.StartNew();
+                    try
+                    {
+                        await seeder.SeedAsync();
+                        seederSw.Stop();
+                        var progress = new SeederProgress(seederName, 1, 1, 0, true, true, null, seederSw.Elapsed);
+                        _logger.LogInformation("✓ [{SeederName}] Completed in {Duration:mm\\:ss\\.fff}", seederName, seederSw.Elapsed);
+                        if (onProgress != null) await onProgress(progress);
+                    }
+                    catch (Exception ex)
+                    {
+                        seederSw.Stop();
+                        var progress = new SeederProgress(seederName, 1, 1, 0, true, false, ex.Message, seederSw.Elapsed);
+                        _logger.LogError(ex, "✗ [{SeederName}] FAILED", seederName);
+                        if (onProgress != null) await onProgress(progress);
+                        throw;
+                    }
+                }
+            }
+
+            stopwatch.Stop();
+            _logger.LogInformation("✓ Named seeding completed in {Duration:mm\\:ss\\.fff}", stopwatch.Elapsed);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "❌ Named seeding FAILED after {Duration:mm\\:ss\\.fff}", stopwatch.Elapsed);
+            return Result.Failure(new Error(ErrorType.General, "SeedingFailed", $"Named seeding failed: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
     /// Drops the database.
     /// </summary>
     public async Task DropDatabaseAsync(DbContext dbContext)
