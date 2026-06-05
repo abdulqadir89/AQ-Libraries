@@ -17,7 +17,9 @@ public class ClaimsEnrichmentHandler(
     {
         ArgumentNullException.ThrowIfNull(ctx);
 
-        var principal = ctx.Principal;
+        // Enrich the access token principal, which is prepared by PrepareAccessTokenPrincipal
+        // before this handler runs. Modifying ctx.Principal at this point would have no effect.
+        var principal = ctx.AccessTokenPrincipal;
         if (principal is null) return;
 
         var subClaim = principal.FindFirst(ClaimTypes.NameIdentifier) ?? principal.FindFirst("sub");

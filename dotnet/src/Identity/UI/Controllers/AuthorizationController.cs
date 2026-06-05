@@ -14,8 +14,71 @@ namespace AQ.Identity.UI.Controllers;
 
 public class AuthorizationController(
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : Controller
+    SignInManager<ApplicationUser> signInManager,
+    IOpenIddictApplicationManager applicationManager) : Controller
 {
+    [HttpPost("~/connect/token")]
+    public async Task<IActionResult> Exchange()
+    {
+        var request = HttpContext.GetOpenIddictServerRequest()
+            ?? throw new InvalidOperationException("The OpenIddict server request cannot be retrieved.");
+
+        if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
+        {
+            var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The token is no longer valid."
+                    }));
+            }
+
+            var user = await userManager.FindByIdAsync(result.Principal!.GetClaim(Claims.Subject)!);
+            if (user is null)
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The token is no longer valid."
+                    }));
+            }
+
+            var identity = new ClaimsIdentity(result.Principal!.Claims,
+                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
+                nameType: Claims.Name,
+                roleType: Claims.Role);
+
+            identity.SetDestinations(GetDestinations);
+
+            return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
+        if (request.IsClientCredentialsGrantType())
+        {
+            var application = await applicationManager.FindByClientIdAsync(request.ClientId!)
+                ?? throw new InvalidOperationException("The application cannot be found.");
+
+            var identity = new ClaimsIdentity(
+                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
+                nameType: Claims.Name,
+                roleType: Claims.Role);
+
+            identity.SetClaim(Claims.Subject, await applicationManager.GetClientIdAsync(application));
+            identity.SetScopes(request.GetScopes());
+            identity.SetDestinations(_ => [Destinations.AccessToken]);
+
+            return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
+        throw new InvalidOperationException("The specified grant type is not supported.");
+    }
+
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()

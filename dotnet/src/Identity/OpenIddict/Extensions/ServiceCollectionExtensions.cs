@@ -93,6 +93,7 @@ public static class ServiceCollectionExtensions
                 serverOptions.UseAspNetCore()
                     .DisableTransportSecurityRequirement()
                     .EnableAuthorizationEndpointPassthrough()
+                    .EnableTokenEndpointPassthrough()
                     .EnableEndSessionEndpointPassthrough();
             })
             .AddValidation(validationOptions =>
@@ -139,7 +140,12 @@ public static class ServiceCollectionExtensions
                     .SetOrder(int.MaxValue - 100));
             });
 
-        services.AddScoped<IOpenIddictServerHandler<OpenIddictServerEvents.ProcessSignInContext>, ClaimsEnrichmentHandler>();
+        services.AddOpenIddict()
+            .AddServer(serverOptions => serverOptions.AddEventHandler(
+                OpenIddictServerHandlerDescriptor.CreateBuilder<OpenIddictServerEvents.ProcessSignInContext>()
+                    .UseScopedHandler<ClaimsEnrichmentHandler>()
+                    .SetOrder(10_000 - 1)
+                    .Build()));
 
         // Ensure the handler's IIdentityDbContext dependency is resolvable as TContext
         services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<TContext>());
