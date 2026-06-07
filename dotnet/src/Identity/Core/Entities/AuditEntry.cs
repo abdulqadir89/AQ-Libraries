@@ -34,6 +34,8 @@ public class AuditEntry
         public const string ClientSecretReset = "ClientSecretReset";
         public const string AdminUserCreated = "AdminUserCreated";
         public const string UserTokensInvalidated = "UserTokensInvalidated";
+        public const string UserClaimAdded = "UserClaimAdded";
+        public const string UserClaimRemoved = "UserClaimRemoved";
     }
 
     public AuditEntry() { }
