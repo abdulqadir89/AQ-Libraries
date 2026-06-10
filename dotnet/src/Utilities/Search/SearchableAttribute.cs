@@ -40,4 +40,11 @@ public class SearchableAttribute : Attribute
     /// Whether to ignore case when searching this field
     /// </summary>
     public bool IgnoreCase { get; init; } = true;
+
+    /// <summary>
+    /// For complex-type properties, explicitly specifies one or more sub-property paths to search
+    /// (e.g., new[] { "Value" } for MarkdownContent). When set, skips recursion and registers each
+    /// path as its own leaf field. All paths inherit the weight and options of the parent attribute.
+    /// </summary>
+    public string[]? SubPaths { get; init; }
 }

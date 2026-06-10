@@ -126,41 +126,55 @@ public static class SearchableFieldExtractor
 
             var propertyPath = string.IsNullOrEmpty(prefix) ? property.Name : $"{prefix}.{property.Name}";
 
-            // Check if this is a Value Object (has a Value property)
-            var actualPropertyPath = propertyPath;
-            if (IsValueObject(property.PropertyType))
+            var propertyType = property.PropertyType;
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                propertyType = propertyType.GetGenericArguments()[0];
+
+            if (IsComplexType(propertyType) && !IsCollectionType(propertyType))
             {
-                actualPropertyPath = $"{propertyPath}.Value";
+                if (searchableAttribute.SubPaths is { Length: > 0 })
+                {
+                    // Explicit sub-paths — register each as its own leaf (e.g., MarkdownContent with SubPaths = ["Value"])
+                    var fieldName = searchableAttribute.SearchFieldName ?? property.Name;
+                    foreach (var subPath in searchableAttribute.SubPaths)
+                    {
+                        var leafPath = $"{propertyPath}.{subPath}";
+                        fields[leafPath] = new SearchFieldInfo
+                        {
+                            PropertyPath = leafPath,
+                            FieldName = fieldName,
+                            PropertyType = property.PropertyType,
+                            Weight = searchableAttribute.Weight,
+                            EnableFuzzyMatch = searchableAttribute.EnableFuzzyMatch,
+                            EnableExactMatch = searchableAttribute.EnableExactMatch,
+                            EnablePrefixMatch = searchableAttribute.EnablePrefixMatch,
+                            MinSearchLength = searchableAttribute.MinSearchLength,
+                            IgnoreCase = searchableAttribute.IgnoreCase
+                        };
+                    }
+                }
+                else if (includeNestedProperties && currentDepth < maxDepth - 1)
+                {
+                    // No explicit sub-path — recurse into the complex type looking for [Searchable] children
+                    ExtractSearchableFieldsRecursive(propertyType, propertyPath, fields, includeNestedProperties, maxDepth, currentDepth + 1);
+                }
             }
-
-            var fieldName = searchableAttribute.SearchFieldName ?? property.Name;
-
-            fields[actualPropertyPath] = new SearchFieldInfo
+            else
             {
-                PropertyPath = actualPropertyPath,
-                FieldName = fieldName,
-                PropertyType = property.PropertyType,
-                Weight = searchableAttribute.Weight,
-                EnableFuzzyMatch = searchableAttribute.EnableFuzzyMatch,
-                EnableExactMatch = searchableAttribute.EnableExactMatch,
-                EnablePrefixMatch = searchableAttribute.EnablePrefixMatch,
-                MinSearchLength = searchableAttribute.MinSearchLength,
-                IgnoreCase = searchableAttribute.IgnoreCase
-            };
-
-            // Recursively process nested properties if enabled
-            if (includeNestedProperties && currentDepth < maxDepth - 1)
-            {
-                var actualType = property.PropertyType;
-                if (actualType.IsGenericType && actualType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                // Primitive / string leaf — add as a searchable field
+                var fieldName = searchableAttribute.SearchFieldName ?? property.Name;
+                fields[propertyPath] = new SearchFieldInfo
                 {
-                    actualType = actualType.GetGenericArguments()[0];
-                }
-
-                if (IsComplexType(actualType) && !IsCollectionType(actualType) && !IsValueObject(actualType))
-                {
-                    ExtractSearchableFieldsRecursive(actualType, propertyPath, fields, includeNestedProperties, maxDepth, currentDepth + 1);
-                }
+                    PropertyPath = propertyPath,
+                    FieldName = fieldName,
+                    PropertyType = property.PropertyType,
+                    Weight = searchableAttribute.Weight,
+                    EnableFuzzyMatch = searchableAttribute.EnableFuzzyMatch,
+                    EnableExactMatch = searchableAttribute.EnableExactMatch,
+                    EnablePrefixMatch = searchableAttribute.EnablePrefixMatch,
+                    MinSearchLength = searchableAttribute.MinSearchLength,
+                    IgnoreCase = searchableAttribute.IgnoreCase
+                };
             }
         }
     }
@@ -305,24 +319,6 @@ public static class SearchableFieldExtractor
                type != typeof(decimal) &&
                !type.IsEnum &&
                type != typeof(object);
-    }
-
-    private static bool IsValueObject(Type type)
-    {
-        // Check if the type has a public Value property (common pattern for Value Objects)
-        var valueProperty = type.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
-
-        // Also check if it inherits from a base class named "ValueObject" (common pattern)
-        var baseType = type.BaseType;
-        while (baseType != null && baseType != typeof(object))
-        {
-            if (baseType.Name == "ValueObject")
-                return true;
-            baseType = baseType.BaseType;
-        }
-
-        // If it has a Value property and looks like a value object structure
-        return valueProperty != null && type.IsClass && !type.IsAbstract;
     }
 
     private static bool IsCollectionType(Type type)
