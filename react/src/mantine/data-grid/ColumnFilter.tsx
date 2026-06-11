@@ -234,6 +234,12 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     }
 
     function handlePopoverClose() {
+      // Auto-apply enum selections on close
+      if (column.type === 'enum' && selectedEnumValues.length > 0) {
+        handleApply();
+        return;
+      }
+
       // Auto-apply if there are values when closing by clicking outside
       if (value.trim() && operator !== 'isnull' && operator !== 'isnotnull') {
         if (operator === 'between') {
@@ -246,13 +252,13 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return;
         }
       }
-      
+
       // If null operators are selected, apply them
       if (operator === 'isnull' || operator === 'isnotnull') {
         handleApply();
         return;
       }
-      
+
       setOpened(false);
     }
 
@@ -327,64 +333,33 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
       switch (column.type) {
         case 'enum':
-          // For 'in' and 'notin' operators, show checklist
-          if (operator === 'in' || operator === 'notin') {
-            if (!column.enumOptions || column.enumOptions.length === 0) {
-              return (
-                <Text size="sm" c="dimmed">
-                  No enum options available
-                </Text>
-              );
-            }
-            
+          if (!column.enumOptions || column.enumOptions.length === 0) {
             return (
-              <Stack gap="xs">
-                <Text size="sm" fw={500}>
-                  {operator === 'in' ? 'Select values to include:' : 'Select values to exclude:'}
-                </Text>
-                <Stack gap="xs" mah={200} style={{ overflowY: 'auto' }}>
-                  {column.enumOptions.map((option) => (
-                    <Checkbox
-                      key={option.value}
-                      label={option.label}
-                      checked={selectedEnumValues.includes(String(option.value))}
-                      onChange={(event) => {
-                        const valueStr = String(option.value);
-                        if (event.currentTarget.checked) {
-                          setSelectedEnumValues(prev => [...prev, valueStr]);
-                        } else {
-                          setSelectedEnumValues(prev => prev.filter(v => v !== valueStr));
-                        }
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </Stack>
-            );
-          } else {
-            // For 'eq' and 'ne' operators, show dropdown
-            if (!column.enumOptions || column.enumOptions.length === 0) {
-              return (
-                <Text size="sm" c="dimmed">
-                  No enum options available
-                </Text>
-              );
-            }
-            
-            return (
-              <Select
-                label="Value"
-                data={column.enumOptions.map(opt => ({ 
-                  value: String(opt.value), 
-                  label: opt.label 
-                }))}
-                value={value}
-                onChange={(val) => setValue(val || '')}
-                onKeyDown={handleKeyDown}
-                placeholder="Select value..."
-              />
+              <Text size="sm" c="dimmed">
+                No enum options available
+              </Text>
             );
           }
+
+          return (
+            <Stack gap="xs" mah={200} style={{ overflowY: 'auto' }}>
+              {column.enumOptions.map((option) => (
+                <Checkbox
+                  key={option.value}
+                  label={option.label}
+                  checked={selectedEnumValues.includes(String(option.value))}
+                  onChange={(event) => {
+                    const valueStr = String(option.value);
+                    if (event.currentTarget.checked) {
+                      setSelectedEnumValues(prev => [...prev, valueStr]);
+                    } else {
+                      setSelectedEnumValues(prev => prev.filter(v => v !== valueStr));
+                    }
+                  }}
+                />
+              ))}
+            </Stack>
+          );
           
         case 'number':
           return (
@@ -505,20 +480,22 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           <FocusTrap active={opened}>
             <Stack gap="md" style={{ minWidth: 250 }}>
               <Text size="sm" fw={500}>Filter by {column.title}</Text>
-              
-              <Select
-                label="Operator"
-                data={getOperators(column.type)}
-                value={operator}
-                onChange={(val) => setOperator(val || getDefaultOperator(column.type))}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    handleApply();
-                  } else if (event.key === 'Escape') {
-                    handleClear();
-                  }
-                }}
-              />
+
+              {column.type !== 'enum' && (
+                <Select
+                  label="Operator"
+                  data={getOperators(column.type)}
+                  value={operator}
+                  onChange={(val) => setOperator(val || getDefaultOperator(column.type))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleApply();
+                    } else if (event.key === 'Escape') {
+                      handleClear();
+                    }
+                  }}
+                />
+              )}
               
               {renderValueInput()}
               {renderSecondValueInput()}

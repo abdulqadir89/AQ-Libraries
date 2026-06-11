@@ -461,19 +461,23 @@ export function DataGrid<T extends Record<string, unknown>>({
         .map(expression => {
           const parts = expression.split(',');
           if (parts.length >= 2) {
-            return {
-              property: parts[0],
-              operator: parts[1] as FilterCondition['operator'],
-              value: parts[2]?.replace(/%2C/g, ',') || '',
-              secondValue: parts[3]?.replace(/%2C/g, ','),
-            };
+            const op = parts[1] as FilterCondition['operator'];
+            let value: string;
+            let secondValue: string | undefined;
+            if (op === 'between' || op === 'notbetween') {
+              value = parts[2]?.replace(/%2C/g, ',') || '';
+              secondValue = parts[3]?.replace(/%2C/g, ',');
+            } else {
+              value = parts.slice(2).join(',').replace(/%2C/g, ',');
+            }
+            return { property: parts[0], operator: op, value, secondValue };
           }
           return null;
         })
         .filter(Boolean) as FilterCondition[];
-      
+
       onFilterChange?.(filterConditions, 'and');
-      
+
       return {
         ...prev,
         columnFilters: newFilters,
@@ -485,18 +489,22 @@ export function DataGrid<T extends Record<string, unknown>>({
     setState(prev => {
       const newFilters = { ...prev.columnFilters };
       delete newFilters[columnKey];
-      
+
       // Build filter conditions and notify parent
       const filterConditions: FilterCondition[] = Object.values(newFilters)
         .map(expression => {
           const parts = expression.split(',');
           if (parts.length >= 2) {
-            return {
-              property: parts[0],
-              operator: parts[1] as FilterCondition['operator'],
-              value: parts[2]?.replace(/%2C/g, ',') || '',
-              secondValue: parts[3]?.replace(/%2C/g, ','),
-            };
+            const op = parts[1] as FilterCondition['operator'];
+            let value: string;
+            let secondValue: string | undefined;
+            if (op === 'between' || op === 'notbetween') {
+              value = parts[2]?.replace(/%2C/g, ',') || '';
+              secondValue = parts[3]?.replace(/%2C/g, ',');
+            } else {
+              value = parts.slice(2).join(',').replace(/%2C/g, ',');
+            }
+            return { property: parts[0], operator: op, value, secondValue };
           }
           return null;
         })
