@@ -66,6 +66,12 @@ const DATE_OPERATORS = [
   { value: 'isnotnull', label: 'Is Not Null' },
 ];
 
+const DATERANGE_OPERATORS = [
+  { value: 'between', label: 'Between' },
+  { value: 'isnull', label: 'Is Null' },
+  { value: 'isnotnull', label: 'Is Not Null' },
+];
+
 const BOOLEAN_OPERATORS = [
   { value: 'eq', label: 'Equals' },
   { value: 'ne', label: 'Not Equals' },
@@ -90,6 +96,8 @@ function getDefaultOperator(type?: string): string {
       return 'eq';
     case 'date':
       return 'eq';
+    case 'daterange':
+      return 'between';
     case 'boolean':
       return 'eq';
     case 'enum':
@@ -147,6 +155,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return isNaN(num) ? 0 : num;
         }
         case 'date':
+        case 'daterange':
           return val ? new Date(val) : new Date();
         case 'boolean':
           return val === 'true';
@@ -212,6 +221,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return NUMBER_OPERATORS;
         case 'date':
           return DATE_OPERATORS;
+        case 'daterange':
+          return DATERANGE_OPERATORS;
         case 'boolean':
           return BOOLEAN_OPERATORS;
         case 'enum':
@@ -382,6 +393,17 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
               placeholder="Select date..."
             />
           );
+
+        case 'daterange':
+          return (
+            <DateInput
+              label="From"
+              value={value ? parseValue(value, 'date') as Date : null}
+              onChange={(val) => setValue(val ? formatValueToString(val) : '')}
+              onKeyDown={handleKeyDown}
+              placeholder="Select start date..."
+            />
+          );
           
         case 'boolean':
           return (
@@ -432,13 +454,14 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           );
           
         case 'date':
+        case 'daterange':
           return (
             <DateInput
               label="To"
               value={secondValue ? parseValue(secondValue, 'date') as Date : null}
               onChange={(val) => setSecondValue(val ? formatValueToString(val) : '')}
               onKeyDown={handleKeyDown}
-              placeholder="Select date..."
+              placeholder="Select end date..."
             />
           );
           
@@ -481,7 +504,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             <Stack gap="md" style={{ minWidth: 250 }}>
               <Text size="sm" fw={500}>Filter by {column.title}</Text>
 
-              {column.type !== 'enum' && (
+              {column.type !== 'enum' && column.type !== 'daterange' && (
                 <Select
                   label="Operator"
                   data={getOperators(column.type)}
