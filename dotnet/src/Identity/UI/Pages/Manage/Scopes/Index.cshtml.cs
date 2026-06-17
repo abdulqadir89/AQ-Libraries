@@ -20,6 +20,11 @@ public class ScopesIndexModel(
     [BindProperty] public string NewDescription { get; set; } = string.Empty;
     [BindProperty] public string NewClaimTypesRaw { get; set; } = string.Empty;
 
+    [BindProperty] public Guid EditId { get; set; }
+    [BindProperty] public string EditDisplayName { get; set; } = string.Empty;
+    [BindProperty] public string EditDescription { get; set; } = string.Empty;
+    [BindProperty] public string EditClaimTypesRaw { get; set; } = string.Empty;
+
     public async Task OnGetAsync()
     {
         await LoadScopesAsync();
@@ -79,6 +84,26 @@ public class ScopesIndexModel(
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{scope.Name}' has been deleted.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEditAsync()
+    {
+        var scope = await context.IdentityScopes
+            .Include(s => s.ClaimTypes)
+            .FirstOrDefaultAsync(s => s.Id == EditId, HttpContext.RequestAborted);
+
+        if (scope == null) return NotFound();
+
+        scope.Update(EditDisplayName, EditDescription);
+
+        context.ScopeClaimTypes.RemoveRange(scope.ClaimTypes);
+        foreach (var ct in ParseLines(EditClaimTypesRaw))
+            context.ScopeClaimTypes.Add(ScopeClaimType.Create(scope.Id, ct));
+
+        await context.SaveChangesAsync(HttpContext.RequestAborted);
+
+        TempData["Success"] = $"Scope '{scope.Name}' has been updated.";
         return RedirectToPage();
     }
 
