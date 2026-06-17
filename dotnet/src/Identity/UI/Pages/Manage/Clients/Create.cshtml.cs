@@ -117,24 +117,15 @@ public class CreateClientModel(
 
     private async Task<List<ScopeOption>> LoadScopesAsync()
     {
-        var managed = await context.IdentityScopes
-            .AsNoTracking()
-            .OrderBy(s => s.Name)
-            .Select(s => new ScopeOption(s.Name, s.DisplayName ?? s.Name))
-            .ToListAsync(HttpContext.RequestAborted);
-
-        var managedNames = managed.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var oidcScopes = scopeManager.ListAsync(cancellationToken: HttpContext.RequestAborted);
-        await foreach (var scope in oidcScopes)
+        var result = new List<ScopeOption>();
+        await foreach (var scope in scopeManager.ListAsync(cancellationToken: HttpContext.RequestAborted))
         {
             var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
-            if (name == null || managedNames.Contains(name)) continue;
+            if (name is null) continue;
             var displayName = await scopeManager.GetDisplayNameAsync(scope, HttpContext.RequestAborted);
-            managed.Add(new ScopeOption(name, displayName ?? name));
+            result.Add(new ScopeOption(name, displayName ?? name));
         }
-
-        return [.. managed.OrderBy(s => s.Name)];
+        return [.. result.OrderBy(s => s.Name)];
     }
 
     private static string? ValidateRedirectUris(List<string> uris)

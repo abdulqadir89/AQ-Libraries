@@ -1,15 +1,14 @@
-using AQ.Identity.Core.Abstractions;
 using FastEndpoints;
-using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
 public class DeleteScopeRequest
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 }
 
-public class DeleteScopeEndpoint(IIdentityDbContext context) : Endpoint<DeleteScopeRequest>
+public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoint<DeleteScopeRequest>
 {
     public override void Configure()
     {
@@ -19,22 +18,14 @@ public class DeleteScopeEndpoint(IIdentityDbContext context) : Endpoint<DeleteSc
 
     public override async Task HandleAsync(DeleteScopeRequest req, CancellationToken ct)
     {
-        var scope = await context.IdentityScopes
-            .FirstOrDefaultAsync(s => s.Id == req.Id, ct);
-
+        var scope = await scopeManager.FindByIdAsync(req.Id, ct);
         if (scope is null)
         {
             await Send.NotFoundAsync(ct);
             return;
         }
 
-        var claimTypes = await context.ScopeClaimTypes
-            .Where(sct => sct.ScopeId == req.Id)
-            .ToListAsync(ct);
-        context.ScopeClaimTypes.RemoveRange(claimTypes);
-        context.IdentityScopes.Remove(scope);
-
-        await context.SaveChangesAsync(ct);
+        await scopeManager.DeleteAsync(scope, ct);
 
         await Send.NoContentAsync(ct);
     }

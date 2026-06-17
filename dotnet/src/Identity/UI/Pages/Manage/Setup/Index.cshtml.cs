@@ -4,7 +4,8 @@ using AQ.Identity.OpenIddict.Extensions.Seeding;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
+using System.Text.Json;
 
 namespace AQ.Identity.UI.Pages.Manage.Setup;
 
@@ -12,6 +13,7 @@ public class SetupAdminModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IIdentityDbContext context,
+    IOpenIddictScopeManager scopeManager,
     ISetupStateService setupState) : PageModel
 {
     [BindProperty] public string Email { get; set; } = string.Empty;
@@ -48,22 +50,18 @@ public class SetupAdminModel(
             return Page();
         }
 
-        // Ensure the manage_api IdentityScope + ScopeClaimType rows exist
-        var scope = await context.IdentityScopes
-            .FirstOrDefaultAsync(s => s.Name == "manage_api", HttpContext.RequestAborted);
-
-        if (scope == null)
+        // Ensure the manage_api scope exists in OpenIddictScopes with its claim type mapping
+        var existingScope = await scopeManager.FindByNameAsync("manage_api", HttpContext.RequestAborted);
+        if (existingScope is null)
         {
-            scope = IdentityScope.Create("manage_api", "Manage API", "Grants access to the identity management API");
-            context.IdentityScopes.Add(scope);
-            context.ScopeClaimTypes.Add(ScopeClaimType.Create(scope.Id, "manage_api"));
-        }
-        else
-        {
-            var claimTypeExists = await context.ScopeClaimTypes
-                .AnyAsync(sct => sct.ScopeId == scope.Id && sct.ClaimType == "manage_api", HttpContext.RequestAborted);
-            if (!claimTypeExists)
-                context.ScopeClaimTypes.Add(ScopeClaimType.Create(scope.Id, "manage_api"));
+            var descriptor = new OpenIddictScopeDescriptor
+            {
+                Name = "manage_api",
+                DisplayName = "Manage API",
+                Description = "Grants access to the identity management API"
+            };
+            descriptor.Properties["claim_types"] = JsonSerializer.SerializeToElement(new[] { "manage_api" });
+            await scopeManager.CreateAsync(descriptor, HttpContext.RequestAborted);
         }
 
         // Grant the admin user the manage_api stored claim

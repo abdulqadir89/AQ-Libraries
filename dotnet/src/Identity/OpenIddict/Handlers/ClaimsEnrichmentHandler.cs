@@ -4,21 +4,22 @@ using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using System.Security.Claims;
-using static OpenIddict.Abstractions.OpenIddictConstants;
+using System.Text.Json;
 
 namespace AQ.Identity.OpenIddict.Handlers;
 
 public class ClaimsEnrichmentHandler(
     IIdentityDbContext context,
+    IOpenIddictScopeManager scopeManager,
     ILogger<ClaimsEnrichmentHandler> logger)
     : IOpenIddictServerHandler<OpenIddictServerEvents.ProcessSignInContext>
 {
+    private const string ClaimTypesKey = "claim_types";
+
     public async ValueTask HandleAsync(OpenIddictServerEvents.ProcessSignInContext ctx)
     {
         ArgumentNullException.ThrowIfNull(ctx);
 
-        // Enrich the access token principal, which is prepared by PrepareAccessTokenPrincipal
-        // before this handler runs. Modifying ctx.Principal at this point would have no effect.
         var principal = ctx.AccessTokenPrincipal;
         if (principal is null) return;
 
@@ -26,13 +27,12 @@ public class ClaimsEnrichmentHandler(
         if (subClaim is null || !Guid.TryParse(subClaim.Value, out var userId)) return;
 
         var grantedScopes = principal
-            .FindAll(Claims.Scope)
+            .FindAll(OpenIddictConstants.Claims.Private.Scope)
             .Select(c => c.Value)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         try
         {
-            // Embed SecurityStamp so ValidateTokenContext can detect invalidation
             var user = await context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId, ctx.CancellationToken);
@@ -45,20 +45,27 @@ public class ClaimsEnrichmentHandler(
 
             principal.SetClaim("stamp", user.SecurityStamp);
 
-            // Resolve claim types declared by the granted scopes
-            var claimTypes = await context.ScopeClaimTypes
-                .AsNoTracking()
-                .Where(sct => context.IdentityScopes
-                    .Where(s => grantedScopes.Contains(s.Name))
-                    .Select(s => s.Id)
-                    .Contains(sct.ScopeId))
-                .Select(sct => sct.ClaimType)
-                .Distinct()
-                .ToListAsync(ctx.CancellationToken);
+            // Resolve claim types declared in each granted scope's Properties JSON
+            var claimTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var scopeName in grantedScopes)
+            {
+                var scope = await scopeManager.FindByNameAsync(scopeName, ctx.CancellationToken);
+                if (scope is null) continue;
+
+                var props = await scopeManager.GetPropertiesAsync(scope, ctx.CancellationToken);
+                if (props.TryGetValue(ClaimTypesKey, out var val) && val is JsonElement el && el.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in el.EnumerateArray())
+                    {
+                        var ct = item.GetString();
+                        if (!string.IsNullOrWhiteSpace(ct))
+                            claimTypes.Add(ct);
+                    }
+                }
+            }
 
             if (claimTypes.Count == 0) return;
 
-            // Load stored claims for this user, filtered to the resolved claim types
             var storedClaims = await context.StoredClaims
                 .AsNoTracking()
                 .Where(c => c.UserId == userId && claimTypes.Contains(c.Type))

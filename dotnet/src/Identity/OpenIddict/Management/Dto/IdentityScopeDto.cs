@@ -2,7 +2,7 @@ namespace AQ.Identity.OpenIddict.Management.Dto;
 
 public class IdentityScopeDto
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -19,5 +19,5 @@ public class UpsertIdentityScopeRequest
 
 public class UpdateIdentityScopeRequest : UpsertIdentityScopeRequest
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 }

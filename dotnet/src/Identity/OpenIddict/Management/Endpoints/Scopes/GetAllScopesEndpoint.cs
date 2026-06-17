@@ -1,11 +1,11 @@
-using AQ.Identity.Core.Abstractions;
 using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
-using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
+using System.Text.Json;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
-public class GetAllScopesEndpoint(IIdentityDbContext context) : EndpointWithoutRequest<List<IdentityScopeDto>>
+public class GetAllScopesEndpoint(IOpenIddictScopeManager scopeManager) : EndpointWithoutRequest<List<IdentityScopeDto>>
 {
     public override void Configure()
     {
@@ -15,22 +15,39 @@ public class GetAllScopesEndpoint(IIdentityDbContext context) : EndpointWithoutR
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var scopes = await context.IdentityScopes
-            .AsNoTracking()
-            .Select(s => new IdentityScopeDto
-            {
-                Id = s.Id,
-                Name = s.Name,
-                DisplayName = s.DisplayName,
-                Description = s.Description,
-                ClaimTypes = context.ScopeClaimTypes
-                    .Where(sct => sct.ScopeId == s.Id)
-                    .Select(sct => sct.ClaimType)
-                    .ToList()
-            })
-            .OrderBy(s => s.Name)
-            .ToListAsync(ct);
+        var result = new List<IdentityScopeDto>();
 
-        await Send.OkAsync(scopes, ct);
+        await foreach (var scope in scopeManager.ListAsync(cancellationToken: ct))
+        {
+            var id = await scopeManager.GetIdAsync(scope, ct) ?? string.Empty;
+            var name = await scopeManager.GetNameAsync(scope, ct) ?? string.Empty;
+            var displayName = await scopeManager.GetDisplayNameAsync(scope, ct) ?? string.Empty;
+            var description = await scopeManager.GetDescriptionAsync(scope, ct) ?? string.Empty;
+            var props = await scopeManager.GetPropertiesAsync(scope, ct);
+
+            var claimTypes = new List<string>();
+            if (props.TryGetValue("claim_types", out var val) && val.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in val.EnumerateArray())
+                {
+                    var ct2 = item.GetString();
+                    if (!string.IsNullOrWhiteSpace(ct2))
+                        claimTypes.Add(ct2);
+                }
+            }
+
+            result.Add(new IdentityScopeDto
+            {
+                Id = id,
+                Name = name,
+                DisplayName = displayName,
+                Description = description,
+                ClaimTypes = claimTypes
+            });
+        }
+
+        result.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+        await Send.OkAsync(result, ct);
     }
 }

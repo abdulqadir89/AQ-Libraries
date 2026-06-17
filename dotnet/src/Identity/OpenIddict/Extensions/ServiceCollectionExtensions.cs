@@ -69,7 +69,7 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetAccessTokenLifetime(options.Tokens.AccessToken);
                 serverOptions.SetRefreshTokenLifetime(options.Tokens.RefreshToken);
 
-                serverOptions.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess, "els_api", "manage_api");
+                serverOptions.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess);
 
                 serverOptions.AcceptAnonymousClients();
                 serverOptions.DisableAccessTokenEncryption();
