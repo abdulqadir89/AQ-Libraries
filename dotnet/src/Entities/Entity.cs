@@ -1,18 +1,16 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 using AQ.Events.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AQ.Entities;
 
-public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
+public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
 {
     [NotMapped]
     private readonly List<IDomainEvent> _domainEvents = [];
 
     public Guid Id { get; protected set; } = Guid.CreateVersion7();
-    public Guid? CreatedById { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
-    public Guid? UpdatedById { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
     public int Revision { get; private set; }
 
@@ -73,25 +71,10 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
     }
 
     /// <summary>
-    /// Mark the entity as created by given user. Does not overwrite existing CreatedById.
+    /// Sets UpdatedAt to now and increments Revision. Called by the DbContext on every save.
     /// </summary>
-    /// <param name="userId">Creator user id, or null for unauthenticated</param>
-    public void SetCreatedBy(Guid? userId)
+    public void SetUpdatedTimestamp()
     {
-        if (CreatedById is null)
-        {
-            CreatedById = userId;
-            CreatedAt = DateTimeOffset.UtcNow;
-        }
-    }
-
-    /// <summary>
-    /// Mark the entity as updated by the given user and increment Revision.
-    /// </summary>
-    /// <param name="userId">Updater user id, or null for unauthenticated</param>
-    public void SetUpdatedBy(Guid? userId)
-    {
-        UpdatedById = userId;
         UpdatedAt = DateTimeOffset.UtcNow;
         Revision++;
     }
@@ -136,6 +119,25 @@ public abstract class Entity : IEntity, IHasDomainEvents, IAuditable
 public abstract class Entity<TUser> : Entity, IAuditable<TUser>
     where TUser : class
 {
+    public Guid? CreatedById { get; private set; }
+    public Guid? UpdatedById { get; private set; }
     public TUser? CreatedBy { get; private set; }
     public TUser? UpdatedBy { get; private set; }
+
+    /// <summary>
+    /// Mark the entity as created by the given user. Does not overwrite existing CreatedById.
+    /// </summary>
+    public void SetCreatedBy(Guid? userId)
+    {
+        CreatedById ??= userId;
+    }
+
+    /// <summary>
+    /// Mark the entity as updated by the given user, set UpdatedAt, and increment Revision.
+    /// </summary>
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        SetUpdatedTimestamp();
+    }
 }
