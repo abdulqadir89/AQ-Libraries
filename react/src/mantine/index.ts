@@ -6,3 +6,4 @@ export * from './datetime';
 export * from './address';
 export * from './money';
 export * from './attachments';
+export * from './split-button';
