@@ -182,8 +182,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   onSelectionChange,
   rowKey = 'id',
   onFilterChange,
-  filterPresets = [],
-  sortPresets = [],
   initialFilterConditions = [],
   initialFilterOperator = 'and',
   initialSortConditions = [],
@@ -202,8 +200,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText] = useDebouncedValue(searchText, 500);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const [selectedFilterPreset, setSelectedFilterPreset] = useState<string | null>(null);
-  const [selectedSortPreset, setSelectedSortPreset] = useState<string | null>(null);
   const [filterOperator, setFilterOperator] = useState<LogicalOperator>(initialFilterOperator);
   const [filterDrafts, setFilterDrafts] = useState<FilterDraft[]>(
     initialFilterConditions.map(toFilterDraft)
@@ -292,14 +288,11 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     setSearchText('');
     setFilterDrafts([]);
     setSortConditions([]);
-    setSelectedFilterPreset(null);
-    setSelectedSortPreset(null);
     onRefresh?.();
   }, [onRefresh]);
 
   const handleClearFilters = useCallback(() => {
     setFilterDrafts([]);
-    setSelectedFilterPreset(null);
     applyStateToParent([], filterOperator, sortConditions);
   }, [applyStateToParent, filterOperator, sortConditions]);
 
@@ -355,42 +348,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     applyStateToParent(validFilters, filterOperator, normalizedSort);
     setOptionsOpen(false);
   }, [applyStateToParent, filterDrafts, filterOperator, sortConditions]);
-
-  const handleFilterPresetChange = useCallback(
-    (presetKey: string | null) => {
-      setSelectedFilterPreset(presetKey);
-      if (!presetKey) {
-        return;
-      }
-
-      const preset = filterPresets.find((item) => item.key === presetKey);
-      if (!preset) {
-        return;
-      }
-
-      const nextOperator = preset.operator || 'and';
-      setFilterOperator(nextOperator);
-      setFilterDrafts(preset.conditions.map(toFilterDraft));
-    },
-    [filterPresets]
-  );
-
-  const handleSortPresetChange = useCallback(
-    (presetKey: string | null) => {
-      setSelectedSortPreset(presetKey);
-      if (!presetKey) {
-        return;
-      }
-
-      const preset = sortPresets.find((item) => item.key === presetKey);
-      if (!preset) {
-        return;
-      }
-
-      setSortConditions(preset.conditions);
-    },
-    [sortPresets]
-  );
 
   const handleRowSelection = useCallback(
     (key: string, checked: boolean) => {
@@ -845,26 +802,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         size="xl"
       >
         <Stack gap="md">
-          <Group grow>
-            <Select
-              label="Filter preset"
-              placeholder="Select preset"
-              data={filterPresets.map((preset) => ({ value: preset.key, label: preset.label }))}
-              value={selectedFilterPreset}
-              onChange={handleFilterPresetChange}
-              clearable
-            />
-
-            <Select
-              label="Sort preset"
-              placeholder="Select preset"
-              data={sortPresets.map((preset) => ({ value: preset.key, label: preset.label }))}
-              value={selectedSortPreset}
-              onChange={handleSortPresetChange}
-              clearable
-            />
-          </Group>
-
           <Group justify="space-between">
             <Group>
               <Text fw={600}>Filter conditions</Text>
@@ -1056,8 +993,6 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               onClick={() => {
                 setFilterDrafts([]);
                 setSortConditions([]);
-                setSelectedFilterPreset(null);
-                setSelectedSortPreset(null);
               }}
             >
               Reset options

@@ -167,19 +167,6 @@ export interface DataGridToolbarConfig {
   showOptions?: boolean;
 }
 
-export interface FilterPreset {
-  key: string;
-  label: string;
-  conditions: FilterCondition[];
-  operator?: LogicalOperator;
-}
-
-export interface SortPreset {
-  key: string;
-  label: string;
-  conditions: SortCondition[];
-}
-
 export interface CardImageConfig<T = Record<string, unknown>> {
   dataIndex?: keyof T;
   height?: number;
@@ -220,8 +207,6 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   onSelectionChange?: (selectedRowKeys: string[]) => void;
   rowKey?: keyof T | ((record: T) => string);
   onFilterChange?: (conditions: FilterCondition[], operator?: LogicalOperator) => void;
-  filterPresets?: FilterPreset[];
-  sortPresets?: SortPreset[];
   initialFilterConditions?: FilterCondition[];
   initialFilterOperator?: LogicalOperator;
   initialSortConditions?: SortCondition[];

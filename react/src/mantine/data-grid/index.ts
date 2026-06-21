@@ -23,8 +23,6 @@ export type {
   DataGridViewSwitcherProps,
   GridViewMode,
   DataGridToolbarConfig,
-  FilterPreset,
-  SortPreset,
   CardLayoutConfig,
   CardImageConfig,
   DataGridState,
