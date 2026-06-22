@@ -1,3 +1,4 @@
+using AQ.Abstractions;
 using AQ.Entities;
 using AQ.Utilities.Search;
 using System.Text.Json;
@@ -37,9 +38,9 @@ public class StateMachineTransition : Entity
     }
 
     // EF Core constructor
-    private StateMachineTransition() { }
+    protected StateMachineTransition() { }
 
-    private StateMachineTransition(
+    protected StateMachineTransition(
         StateMachineDefinition definition,
         StateMachineState? fromState,
         StateMachineState? toState,
@@ -278,5 +279,50 @@ public class StateMachineTransition : Entity
     }
 
     #endregion
+}
+
+public class AuditableStateMachineTransition<TUser> : StateMachineTransition, IAuditable<TUser>
+    where TUser : class
+{
+    public Guid? CreatedById { get; private set; }
+    public Guid? UpdatedById { get; private set; }
+    public TUser? CreatedBy { get; private set; }
+    public TUser? UpdatedBy { get; private set; }
+
+    private AuditableStateMachineTransition() : base() { }
+
+    private AuditableStateMachineTransition(
+        StateMachineDefinition definition,
+        StateMachineState? fromState,
+        StateMachineState? toState,
+        StateMachineTrigger trigger,
+        string? description,
+        IEnumerable<IStateMachineTransitionRequirement>? requirements,
+        IEnumerable<string>? publishEventTypes)
+        : base(definition, fromState, toState, trigger, description, requirements, publishEventTypes) { }
+
+    public static new AuditableStateMachineTransition<TUser> Create(
+        StateMachineDefinition definition,
+        StateMachineState? fromState,
+        StateMachineState? toState,
+        StateMachineTrigger trigger,
+        string? description = null,
+        IEnumerable<IStateMachineTransitionRequirement>? requirements = null,
+        IEnumerable<string>? publishEventTypes = null)
+    {
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
+        if (trigger == null) throw new ArgumentNullException(nameof(trigger));
+
+        return new AuditableStateMachineTransition<TUser>(
+            definition, fromState, toState, trigger, description?.Trim(), requirements, publishEventTypes);
+    }
+
+    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
+
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        SetUpdatedTimestamp();
+    }
 }
 

@@ -444,8 +444,6 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
         EntityId = entity.Id;
     }
 
-
-
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
@@ -459,6 +457,29 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
         CopyDefinitionDataTo(newDefinition);
 
         return newDefinition;
+    }
+}
+
+public abstract class AuditableStateMachineDefinition<TEntity, TUser> : StateMachineDefinition<TEntity>, IAuditable<TUser>
+    where TEntity : IEntity
+    where TUser : class
+{
+    public Guid? CreatedById { get; private set; }
+    public Guid? UpdatedById { get; private set; }
+    public TUser? CreatedBy { get; private set; }
+    public TUser? UpdatedBy { get; private set; }
+
+    protected AuditableStateMachineDefinition() : base() { }
+
+    protected AuditableStateMachineDefinition(TEntity entity, string initialStateName, int version = 1)
+        : base(entity, initialStateName, version) { }
+
+    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
+
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        SetUpdatedTimestamp();
     }
 }
 

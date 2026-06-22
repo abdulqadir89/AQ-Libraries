@@ -18,9 +18,9 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     public StateMachineStateCategory Category { get; private set; } = StateMachineStateCategory.Intermediate;
 
     // EF Core constructor
-    private StateMachineState() { }
+    protected StateMachineState() { }
 
-    private StateMachineState(
+    protected StateMachineState(
         StateMachineDefinition definition,
         string name,
         string? description = null,
@@ -70,5 +70,45 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     public void SetCategory(StateMachineStateCategory category) => Category = category;
 
     public override string ToString() => Name;
+}
+
+public class AuditableStateMachineState<TUser> : StateMachineState, IAuditable<TUser>
+    where TUser : class
+{
+    public Guid? CreatedById { get; private set; }
+    public Guid? UpdatedById { get; private set; }
+    public TUser? CreatedBy { get; private set; }
+    public TUser? UpdatedBy { get; private set; }
+
+    private AuditableStateMachineState() : base() { }
+
+    private AuditableStateMachineState(
+        StateMachineDefinition definition,
+        string name,
+        string? description,
+        StateMachineStateCategory category)
+        : base(definition, name, description, category) { }
+
+    public static new AuditableStateMachineState<TUser> Create(
+        StateMachineDefinition definition,
+        string name,
+        string? description = null,
+        StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
+    {
+        if (definition is null)
+            throw new ArgumentNullException(nameof(definition));
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("State name cannot be null or empty.", nameof(name));
+
+        return new AuditableStateMachineState<TUser>(definition, name.Trim(), description?.Trim(), category);
+    }
+
+    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
+
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        SetUpdatedTimestamp();
+    }
 }
 

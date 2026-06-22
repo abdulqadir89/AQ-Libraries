@@ -1,3 +1,4 @@
+using AQ.Abstractions;
 using AQ.Entities;
 using AQ.Utilities.Search;
 
@@ -51,9 +52,9 @@ public class StateMachineTrigger : Entity
     public string? TriggerMetadataJson { get; private set; }
 
     // EF Core constructor
-    private StateMachineTrigger() { }
+    protected StateMachineTrigger() { }
 
-    private StateMachineTrigger(
+    protected StateMachineTrigger(
         StateMachineDefinition definition,
         string name,
         string? description = null,
@@ -121,5 +122,50 @@ public class StateMachineTrigger : Entity
     }
 
     public override string ToString() => $"{Name} ({Type})";
+}
+
+public class AuditableStateMachineTrigger<TUser> : StateMachineTrigger, IAuditable<TUser>
+    where TUser : class
+{
+    public Guid? CreatedById { get; private set; }
+    public Guid? UpdatedById { get; private set; }
+    public TUser? CreatedBy { get; private set; }
+    public TUser? UpdatedBy { get; private set; }
+
+    private AuditableStateMachineTrigger() : base() { }
+
+    private AuditableStateMachineTrigger(
+        StateMachineDefinition definition,
+        string name,
+        string? description,
+        StateMachineTriggerType type,
+        bool isRecordsOnly,
+        string? eventType,
+        string? triggerMetadataJson)
+        : base(definition, name, description, type, isRecordsOnly, eventType, triggerMetadataJson) { }
+
+    public static new AuditableStateMachineTrigger<TUser> Create(
+        StateMachineDefinition definition,
+        string name,
+        string? description = null,
+        StateMachineTriggerType type = StateMachineTriggerType.Manual,
+        bool isRecordsOnly = false,
+        string? eventType = null,
+        string? triggerMetadataJson = null)
+    {
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
+
+        return new AuditableStateMachineTrigger<TUser>(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType, triggerMetadataJson);
+    }
+
+    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
+
+    public void SetUpdatedBy(Guid? userId)
+    {
+        UpdatedById = userId;
+        SetUpdatedTimestamp();
+    }
 }
 
