@@ -9,6 +9,8 @@ namespace AQ.StateMachine.Entities;
 /// </summary>
 public class StateMachineTransition : Entity
 {
+    private static readonly JsonSerializerOptions _camelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     public Guid StateMachineDefinitionId { get; private set; }
     public StateMachineState? FromState { get; private set; }
     public Guid? FromStateId { get; private set; }
@@ -22,6 +24,8 @@ public class StateMachineTransition : Entity
     public IEnumerable<IStateMachineTransitionRequirement>? Requirements { get; private set; }
 
     public string PublishEventTypesJson { get; private set; } = "[]";
+
+    public string? TransitionMetadataJson { get; private set; }
 
     /// <summary>
     /// Gets the list of event type keys that this transition will publish when it executes.
@@ -94,6 +98,22 @@ public class StateMachineTransition : Entity
         if (publishEventTypes is not null)
             PublishEventTypes = publishEventTypes.ToList();
     }
+
+    /// <summary>
+    /// Gets the typed metadata stored on this transition, or null if none is set.
+    /// </summary>
+    public T? GetMetadata<T>() where T : class
+        => TransitionMetadataJson is null
+            ? null
+            : JsonSerializer.Deserialize<T>(TransitionMetadataJson, _camelCase);
+
+    /// <summary>
+    /// Sets typed metadata on this transition. Pass null to clear.
+    /// </summary>
+    public void SetMetadata<T>(T? value) where T : class
+        => TransitionMetadataJson = value is null
+            ? null
+            : JsonSerializer.Serialize(value, _camelCase);
 
     /// <summary>
     /// Checks if this transition has any requirements that need to be evaluated.

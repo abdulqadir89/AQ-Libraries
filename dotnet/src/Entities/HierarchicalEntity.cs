@@ -30,9 +30,10 @@ public abstract class HierarchicalEntity<T> : Entity, IHierarchicalEntity where 
 
     public async Task SetParent(T? parent, Func<T, Guid?, Task> updateClosure)
     {
+        var newParentId = parent?.Id;
+        await updateClosure.Invoke((T)this, newParentId);
         Parent = parent;
-        ParentId = parent?.Id;
-        await updateClosure.Invoke((T)this, parent?.Id);
+        ParentId = newParentId;
     }
 
 }
