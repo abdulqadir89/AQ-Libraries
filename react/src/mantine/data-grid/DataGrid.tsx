@@ -739,7 +739,7 @@ export function DataGrid<T extends Record<string, unknown>>({
             {bulkActions && bulkActions.length > 0 && state.selectedRows.length > 0 && (
               <Menu shadow="md" withinPortal>
                 <Menu.Target>
-                  <Button variant="light" color="blue" leftSection={<IconStack2 size={16} />}>
+                  <Button variant="light" leftSection={<IconStack2 size={16} />}>
                     Bulk Actions ({state.selectedRows.length})
                   </Button>
                 </Menu.Target>
