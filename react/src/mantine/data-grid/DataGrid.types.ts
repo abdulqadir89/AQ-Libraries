@@ -5,7 +5,7 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   title: string;
   dataIndex: keyof T;
   cardRole?: 'title' | 'details';
-  type?: 'string' | 'number' | 'date' | 'daterange' | 'boolean' | 'enum' | 'markdown';
+  type?: 'string' | 'number' | 'date' | 'daterange' | 'boolean' | 'enum' | 'markdown' | 'lookup';
   width?: number | string;
   minWidth?: number; // Minimum width in pixels (default: 100)
   maxWidth?: number; // Maximum width in pixels
@@ -15,6 +15,21 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   align?: 'left' | 'center' | 'right';
   // For enum columns - provide the enum options
   enumOptions?: Array<{ value: string | number; label: string }>;
+  // For lookup columns - a CRUD-backed entity filtered via its own async Select component
+  lookupConfig?: LookupFilterConfig;
+}
+
+// Renders the entity-specific picker (e.g. wraps an XSelect component) for a 'lookup' column filter
+export interface LookupFilterRenderProps {
+  value: string[];
+  onChange: (value: string[]) => void;
+  disabled?: boolean;
+}
+
+export interface LookupFilterConfig {
+  renderSelect: (props: LookupFilterRenderProps) => ReactNode;
+  // Soft cap on selected values to keep the filter expression within safe URL length (default 15)
+  maxValues?: number;
 }
 
 export interface ActionButton<T = Record<string, unknown>> {

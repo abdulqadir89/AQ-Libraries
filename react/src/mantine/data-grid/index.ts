@@ -31,6 +31,8 @@ export type {
   LogicalOperator,
   FilterGroup,
   SortCondition,
+  LookupFilterConfig,
+  LookupFilterRenderProps,
 } from './DataGrid.types';
 
 // Re-export builders from utils for convenience

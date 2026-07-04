@@ -102,6 +102,8 @@ function getDefaultOperator(type?: string): string {
       return 'eq';
     case 'enum':
       return 'in';
+    case 'lookup':
+      return 'in';
     default:
       return 'contains';
   }
@@ -144,6 +146,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     const [secondValue, setSecondValue] = useState('');
     // For enum filters with multiple selection
     const [selectedEnumValues, setSelectedEnumValues] = useState<string[]>([]);
+    // For lookup filters with multiple selection (CRUD-backed entity, async Select)
+    const [selectedLookupValues, setSelectedLookupValues] = useState<string[]>([]);
 
     // Helper functions to convert between string and typed values
     const parseValue = (val: string, type?: string): string | number | Date | boolean => {
@@ -178,6 +182,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setValue('');
         setSecondValue('');
         setSelectedEnumValues([]);
+        setSelectedLookupValues([]);
         setHasActiveFilter(false);
       },
       setFilterExpression: (expression: string) => {
@@ -186,15 +191,16 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           setValue('');
           setSecondValue('');
           setSelectedEnumValues([]);
+          setSelectedLookupValues([]);
           setHasActiveFilter(false);
           return;
         }
-        
+
         const parsed = parseFilterExpression(expression);
         setOperator(parsed.operator || getDefaultOperator(column.type));
         setValue(parsed.value || '');
         setSecondValue(parsed.secondValue || '');
-        
+
         // Handle enum 'in' and 'notin' operators
         if (column.type === 'enum' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
           const enumValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
@@ -202,7 +208,15 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         } else {
           setSelectedEnumValues([]);
         }
-        
+
+        // Handle lookup 'in' and 'notin' operators
+        if (column.type === 'lookup' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
+          const lookupValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
+          setSelectedLookupValues(lookupValues);
+        } else {
+          setSelectedLookupValues([]);
+        }
+
         setHasActiveFilter(true);
       },
       close: () => {
@@ -227,6 +241,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return BOOLEAN_OPERATORS;
         case 'enum':
           return ENUM_OPERATORS;
+        case 'lookup':
+          return ENUM_OPERATORS;
         default:
           return STRING_OPERATORS;
       }
@@ -247,6 +263,12 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     function handlePopoverClose() {
       // Auto-apply enum selections on close
       if (column.type === 'enum' && selectedEnumValues.length > 0) {
+        handleApply();
+        return;
+      }
+
+      // Auto-apply lookup selections on close
+      if (column.type === 'lookup' && selectedLookupValues.length > 0) {
         handleApply();
         return;
       }
@@ -295,7 +317,20 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setOpened(false);
         return;
       }
-      
+
+      // Handle lookup 'in' and 'notin' operators with multiple selection
+      if (column.type === 'lookup' && (operator === 'in' || operator === 'notin')) {
+        if (selectedLookupValues.length === 0) {
+          return;
+        }
+        const values = selectedLookupValues.map(v => formatValue(v)).join(',');
+        const expression = `${column.key},${operator},${values}`;
+        onApplyFilter(expression);
+        setHasActiveFilter(true);
+        setOpened(false);
+        return;
+      }
+
       // Handle operators that require values
       if (!value.trim()) {
         return;
@@ -323,6 +358,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       setValue('');
       setSecondValue('');
       setSelectedEnumValues([]);
+      setSelectedLookupValues([]);
       setHasActiveFilter(false);
       onClearFilter(column.key);
       setOpened(false);
@@ -371,7 +407,35 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
               ))}
             </Stack>
           );
-          
+
+        case 'lookup': {
+          if (!column.lookupConfig) {
+            return (
+              <Text size="sm" c="dimmed">
+                No lookup configuration available
+              </Text>
+            );
+          }
+
+          const maxValues = column.lookupConfig.maxValues ?? 15;
+          const capReached = selectedLookupValues.length >= maxValues;
+
+          return (
+            <Stack gap="xs">
+              {column.lookupConfig.renderSelect({
+                value: selectedLookupValues,
+                onChange: setSelectedLookupValues,
+                disabled: capReached,
+              })}
+              {capReached && (
+                <Text size="xs" c="dimmed">
+                  Limit reached ({maxValues}) — remove a selection to add another.
+                </Text>
+              )}
+            </Stack>
+          );
+        }
+
         case 'number':
           return (
             <NumberInput
@@ -504,7 +568,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             <Stack gap="md" style={{ minWidth: 250 }}>
               <Text size="sm" fw={500}>Filter by {column.title}</Text>
 
-              {column.type !== 'enum' && column.type !== 'daterange' && (
+              {column.type !== 'enum' && column.type !== 'lookup' && column.type !== 'daterange' && (
                 <Select
                   label="Operator"
                   data={getOperators(column.type)}
