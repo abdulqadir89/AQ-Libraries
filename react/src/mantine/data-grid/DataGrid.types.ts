@@ -9,11 +9,12 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   width?: number | string;
   minWidth?: number; // Minimum width in pixels (default: 100)
   maxWidth?: number; // Maximum width in pixels
-  // Relative weight for expanding/shrinking this column's width to fill or fit the
-  // available container width, always clamped by minWidth/maxWidth. Default 0 (fixed
-  // width, unaffected by container size) so existing columns are unaffected unless a
-  // grid explicitly opts a column in (e.g. ratio: 1, 1.5, 2 for flexible text columns).
-  ratio?: number;
+  // Marks this column as the one that absorbs all leftover container width (or shrink
+  // pressure), clamped by its own minWidth/maxWidth. At most one column per grid should
+  // set this. Every other column — including Actions and the selection checkbox — stays
+  // pinned at its own width regardless of container size. Default false/unset: the table
+  // simply sits at its natural total width and scrolls horizontally when needed.
+  primary?: boolean;
   sortable?: boolean;
   filterable?: boolean;
   render?: (value: unknown, record: T, index: number) => ReactNode;

@@ -61,7 +61,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   specialModeConfig,
   actions,
   showActions = true,
-  actionsWidth = 120,
+  actionsWidth,
   pagination,
   onPageChange,
   searchable = true,
@@ -117,218 +117,6 @@ export function DataGrid<T extends Record<string, unknown>>({
     });
   }, [selectedRows]);
 
-  // Sorting state
-  const [sortConditions, setSortConditions] = useState<SortCondition[]>([]);
-
-  // Column widths state (for resizing)
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
-
-  // Columns the user has manually dragged to a specific width — excluded from
-  // ratio-based auto expand/shrink so a deliberate resize isn't fought on next layout pass.
-  const manuallyResizedKeys = useRef<Set<string>>(new Set());
-
-  // Measures the scrollable table container so ratio columns can expand/shrink to fill it.
-  const [scrollAreaRef, scrollAreaRect] = useResizeObserver();
-
-  // Resizing state
-  const resizingColumn = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
-
-  const calculateDynamicWidth = useCallback((column: DataGridColumn<T>): number => {
-    const DEFAULT_MIN_WIDTH = 100;
-    const PADDING = 40;
-    const CHAR_WIDTH = 8;
-
-    let width = column.minWidth || DEFAULT_MIN_WIDTH;
-    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING);
-
-    if (column.maxWidth) {
-      width = Math.min(width, column.maxWidth);
-    }
-
-    return Math.round(width);
-  }, []);
-
-  // Distributes the delta between available container width and the columns' base
-  // (or manually-resized) widths across columns with ratio > 0, proportional to their
-  // ratio, clamped by each column's minWidth/maxWidth. Columns with ratio 0 (default)
-  // are left exactly at their base width, so a grid with no ratio columns is a no-op —
-  // pixel-identical to the pre-ratio behavior.
-  const applyRatioAdjustment = useCallback((
-    baseWidths: Record<string, number>,
-    containerWidth: number,
-  ): Record<string, number> => {
-    const flexible = columns.filter(
-      c => (c.ratio ?? 0) > 0 && !manuallyResizedKeys.current.has(c.key)
-    );
-    if (flexible.length === 0 || containerWidth <= 0) return baseWidths;
-
-    const result = { ...baseWidths };
-    const fixedColumnsWidth = columns
-      .filter(c => !flexible.includes(c))
-      .reduce((sum, c) => sum + (result[c.key] ?? 0), 0);
-    // Actions column and the row-selection checkbox aren't DataGridColumn entries,
-    // so they're reserved here rather than being visible to the ratio distribution.
-    const actionsReserve = showActions ? actionsWidth : 0;
-    const checkboxReserve = selectable ? 40 : 0;
-    const fixedWidth = fixedColumnsWidth + actionsReserve + checkboxReserve;
-
-    let remaining = containerWidth - fixedWidth;
-    let pool = [...flexible];
-
-    // Iteratively distribute remaining width by ratio, clamping each column to its
-    // min/max and re-distributing any leftover across columns not yet clamped.
-    for (let pass = 0; pass < flexible.length + 1 && pool.length > 0; pass++) {
-      const totalRatio = pool.reduce((sum, c) => sum + (c.ratio ?? 0), 0);
-      if (totalRatio <= 0) break;
-
-      const stillFlexible: typeof pool = [];
-      let usedByClamped = 0;
-
-      pool.forEach(column => {
-        const share = remaining * ((column.ratio ?? 0) / totalRatio);
-        let width = share;
-        if (column.minWidth != null) width = Math.max(width, column.minWidth);
-        if (column.maxWidth != null) width = Math.min(width, column.maxWidth);
-        width = Math.round(width);
-
-        const wasClamped =
-          (column.minWidth != null && width === column.minWidth && share < column.minWidth) ||
-          (column.maxWidth != null && width === column.maxWidth && share > column.maxWidth);
-
-        if (wasClamped) {
-          result[column.key] = width;
-          usedByClamped += width;
-        } else {
-          stillFlexible.push(column);
-        }
-      });
-
-      if (stillFlexible.length === pool.length) {
-        // Nothing new got clamped this pass — assign shares as computed and stop.
-        stillFlexible.forEach(column => {
-          const share = remaining * ((column.ratio ?? 0) / totalRatio);
-          result[column.key] = Math.round(share);
-        });
-        break;
-      }
-
-      remaining -= usedByClamped;
-      pool = stillFlexible;
-    }
-
-    return result;
-  }, [columns]);
-
-  // Initialize column widths
-  // Use a stable signature (key + explicit width + ratio) to avoid recalculating on
-  // every parent render when `columns` is defined inline (new reference each render).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}:${c.ratio ?? 0}`).join(',');
-
-  useEffect(() => {
-    const baseWidths: Record<string, number> = {};
-
-    columns.forEach(column => {
-      if (column.width) {
-        baseWidths[column.key] = typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
-      } else {
-        baseWidths[column.key] = calculateDynamicWidth(column);
-      }
-    });
-
-    manuallyResizedKeys.current.clear();
-    setColumnWidths(
-      scrollAreaRect.width > 0 ? applyRatioAdjustment(baseWidths, scrollAreaRect.width) : baseWidths
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnSignature]);
-
-  // Re-run ratio adjustment when the container is resized (e.g. narrower viewport,
-  // sidebar collapse/expand, zoom change) without disturbing manually-resized columns.
-  useEffect(() => {
-    if (scrollAreaRect.width <= 0) return;
-
-    setColumnWidths(prev => {
-      const baseWidths: Record<string, number> = { ...prev };
-      columns.forEach(column => {
-        if (manuallyResizedKeys.current.has(column.key)) return;
-        baseWidths[column.key] = column.width
-          ? (typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10))
-          : calculateDynamicWidth(column);
-      });
-      return applyRatioAdjustment(baseWidths, scrollAreaRect.width);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollAreaRect.width]);
-
-  // Handle column resize move
-  const handleResizeMove = useCallback((e: MouseEvent) => {
-    if (!resizingColumn.current) return;
-    
-    const { key, startX, startWidth } = resizingColumn.current;
-    const diff = e.clientX - startX;
-    const column = columns.find(col => col.key === key);
-
-    if (!column) return;
-
-    manuallyResizedKeys.current.add(key);
-
-    let newWidth = startWidth + diff;
-    
-    // Apply minWidth constraint (default 100px)
-    const minWidth = column.minWidth || 100;
-    newWidth = Math.max(newWidth, minWidth);
-    
-    // Apply maxWidth constraint if specified
-    if (column.maxWidth) {
-      newWidth = Math.min(newWidth, column.maxWidth);
-    }
-    
-    setColumnWidths(prev => ({
-      ...prev,
-      [key]: newWidth,
-    }));
-  }, [columns]);
-
-  // Handle column resize end
-  const handleResizeEnd = useCallback(() => {
-    resizingColumn.current = null;
-    document.removeEventListener('mousemove', handleResizeMove);
-    document.removeEventListener('mouseup', handleResizeEnd);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  }, [handleResizeMove]);
-
-  // Handle column resize start
-  const handleResizeStart = useCallback((
-    e: React.MouseEvent,
-    column: DataGridColumn<T>
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    resizingColumn.current = {
-      key: column.key,
-      startX: e.clientX,
-      startWidth: columnWidths[column.key] || 100,
-    };
-    
-    document.addEventListener('mousemove', handleResizeMove);
-    document.addEventListener('mouseup', handleResizeEnd);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [columnWidths, handleResizeMove, handleResizeEnd]);
-
-  // Cleanup resize listeners on unmount
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleResizeMove);
-      document.removeEventListener('mouseup', handleResizeEnd);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [handleResizeMove, handleResizeEnd]);
-
   // Determine button visibility based on mode
   const getButtonConfig = (buttonKey: string) => {
     switch (mode) {
@@ -341,11 +129,11 @@ export function DataGrid<T extends Record<string, unknown>>({
           delete: { visible: false, disabled: false },
           create: { visible: false, disabled: false },
         }[buttonKey] || { visible: false, disabled: false };
-        
+
       case 'action':
         // In action mode: all buttons visible
         return { visible: true, disabled: false };
-        
+
       case 'special': {
         // In special mode: use specialModeConfig
         const config = specialModeConfig?.[buttonKey as keyof SpecialModeConfig];
@@ -357,7 +145,7 @@ export function DataGrid<T extends Record<string, unknown>>({
         }
         return { visible: true, disabled: false };
       }
-        
+
       default:
         return { visible: true, disabled: false };
     }
@@ -431,6 +219,195 @@ export function DataGrid<T extends Record<string, unknown>>({
   ];
 
   const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
+
+  // Static estimate of visible action buttons for sizing the actions column — evaluated
+  // without a record, so per-row `visible()` overrides (rare, row-data-dependent) are
+  // assumed visible here; this matches the precision the previous flat default had.
+  const visibleActionCount = finalActions.filter(action => {
+    try {
+      return !action.visible || action.visible({} as T);
+    } catch {
+      return true;
+    }
+  }).length;
+
+  // Icon ActionIcon (size="md") is 36px, Group gap="xs" is 10px, plus ~24px of cell
+  // padding — computed so grids with fewer/more buttons than the old flat 120px default
+  // don't render an actions column with empty space or cramped/wrapping buttons.
+  const computedActionsWidth = visibleActionCount > 0
+    ? visibleActionCount * 36 + (visibleActionCount - 1) * 10 + 24
+    : 0;
+  const resolvedActionsWidth = actionsWidth ?? computedActionsWidth;
+
+  // Sorting state
+  const [sortConditions, setSortConditions] = useState<SortCondition[]>([]);
+
+  // Column widths state (for resizing)
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+
+  // Columns the user has manually dragged to a specific width — once resized, a column
+  // is never recalculated again (stays exactly where the user left it).
+  const manuallyResizedKeys = useRef<Set<string>>(new Set());
+
+  // Measures the scrollable table container so the primary column can fill/fit it.
+  const [scrollAreaRef, scrollAreaRect] = useResizeObserver();
+
+  // Resizing state
+  const resizingColumn = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+
+  const calculateDynamicWidth = useCallback((column: DataGridColumn<T>): number => {
+    const DEFAULT_MIN_WIDTH = 100;
+    const PADDING = 40;
+    const CHAR_WIDTH = 8;
+
+    let width = column.minWidth || DEFAULT_MIN_WIDTH;
+    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING);
+
+    if (column.maxWidth) {
+      width = Math.min(width, column.maxWidth);
+    }
+
+    return Math.round(width);
+  }, []);
+
+  const baseWidthFor = useCallback((column: DataGridColumn<T>): number => {
+    if (column.width) {
+      return typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
+    }
+    return calculateDynamicWidth(column);
+  }, [calculateDynamicWidth]);
+
+  // At most one column should be marked `primary` — it alone absorbs leftover container
+  // width (or shrink pressure), clamped by its own minWidth/maxWidth. Every other column
+  // (including Actions and the selection checkbox) stays pinned at its own fixed width,
+  // never redistributed. If no column is primary, the table simply sits at its natural
+  // total width and scrolls horizontally when the container is narrower.
+  const applyPrimaryColumnSizing = useCallback((
+    baseWidths: Record<string, number>,
+    containerWidth: number,
+  ): Record<string, number> => {
+    const primary = columns.find(c => c.primary && !manuallyResizedKeys.current.has(c.key));
+    if (!primary || containerWidth <= 0) return baseWidths;
+
+    const otherColumnsWidth = columns
+      .filter(c => c.key !== primary.key)
+      .reduce((sum, c) => sum + (baseWidths[c.key] ?? 0), 0);
+    const actionsReserve = showActions ? resolvedActionsWidth : 0;
+    const checkboxReserve = selectable ? 40 : 0;
+    const fixedWidth = otherColumnsWidth + actionsReserve + checkboxReserve;
+
+    // Reserve a couple of px for the table's own border (withTableBorder/withColumnBorders)
+    // which sits inside the measured container box — rounding down (never up) here
+    // guarantees the computed total never exceeds the container by even 1px, so a table
+    // that exactly fits never shows a phantom horizontal scrollbar.
+    const BORDER_SAFETY_MARGIN = 4;
+    let primaryWidth = containerWidth - fixedWidth - BORDER_SAFETY_MARGIN;
+    if (primary.minWidth != null) primaryWidth = Math.max(primaryWidth, primary.minWidth);
+    if (primary.maxWidth != null) primaryWidth = Math.min(primaryWidth, primary.maxWidth);
+
+    return { ...baseWidths, [primary.key]: Math.floor(primaryWidth) };
+  }, [columns, showActions, resolvedActionsWidth, selectable]);
+
+  // Initialize column widths
+  // Use a stable signature (key + explicit width + primary flag) to avoid recalculating
+  // on every parent render when `columns` is defined inline (new reference each render).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}:${c.primary ? 1 : 0}`).join(',');
+
+  useEffect(() => {
+    const baseWidths: Record<string, number> = {};
+    columns.forEach(column => { baseWidths[column.key] = baseWidthFor(column); });
+
+    manuallyResizedKeys.current.clear();
+    setColumnWidths(
+      scrollAreaRect.width > 0 ? applyPrimaryColumnSizing(baseWidths, scrollAreaRect.width) : baseWidths
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnSignature]);
+
+  // Re-run primary-column sizing when the container is resized (e.g. narrower viewport,
+  // sidebar collapse/expand, zoom change) without disturbing manually-resized columns.
+  useEffect(() => {
+    if (scrollAreaRect.width <= 0) return;
+
+    setColumnWidths(prev => {
+      const baseWidths: Record<string, number> = { ...prev };
+      columns.forEach(column => {
+        if (manuallyResizedKeys.current.has(column.key)) return;
+        baseWidths[column.key] = baseWidthFor(column);
+      });
+      return applyPrimaryColumnSizing(baseWidths, scrollAreaRect.width);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollAreaRect.width]);
+
+  // Handle column resize move
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn.current) return;
+    
+    const { key, startX, startWidth } = resizingColumn.current;
+    const diff = e.clientX - startX;
+    const column = columns.find(col => col.key === key);
+
+    if (!column) return;
+
+    manuallyResizedKeys.current.add(key);
+
+    let newWidth = startWidth + diff;
+    
+    // Apply minWidth constraint (default 100px)
+    const minWidth = column.minWidth || 100;
+    newWidth = Math.max(newWidth, minWidth);
+    
+    // Apply maxWidth constraint if specified
+    if (column.maxWidth) {
+      newWidth = Math.min(newWidth, column.maxWidth);
+    }
+    
+    setColumnWidths(prev => ({
+      ...prev,
+      [key]: newWidth,
+    }));
+  }, [columns]);
+
+  // Handle column resize end
+  const handleResizeEnd = useCallback(() => {
+    resizingColumn.current = null;
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, [handleResizeMove]);
+
+  // Handle column resize start
+  const handleResizeStart = useCallback((
+    e: React.MouseEvent,
+    column: DataGridColumn<T>
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    resizingColumn.current = {
+      key: column.key,
+      startX: e.clientX,
+      startWidth: columnWidths[column.key] || 100,
+    };
+    
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [columnWidths, handleResizeMove, handleResizeEnd]);
+
+  // Cleanup resize listeners on unmount
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [handleResizeMove, handleResizeEnd]);
 
   // State for search debouncing
   const [debouncedSearchText] = useDebouncedValue(state.searchText, 500);
@@ -803,13 +780,29 @@ export function DataGrid<T extends Record<string, unknown>>({
           </Table.Td>
         ))}
         {showActions && finalActions.length > 0 && (
-          <Table.Td style={{ width: actionsWidth }}>
+          <Table.Td style={{ width: resolvedActionsWidth }}>
             {renderActions(record)}
           </Table.Td>
         )}
       </Table.Tr>
     );
   });
+
+  // Explicit total table width (sum of every column + actions + checkbox gutter) paired
+  // with table-layout: fixed below — without both, the browser ignores per-cell inline
+  // widths and stretches/redistributes columns (typically the last one) to fill the
+  // container on its own, which is what caused Actions to balloon on wide screens.
+  const tableWidth = columns.reduce((sum, column) => sum + (columnWidths[column.key] || (typeof column.width === 'number' ? column.width : 100)), 0)
+    + (showActions && finalActions.length > 0 ? resolvedActionsWidth : 0)
+    + (selectable ? 40 : 0);
+
+  // Mantine's ScrollArea auto-shows its scrollbar via a ResizeObserver on the content
+  // box, but that observer unreliably misses overflow introduced by a manual column
+  // resize (rapid inline-style mousemove updates on an interior column) — reproducibly
+  // confirmed some columns' resize handles trigger it and others don't. Since we already
+  // compute both the table's true total width and the container's measured width, drive
+  // the scrollbar directly from that comparison instead of trusting the observer.
+  const tableOverflows = scrollAreaRect.width > 0 && tableWidth > scrollAreaRect.width;
 
   // Render create button based on mode
   const renderCreateButton = () => {
@@ -883,7 +876,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                 value={state.searchText}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleSearch(event.currentTarget.value)}
                 onKeyDown={handleKeyDown}
-                style={{ flex: '1 1 300px', minWidth: 0, maxWidth: 400 }}
+                style={{ width: 300, maxWidth: '100%', flex: '0 1 auto' }}
               />
             )}
 
@@ -915,12 +908,13 @@ export function DataGrid<T extends Record<string, unknown>>({
 
       {/* Table */}
       <Paper withBorder ref={scrollAreaRef}>
-        <ScrollArea type="always" scrollbarSize={10}>
+        <ScrollArea type={tableOverflows ? 'always' : 'never'} scrollbarSize={10}>
           <Table
             striped={striped}
             highlightOnHover={highlightOnHover}
             withTableBorder={withBorder}
             withColumnBorders={withColumnBorders}
+            style={{ tableLayout: 'fixed', width: tableWidth }}
           >
             <Table.Thead>
               <Table.Tr>
@@ -995,7 +989,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                   </Table.Th>
                 ))}
                 {showActions && finalActions.length > 0 && (
-                  <Table.Th style={{ width: actionsWidth, textAlign: 'center' }}>
+                  <Table.Th style={{ width: resolvedActionsWidth, textAlign: 'center' }}>
                     Actions
                   </Table.Th>
                 )}
