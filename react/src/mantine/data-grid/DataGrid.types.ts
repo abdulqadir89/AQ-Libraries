@@ -9,6 +9,11 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   width?: number | string;
   minWidth?: number; // Minimum width in pixels (default: 100)
   maxWidth?: number; // Maximum width in pixels
+  // Relative weight for expanding/shrinking this column's width to fill or fit the
+  // available container width, always clamped by minWidth/maxWidth. Default 0 (fixed
+  // width, unaffected by container size) so existing columns are unaffected unless a
+  // grid explicitly opts a column in (e.g. ratio: 1, 1.5, 2 for flexible text columns).
+  ratio?: number;
   sortable?: boolean;
   filterable?: boolean;
   render?: (value: unknown, record: T, index: number) => ReactNode;
