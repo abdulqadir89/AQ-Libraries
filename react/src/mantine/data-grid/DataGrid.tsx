@@ -234,8 +234,12 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Icon ActionIcon (size="md") is 36px, Group gap="xs" is 10px, plus ~24px of cell
   // padding — computed so grids with fewer/more buttons than the old flat 120px default
   // don't render an actions column with empty space or cramped/wrapping buttons.
+  // Width is computed for at least 2 icons' worth of space even when only 1 action is
+  // visible, since the "Actions" header label itself needs that much room — a single
+  // icon's width alone clips/wraps the header text (e.g. a lone Delete-only grid).
+  const actionsWidthColumnCount = Math.max(visibleActionCount, 2);
   const computedActionsWidth = visibleActionCount > 0
-    ? visibleActionCount * 36 + (visibleActionCount - 1) * 10 + 24
+    ? actionsWidthColumnCount * 36 + (actionsWidthColumnCount - 1) * 10 + 24
     : 0;
   const resolvedActionsWidth = actionsWidth ?? computedActionsWidth;
 
@@ -259,16 +263,24 @@ export function DataGrid<T extends Record<string, unknown>>({
     const DEFAULT_MIN_WIDTH = 100;
     const PADDING = 40;
     const CHAR_WIDTH = 8;
+    // Header cell also renders a sort icon (14px + 4px gap, only when column.sortable
+    // AND the grid-level `sortable` prop both hold — matches the render condition below
+    // exactly) and a filter ActionIcon (30px + 10px "xs" gap, when filterable !== false).
+    // The old heuristic only measured title text width, so headers with both icons
+    // regularly computed a width narrower than their actual rendered content and wrapped
+    // onto two lines even though there was room to fit on one.
+    const SORT_ICON_WIDTH = (column.sortable && sortable) ? 14 + 4 : 0;
+    const FILTER_ICON_WIDTH = column.filterable !== false ? 30 + 10 : 0;
 
     let width = column.minWidth || DEFAULT_MIN_WIDTH;
-    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING);
+    width = Math.max(width, column.title.length * CHAR_WIDTH + PADDING + SORT_ICON_WIDTH + FILTER_ICON_WIDTH);
 
     if (column.maxWidth) {
       width = Math.min(width, column.maxWidth);
     }
 
     return Math.round(width);
-  }, []);
+  }, [sortable]);
 
   const baseWidthFor = useCallback((column: DataGridColumn<T>): number => {
     if (column.width) {
