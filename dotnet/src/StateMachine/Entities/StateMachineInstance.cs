@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AQ.Abstractions;
 using AQ.Entities;
 
@@ -17,6 +18,19 @@ public abstract class StateMachineInstance : Entity
     public DateTimeOffset? CurrentStateEnteredAt { get; protected set; }
 
     public ICollection<StateMachineStateTransitionHistory> TransitionHistory { get; protected set; } = [];
+
+    /// <summary>
+    /// JSON-serialized list of <see cref="StateMachineMigrationRecord"/>, appended to by
+    /// <see cref="MigrateToDefinition"/>. Definition migrations do not produce a
+    /// <see cref="StateMachineStateTransitionHistory"/> row, so this is the only record of when
+    /// and between which states/definitions a migration occurred.
+    /// </summary>
+    public string? MigrationHistory { get; protected set; }
+
+    private static readonly JsonSerializerOptions MigrationHistorySerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     // EF Core constructor
     protected StateMachineInstance() { }
@@ -176,6 +190,23 @@ public abstract class StateMachineInstance : Entity
         => AddDomainEvent(new StateMachineTransitionedEvent(Id, definitionId, definitionVersion, toStateId));
 
     /// <summary>
+    /// Gets the full history of definition migrations performed on this instance, oldest first.
+    /// </summary>
+    public IReadOnlyList<StateMachineMigrationRecord> GetMigrationHistory()
+    {
+        return string.IsNullOrEmpty(MigrationHistory)
+            ? []
+            : JsonSerializer.Deserialize<List<StateMachineMigrationRecord>>(MigrationHistory, MigrationHistorySerializerOptions) ?? [];
+    }
+
+    private void AppendMigrationRecord(StateMachineMigrationRecord record)
+    {
+        var records = GetMigrationHistory().ToList();
+        records.Add(record);
+        MigrationHistory = JsonSerializer.Serialize(records, MigrationHistorySerializerOptions);
+    }
+
+    /// <summary>
     /// Migrates this instance to a new state machine definition using the mapping stored in
     /// <see cref="StateMachineDefinition.PreviousVersionStateMapping"/>.
     /// State IDs — not names — are used to resolve the current state in the new definition,
@@ -204,12 +235,21 @@ public abstract class StateMachineInstance : Entity
             ?? throw new InvalidOperationException(
                 $"Mapped target state ID '{newStateId}' does not exist in the target definition.");
 
+        var previousDefinitionId = DefinitionId;
+        var previousStateId = CurrentStateId;
+        var migratedAt = DateTimeOffset.UtcNow;
+
+        // A migration is a definition swap, not a real state change — CurrentStateEnteredAt and
+        // LastTransitionAt are deliberately NOT reset here, so the instance's true accumulated
+        // dwell time in its (conceptual) current state survives the migration. MigratedAt on the
+        // migration record marks the boundary instant for analytics purposes instead.
         DefinitionId = newDefinition.Id;
         Definition = newDefinition;
         CurrentStateId = newState.Id;
         CurrentState = newState;
-        LastTransitionAt = DateTimeOffset.UtcNow;
-        CurrentStateEnteredAt = DateTimeOffset.UtcNow;
+
+        AppendMigrationRecord(new StateMachineMigrationRecord(
+            previousDefinitionId, newDefinition.Id, previousStateId, newState.Id, migratedAt));
     }
 }
 
