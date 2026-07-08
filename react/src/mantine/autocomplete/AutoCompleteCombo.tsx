@@ -3,14 +3,30 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Select,
   MultiSelect,
+  ColorSwatch,
+  Group,
 } from '@mantine/core';
-import type { SelectProps, MultiSelectProps } from '@mantine/core';
+import type { SelectProps, MultiSelectProps, ComboboxItem } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 
 export interface AutoCompleteItem {
   value: string;
   label: string;
   disabled?: boolean;
+  color?: string;
+}
+
+function renderAutoCompleteOption({ option }: { option: ComboboxItem }) {
+  const item = option as AutoCompleteItem;
+  if (!item.color) {
+    return item.label;
+  }
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <ColorSwatch color={item.color} size={12} />
+      <span>{item.label}</span>
+    </Group>
+  );
 }
 
 export interface AutoCompleteComboProps {
@@ -144,6 +160,7 @@ export const AutoCompleteCombo = forwardRef<HTMLInputElement, AutoCompleteComboP
       maxDropdownHeight,
       limit,
       nothingFoundMessage: searchQuery.isLoading ? 'Loading...' : 'No options found',
+      renderOption: renderAutoCompleteOption,
       ...props,
     };
 
