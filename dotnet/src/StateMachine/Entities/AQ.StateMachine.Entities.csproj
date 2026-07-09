@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Entities\AQ.Entities.csproj" />
-    <ProjectReference Include="..\..\Utilities\Search\AQ.Utilities.Search.csproj" />
+    <ProjectReference Include="..\..\Utilities\AQ.Utilities.csproj" />
   </ItemGroup>
 
 </Project>

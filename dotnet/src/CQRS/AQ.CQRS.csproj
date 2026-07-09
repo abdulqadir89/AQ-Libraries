@@ -6,8 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Utilities\Results\AQ.Utilities.Results.csproj" />
-    <ProjectReference Include="..\Utilities\Sort\AQ.Utilities.Sort.csproj" />
+    <ProjectReference Include="..\Utilities\AQ.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Utilities\Results\AQ.Utilities.Results.csproj" />
+    <ProjectReference Include="..\..\Utilities\AQ.Utilities.csproj" />
     <ProjectReference Include="..\Entities\AQ.StateMachine.Entities.csproj" />
   </ItemGroup>
 

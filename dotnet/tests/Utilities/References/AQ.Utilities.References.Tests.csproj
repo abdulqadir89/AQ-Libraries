@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Utilities\References\AQ.Utilities.References.csproj" />
+    <ProjectReference Include="..\..\..\src\Utilities\AQ.Utilities.csproj" />
   </ItemGroup>
 
 </Project>
