@@ -7,4 +7,5 @@ public interface IVerifiable
 
     void ResetVerification();
     void AddVerification(Guid verifiedByUserId);
+    bool HasBeenVerifiedBy(Guid userId);
 }

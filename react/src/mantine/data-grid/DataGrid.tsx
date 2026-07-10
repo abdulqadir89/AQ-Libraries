@@ -792,7 +792,12 @@ export function DataGrid<T extends Record<string, unknown>>({
           </Table.Td>
         ))}
         {showActions && finalActions.length > 0 && (
-          <Table.Td style={{ width: resolvedActionsWidth }}>
+          <Table.Td
+            className={styles.stickyActionsCell}
+            data-striped={striped && index % 2 === 1 ? 'true' : undefined}
+            data-selected={isSelected ? 'true' : undefined}
+            style={{ width: resolvedActionsWidth }}
+          >
             {renderActions(record)}
           </Table.Td>
         )}
@@ -1001,7 +1006,10 @@ export function DataGrid<T extends Record<string, unknown>>({
                   </Table.Th>
                 ))}
                 {showActions && finalActions.length > 0 && (
-                  <Table.Th style={{ width: resolvedActionsWidth, textAlign: 'center' }}>
+                  <Table.Th
+                    className={styles.stickyActionsHeader}
+                    style={{ width: resolvedActionsWidth, textAlign: 'center' }}
+                  >
                     Actions
                   </Table.Th>
                 )}

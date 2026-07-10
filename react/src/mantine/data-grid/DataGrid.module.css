@@ -59,6 +59,32 @@
   padding: 0.2em 0.5em;
 }
 
+.stickyActionsCell {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background-color: var(--mantine-color-body);
+}
+
+.stickyActionsCell[data-striped='true'] {
+  background-color: var(--table-striped-color, var(--mantine-color-body));
+}
+
+.stickyActionsCell[data-selected='true'] {
+  background-color: var(--mantine-color-blue-light);
+}
+
+tr:hover .stickyActionsCell {
+  background-color: var(--table-hover-color);
+}
+
+.stickyActionsHeader {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background-color: inherit;
+}
+
 .clickableCard {
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
