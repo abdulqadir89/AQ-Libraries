@@ -35,8 +35,9 @@ public class TestEntity : Entity
 // Test implementation of StateMachineDefinition
 public class TestStateMachineDefinition : StateMachineDefinition<TestEntity>
 {
-    public TestStateMachineDefinition(string initialStateName) : base(new TestEntity(), initialStateName)
+    public TestStateMachineDefinition(string stateName) : base(new TestEntity())
     {
+        AddState(StateMachineState.Create(this, stateName));
     }
 
     public override StateMachineDefinition CreateNewVersion(int version)

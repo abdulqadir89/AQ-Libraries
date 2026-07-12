@@ -148,10 +148,11 @@ public class StateMachineTransition : Entity
     public bool RequiresUserData => GetRequiredDataTypes().Any();
 
     /// <summary>
-    /// Indicates whether this transition changes state (has both from and to state IDs).
+    /// Indicates whether this transition changes state (from and to state IDs differ).
+    /// Entry transitions have a null FromStateId, so they always count as a state change.
     /// Uses IDs instead of nav props to avoid issues with unloaded entities.
     /// </summary>
-    public bool ChangesState => FromStateId.HasValue && ToStateId.HasValue;
+    public bool ChangesState => FromStateId != ToStateId;
 
     /// <summary>
     /// Indicates whether this is a trigger-only transition (no state change).
@@ -196,7 +197,7 @@ public class StateMachineTransition : Entity
 
     public override string ToString() =>
         ChangesState
-            ? $"{FromState!.Name} -> {ToState!.Name} ({Trigger!.Name})"
+            ? $"{FromState?.Name ?? "(entry)"} -> {ToState!.Name} ({Trigger!.Name})"
             : $"Trigger: {Trigger!.Name}";
 
     #region JSON Serialization for Persistence

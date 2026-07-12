@@ -7,7 +7,7 @@ namespace AQ.StateMachine.Entities;
 /// <summary>
 /// Represents a state within a state machine definition.
 /// </summary>
-public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
+public class StateMachineState : Entity
 {
     public Guid StateMachineDefinitionId { get; private set; }
     public StateMachineDefinition? StateMachineDefinition { get; private set; }
@@ -15,7 +15,14 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
     public string Name { get; private set; } = default!;
     [Searchable]
     public string? Description { get; private set; }
-    public StateMachineStateCategory Category { get; private set; } = StateMachineStateCategory.Intermediate;
+
+    /// <summary>
+    /// True if this is a terminal state — no outgoing transitions, instance considered complete.
+    /// "Initial" is no longer a state-level concept: which state(s) an instance can start at is
+    /// determined entirely by entry transitions (FromState=null), which support multiple entry
+    /// points per definition.
+    /// </summary>
+    public bool IsFinal { get; private set; }
 
     // EF Core constructor
     protected StateMachineState() { }
@@ -24,13 +31,13 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
         StateMachineDefinition definition,
         string name,
         string? description = null,
-        StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
+        bool isFinal = false)
     {
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         StateMachineDefinitionId = definition.Id;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description;
-        Category = category;
+        IsFinal = isFinal;
     }
 
     /// <summary>
@@ -40,34 +47,29 @@ public class StateMachineState : Entity, IHasCategory<StateMachineStateCategory>
         StateMachineDefinition definition,
         string name,
         string? description = null,
-        StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
+        bool isFinal = false)
     {
         if (definition is null)
             throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("State name cannot be null or empty.", nameof(name));
 
-        return new StateMachineState(definition, name.Trim(), description?.Trim(), category);
+        return new StateMachineState(definition, name.Trim(), description?.Trim(), isFinal);
     }
 
     /// <summary>
-    /// Updates the state's name, description and category.
+    /// Updates the state's name, description and final flag.
     /// </summary>
-    public void Update(string? name = null, string? description = null, StateMachineStateCategory? category = null)
+    public void Update(string? name = null, string? description = null, bool? isFinal = null)
     {
         if (!string.IsNullOrWhiteSpace(name))
             Name = name.Trim();
 
         Description = description?.Trim();
 
-        if (category.HasValue)
-            Category = category.Value;
+        if (isFinal.HasValue)
+            IsFinal = isFinal.Value;
     }
-
-    /// <summary>
-    /// Sets the category of the state.
-    /// </summary>
-    public void SetCategory(StateMachineStateCategory category) => Category = category;
 
     public override string ToString() => Name;
 }
@@ -86,21 +88,21 @@ public class AuditableStateMachineState<TUser> : StateMachineState, IAuditable<T
         StateMachineDefinition definition,
         string name,
         string? description,
-        StateMachineStateCategory category)
-        : base(definition, name, description, category) { }
+        bool isFinal)
+        : base(definition, name, description, isFinal) { }
 
     public static new AuditableStateMachineState<TUser> Create(
         StateMachineDefinition definition,
         string name,
         string? description = null,
-        StateMachineStateCategory category = StateMachineStateCategory.Intermediate)
+        bool isFinal = false)
     {
         if (definition is null)
             throw new ArgumentNullException(nameof(definition));
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("State name cannot be null or empty.", nameof(name));
 
-        return new AuditableStateMachineState<TUser>(definition, name.Trim(), description?.Trim(), category);
+        return new AuditableStateMachineState<TUser>(definition, name.Trim(), description?.Trim(), isFinal);
     }
 
     public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;

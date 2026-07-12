@@ -12,7 +12,7 @@ public abstract class StateMachineStateTransitionHistory : Entity
     public Guid StateMachineInstanceId { get; private set; }
     public StateMachineInstance? StateMachineInstance { get; private set; }
 
-    public Guid FromStateId { get; private set; }
+    public Guid? FromStateId { get; private set; }
     public StateMachineState? FromState { get; private set; }
 
     public Guid ToStateId { get; private set; }
@@ -39,14 +39,14 @@ public abstract class StateMachineStateTransitionHistory : Entity
 
     protected StateMachineStateTransitionHistory(
         StateMachineInstance instance,
-        StateMachineState fromState,
+        StateMachineState? fromState,
         StateMachineState toState,
         StateMachineTrigger? trigger,
         bool isForced,
         string? reason)
     {
         StateMachineInstanceId = (instance ?? throw new ArgumentNullException(nameof(instance))).Id;
-        FromStateId = (fromState ?? throw new ArgumentNullException(nameof(fromState))).Id;
+        FromStateId = fromState?.Id;
         ToStateId = (toState ?? throw new ArgumentNullException(nameof(toState))).Id;
         TriggerId = trigger?.Id;
         IsForced = isForced;
@@ -80,6 +80,10 @@ public abstract class StateMachineStateTransitionHistory : Entity
     /// </summary>
     public string GetDescription()
     {
+        // Entry transition: instance created directly at ToState, no prior state
+        if (FromStateId is null)
+            return $"Created at '{ToState!.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}";
+
         // No-op entry (no state change and no trigger)
         if (FromStateId == ToStateId && Trigger == null)
             return $"No transition at '{FromState!.Name}'{(string.IsNullOrEmpty(Reason) ? "" : $": {Reason}")}";
@@ -104,7 +108,7 @@ public abstract class StateMachineStateTransitionHistory : Entity
     /// </summary>
     public bool MatchesByName(string? fromStateName = null, string? toStateName = null, string? triggerName = null)
     {
-        return (fromStateName == null || FromState!.Name == fromStateName) &&
+        return (fromStateName == null || FromState?.Name == fromStateName) &&
                (toStateName == null || ToState!.Name == toStateName) &&
                (triggerName == null || Trigger?.Name == triggerName);
     }
@@ -137,7 +141,7 @@ public abstract class AuditableStateMachineStateTransitionHistory<TUser> : State
 
     protected AuditableStateMachineStateTransitionHistory(
         StateMachineInstance instance,
-        StateMachineState fromState,
+        StateMachineState? fromState,
         StateMachineState toState,
         StateMachineTrigger? trigger,
         bool isForced,

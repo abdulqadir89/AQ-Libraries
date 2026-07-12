@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using AQ.Abstractions;
 using AQ.Entities;
 
@@ -31,9 +32,18 @@ public abstract class StateMachineDefinition : Entity
     public IReadOnlyList<StateMachineTransition> Transitions => _transitions.AsReadOnly();
 
     /// <summary>
-    /// Gets the initial state of the state machine.
+    /// States reachable as an entry point — the target of an entry transition (FromState=null).
+    /// A definition may have zero (not yet configured), one, or multiple entry points; multiple
+    /// entry points is the whole reason entry transitions exist rather than a single tagged
+    /// "Initial" state.
     /// </summary>
-    public StateMachineState? InitialState => _states.FirstOrDefault(s => s.Category == StateMachineStateCategory.Initial);
+    [NotMapped]
+    public IEnumerable<StateMachineState> EntryStates =>
+        _transitions
+            .Where(t => t.FromStateId is null && t.ToStateId.HasValue)
+            .Select(t => _states.FirstOrDefault(s => s.Id == t.ToStateId!.Value))
+            .OfType<StateMachineState>()
+            .Distinct();
 
     public StateMachineDefinitionStatus Status { get; private set; }
 
@@ -48,25 +58,26 @@ public abstract class StateMachineDefinition : Entity
     // EF Core constructor
     protected StateMachineDefinition() { }
 
-    protected StateMachineDefinition(
-        string initialStateName,
-        int version = 1)
+    protected StateMachineDefinition(int version = 1)
     {
         Version = version;
 
-        // Create the initial state
-        var initialState = StateMachineState.Create(this, initialStateName, category: StateMachineStateCategory.Initial);
-        _states.Add(initialState);
-
-        // Add domain event for definition creation
+        // No state is created here — states and entry transitions are added afterward via
+        // AddState/AddEntryTrigger. A definition may have zero, one, or multiple entry points.
     }
-
-
 
     /// <summary>
     /// Creates a new version of this definition.
     /// </summary>
     public abstract StateMachineDefinition CreateNewVersion(int version);
+
+    /// <summary>
+    /// Adds a state to this definition. For use by derived classes only.
+    /// </summary>
+    protected void AddState(StateMachineState state)
+    {
+        _states.Add(state);
+    }
 
     /// <summary>
     /// Adds a trigger to this definition. For use by derived classes only.
@@ -85,31 +96,48 @@ public abstract class StateMachineDefinition : Entity
     }
 
     /// <summary>
+    /// Adds an entry trigger — a transition from no prior state (FromState=null) to
+    /// <paramref name="toState"/>. A definition can have multiple entry triggers, of any
+    /// <see cref="StateMachineTriggerType"/> (defaulting to Manual), enabling multiple ways to
+    /// create an instance of this definition — e.g. a normal manual creation flow alongside a
+    /// standalone event-driven one that lands directly at a later state.
+    /// </summary>
+    public void AddEntryTrigger(
+        string name,
+        StateMachineState toState,
+        StateMachineTriggerType type = StateMachineTriggerType.Manual,
+        string? description = null,
+        string? eventType = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
+        if (toState == null)
+            throw new ArgumentNullException(nameof(toState));
+
+        var trigger = StateMachineTrigger.Create(this, name, description, type, isRecordsOnly: false, eventType: eventType);
+        AddTrigger(trigger);
+        AddTransition(StateMachineTransition.Create(this, fromState: null, toState, trigger, description));
+    }
+
+    /// <summary>
     /// Helper method to copy states, triggers, and transitions to a new definition.
     /// </summary>
     protected void CopyDefinitionDataTo(StateMachineDefinition newDefinition)
     {
-        if (InitialState == null)
-            throw new InvalidOperationException("Cannot create new version without an initial state.");
-
-        // Copy all states except the initial state (which is already created in constructor)
-        foreach (var state in _states.Where(s => s.Id != InitialState.Id))
+        // Copy all states
+        foreach (var state in _states)
         {
             var newState = StateMachineState.Create(
                 newDefinition,
                 state.Name,
                 state.Description,
-                state.Category);
+                state.IsFinal);
             newDefinition._states.Add(newState);
         }
 
         // Copy all triggers
         foreach (var trigger in _triggers)
         {
-            // Skip triggers already present by name in the new definition (e.g. auto-added in constructor)
-            if (newDefinition._triggers.Any(t => t.Name == trigger.Name))
-                continue;
-
             var newTrigger = StateMachineTrigger.Create(
                 newDefinition,
                 trigger.Name,
@@ -203,9 +231,8 @@ public abstract class StateMachineDefinition : Entity
         var diagram = new System.Text.StringBuilder();
         diagram.AppendLine("stateDiagram-v2");
 
-        // Synthetic start arrows: [*] --> InitialState
-        foreach (var state in _states.Where(s => s.Category == StateMachineStateCategory.Initial))
-            diagram.AppendLine($"    [*] --> {SanitizeStateName(state.Name)}");
+        // Start arrows ([*] --> EntryState) are drawn by the main transition loop below, for any
+        // transition with FromStateId == null — no separate pass needed.
 
         // Add all transitions with their triggers
         foreach (var transition in _transitions)
@@ -249,7 +276,7 @@ public abstract class StateMachineDefinition : Entity
         }
 
         // Synthetic end arrows: FinalState --> [*]
-        foreach (var state in _states.Where(s => s.Category == StateMachineStateCategory.Final))
+        foreach (var state in _states.Where(s => s.IsFinal))
             diagram.AppendLine($"    {SanitizeStateName(state.Name)} --> [*]");
 
         if (currentState != null)
@@ -327,24 +354,18 @@ public abstract class StateMachineDefinition : Entity
         if (!_states.Any())
             errors.Add("Definition must have at least one state.");
 
-        // Check if initial state exists
-        if (InitialState == null)
-            errors.Add("Initial state is not defined.");
+        // Check at least one entry point exists (a transition with FromState=null)
+        if (!_transitions.Any(t => t.FromStateId is null))
+            errors.Add("Definition has no entry trigger — no way to create an instance of it.");
 
-        // Check for orphaned states (states with no transitions leading to them, except initial state)
-        var reachableStates = new HashSet<Guid>();
-        if (InitialState != null)
-            reachableStates.Add(InitialState.Id);
+        // Check for orphaned states — states never reachable as a transition's ToState, including
+        // entry transitions (FromState=null) which are just transitions like any other here.
+        var reachableStates = _transitions
+            .Where(t => t.ToStateId.HasValue)
+            .Select(t => t.ToStateId!.Value)
+            .ToHashSet();
 
-        foreach (var transition in _transitions)
-        {
-            if (transition.ToStateId.HasValue)
-                reachableStates.Add(transition.ToStateId.Value);
-        }
-
-        var orphanedStates = InitialState != null
-            ? _states.Where(s => s.Id != InitialState.Id && !reachableStates.Contains(s.Id)).ToList()
-            : _states.Where(s => !reachableStates.Contains(s.Id)).ToList();
+        var orphanedStates = _states.Where(s => !reachableStates.Contains(s.Id)).ToList();
         if (orphanedStates.Any())
         {
             errors.Add($"Orphaned states found: {string.Join(", ", orphanedStates.Select(s => s.Name))}");
@@ -431,9 +452,8 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
 
     protected StateMachineDefinition(
         TEntity entity,
-        string initialStateName,
         int version = 1)
-        : base(initialStateName, version)
+        : base(version)
     {
         EntityId = entity.Id;
     }
@@ -449,10 +469,7 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     /// </summary>
     public override StateMachineDefinition CreateNewVersion(int version)
     {
-        if (InitialState == null)
-            throw new InvalidOperationException("Cannot create new version without an initial state.");
-
-        var newDefinition = new StateMachineDefinition<TEntity>(Entity!, InitialState.Name, version);
+        var newDefinition = new StateMachineDefinition<TEntity>(Entity!, version);
 
         CopyDefinitionDataTo(newDefinition);
 
@@ -471,8 +488,8 @@ public abstract class AuditableStateMachineDefinition<TEntity, TUser> : StateMac
 
     protected AuditableStateMachineDefinition() : base() { }
 
-    protected AuditableStateMachineDefinition(TEntity entity, string initialStateName, int version = 1)
-        : base(entity, initialStateName, version) { }
+    protected AuditableStateMachineDefinition(TEntity entity, int version = 1)
+        : base(entity, version) { }
 
     public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
 

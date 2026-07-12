@@ -40,10 +40,9 @@ public abstract class StateMachineInstance : Entity
     {
         DefinitionId = definition?.Id ?? throw new ArgumentNullException(nameof(definition));
 
-        // Set current state to the definition's initial state
-        var initialState = definition.InitialState ?? throw new InvalidOperationException("Definition must have an initial state.");
-        CurrentStateId = initialState.Id;
-        CurrentStateEnteredAt = DateTimeOffset.UtcNow;
+        // CurrentStateId is intentionally left unset here — an instance has no state until a
+        // transition (including the initial entry transition, FromState=null) is executed
+        // against it. Construction alone must not imply a state.
     }
 
 
@@ -85,7 +84,7 @@ public abstract class StateMachineInstance : Entity
     public IEnumerable<StateMachineTrigger> GetAvailableTriggers()
     {
         // Final states have no outgoing transitions
-        if (CurrentState?.Category == StateMachineStateCategory.Final)
+        if (CurrentState?.IsFinal == true)
             return [];
 
         // Get transitions from current state, plus global IsRecordsOnly triggers
@@ -105,7 +104,7 @@ public abstract class StateMachineInstance : Entity
     public IEnumerable<StateMachineTransition> GetAvailableTransitions()
     {
         // Final states have no outgoing transitions
-        if (CurrentState?.Category == StateMachineStateCategory.Final)
+        if (CurrentState?.IsFinal == true)
             return [];
 
         // Only return transitions from current state (not IsRecordsOnly triggers — they have no transition)
@@ -179,7 +178,7 @@ public abstract class StateMachineInstance : Entity
     /// </summary>
     public bool IsInFinalState()
     {
-        return CurrentState!.Category == StateMachineStateCategory.Final;
+        return CurrentState!.IsFinal;
     }
 
     /// <summary>
