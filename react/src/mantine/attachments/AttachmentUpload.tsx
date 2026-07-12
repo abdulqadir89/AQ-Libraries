@@ -11,7 +11,7 @@ export interface AttachmentUploadProps {
   onUploaded?: () => void;
   accept?: string;
   maxFiles?: number;
-  onUpload: (entityType: string, entityId: string, category: string, file: File) => Promise<void>;
+  onUpload: (entityType: string, entityId: string, category: string, file: File) => Promise<unknown>;
   onError: (err: unknown) => void;
 }
 
