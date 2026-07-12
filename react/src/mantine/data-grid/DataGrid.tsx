@@ -23,6 +23,7 @@ import { useDebouncedValue, useResizeObserver } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { ColumnFilter } from './ColumnFilter';
 import type { ColumnFilterRef } from './ColumnFilter';
+import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import {
   IconSearch,
   IconRefresh,
@@ -37,6 +38,7 @@ import {
   IconFilterOff,
   IconStack2,
   IconX,
+  IconColumns,
 } from '@tabler/icons-react';
 import type {
   BulkAction,
@@ -54,6 +56,7 @@ interface ExtendedDataGridState extends DataGridState {
 }
 
 export function DataGrid<T extends Record<string, unknown>>({
+  gridId,
   data = [],
   loading = false,
   columns = [],
@@ -243,6 +246,43 @@ export function DataGrid<T extends Record<string, unknown>>({
     : 0;
   const resolvedActionsWidth = actionsWidth ?? computedActionsWidth;
 
+  // Column visibility — defaults come from each column's `defaultHidden`, overridden by
+  // whatever the user has toggled (persisted per-gridId in localStorage). Only stores
+  // overrides, so a later change to `defaultHidden` in code still applies to untouched columns.
+  const columnSignatureForVisibility = columns.map(c => c.key).join(',');
+  const [columnVisibilityOverrides, setColumnVisibilityOverrides] = useState<Record<string, boolean>>(
+    () => (gridId ? ColumnVisibilityStorage.get(gridId) ?? {} : {})
+  );
+
+  useEffect(() => {
+    setColumnVisibilityOverrides(gridId ? ColumnVisibilityStorage.get(gridId) ?? {} : {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gridId, columnSignatureForVisibility]);
+
+  const isColumnVisible = useCallback((column: DataGridColumn<T>): boolean => {
+    const override = columnVisibilityOverrides[column.key];
+    if (override !== undefined) return override;
+    return !column.defaultHidden;
+  }, [columnVisibilityOverrides]);
+
+  const visibleColumns = columns.filter(isColumnVisible);
+
+  const toggleColumnVisibility = useCallback((column: DataGridColumn<T>) => {
+    if (column.primary) return; // primary column absorbs layout width — never hideable
+
+    setColumnVisibilityOverrides(prev => {
+      const currentlyVisible = prev[column.key] !== undefined ? prev[column.key] : !column.defaultHidden;
+      const nextVisibleCount = columns.filter(c =>
+        c.key === column.key ? !currentlyVisible : isColumnVisible(c)
+      ).length;
+      if (currentlyVisible && nextVisibleCount === 0) return prev; // keep at least 1 column visible
+
+      const next = { ...prev, [column.key]: !currentlyVisible };
+      if (gridId) ColumnVisibilityStorage.set(gridId, next);
+      return next;
+    });
+  }, [columns, gridId, isColumnVisible]);
+
   // Sorting state
   const [sortConditions, setSortConditions] = useState<SortCondition[]>([]);
 
@@ -298,10 +338,10 @@ export function DataGrid<T extends Record<string, unknown>>({
     baseWidths: Record<string, number>,
     containerWidth: number,
   ): Record<string, number> => {
-    const primary = columns.find(c => c.primary && !manuallyResizedKeys.current.has(c.key));
+    const primary = visibleColumns.find(c => c.primary && !manuallyResizedKeys.current.has(c.key));
     if (!primary || containerWidth <= 0) return baseWidths;
 
-    const otherColumnsWidth = columns
+    const otherColumnsWidth = visibleColumns
       .filter(c => c.key !== primary.key)
       .reduce((sum, c) => sum + (baseWidths[c.key] ?? 0), 0);
     const actionsReserve = showActions ? resolvedActionsWidth : 0;
@@ -318,13 +358,14 @@ export function DataGrid<T extends Record<string, unknown>>({
     if (primary.maxWidth != null) primaryWidth = Math.min(primaryWidth, primary.maxWidth);
 
     return { ...baseWidths, [primary.key]: Math.floor(primaryWidth) };
-  }, [columns, showActions, resolvedActionsWidth, selectable]);
+  }, [visibleColumns, showActions, resolvedActionsWidth, selectable]);
 
   // Initialize column widths
   // Use a stable signature (key + explicit width + primary flag) to avoid recalculating
   // on every parent render when `columns` is defined inline (new reference each render).
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}:${c.primary ? 1 : 0}`).join(',');
+  const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}:${c.primary ? 1 : 0}`).join(',')
+    + '|' + visibleColumns.map(c => c.key).join(',');
 
   useEffect(() => {
     const baseWidths: Record<string, number> = {};
@@ -769,7 +810,7 @@ export function DataGrid<T extends Record<string, unknown>>({
 
     return (
       <Table.Tr key={key} bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}>
-        {columns.map((column, colIndex) => (
+        {visibleColumns.map((column, colIndex) => (
           <Table.Td
             key={String(column.key)}
             style={{
@@ -809,7 +850,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   // with table-layout: fixed below — without both, the browser ignores per-cell inline
   // widths and stretches/redistributes columns (typically the last one) to fill the
   // container on its own, which is what caused Actions to balloon on wide screens.
-  const tableWidth = columns.reduce((sum, column) => sum + (columnWidths[column.key] || (typeof column.width === 'number' ? column.width : 100)), 0)
+  const tableWidth = visibleColumns.reduce((sum, column) => sum + (columnWidths[column.key] || (typeof column.width === 'number' ? column.width : 100)), 0)
     + (showActions && finalActions.length > 0 ? resolvedActionsWidth : 0)
     + (selectable ? 40 : 0);
 
@@ -918,6 +959,39 @@ export function DataGrid<T extends Record<string, unknown>>({
               </Button>
             )}
 
+            {columns.length > 1 && (
+              <Menu shadow="md" closeOnItemClick={false} withinPortal>
+                <Menu.Target>
+                  <ActionIcon variant="light" size="lg" title="Show/hide columns">
+                    <IconColumns size={18} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {columns.map(column => {
+                    const visible = isColumnVisible(column);
+                    const locked = column.primary || (visible && visibleColumns.length === 1);
+                    return (
+                      <Menu.Item
+                        key={column.key}
+                        onClick={() => toggleColumnVisibility(column)}
+                        leftSection={
+                          <Checkbox
+                            size="xs"
+                            checked={visible}
+                            disabled={locked}
+                            title={column.primary ? 'Primary column cannot be hidden' : undefined}
+                            onChange={() => toggleColumnVisibility(column)}
+                          />
+                        }
+                      >
+                        {column.title}
+                      </Menu.Item>
+                    );
+                  })}
+                </Menu.Dropdown>
+              </Menu>
+            )}
+
             {toolbarRightSection}
           </Group>
         </Flex>
@@ -935,7 +1009,7 @@ export function DataGrid<T extends Record<string, unknown>>({
           >
             <Table.Thead>
               <Table.Tr>
-                {columns.map((column, colIndex) => (
+                {visibleColumns.map((column, colIndex) => (
                   <Table.Th
                     key={String(column.key)}
                     style={{
@@ -1019,7 +1093,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               {rows.length > 0 ? rows : (
                 <Table.Tr>
                   <Table.Td 
-                    colSpan={columns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0)}
+                    colSpan={visibleColumns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0)}
                     style={{ textAlign: 'center', padding: '2rem' }}
                   >
                     <Text c="dimmed">No data available</Text>

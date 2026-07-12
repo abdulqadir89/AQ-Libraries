@@ -15,6 +15,9 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   // pinned at its own width regardless of container size. Default false/unset: the table
   // simply sits at its natural total width and scrolls horizontally when needed.
   primary?: boolean;
+  // Column hidden by default unless the user has toggled it visible via the column
+  // show/hide menu (per-gridId override persisted in localStorage).
+  defaultHidden?: boolean;
   sortable?: boolean;
   filterable?: boolean;
   render?: (value: unknown, record: T, index: number) => ReactNode;
