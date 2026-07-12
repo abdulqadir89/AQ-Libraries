@@ -144,6 +144,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     const [operator, setOperator] = useState(getDefaultOperator(column.type));
     const [value, setValue] = useState('');
     const [secondValue, setSecondValue] = useState('');
+    const [rangeError, setRangeError] = useState('');
     // For enum filters with multiple selection
     const [selectedEnumValues, setSelectedEnumValues] = useState<string[]>([]);
     // For lookup filters with multiple selection (CRUD-backed entity, async Select)
@@ -184,6 +185,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setSelectedEnumValues([]);
         setSelectedLookupValues([]);
         setHasActiveFilter(false);
+        setRangeError('');
       },
       setFilterExpression: (expression: string) => {
         if (!expression) {
@@ -193,6 +195,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           setSelectedEnumValues([]);
           setSelectedLookupValues([]);
           setHasActiveFilter(false);
+          setRangeError('');
           return;
         }
 
@@ -335,19 +338,37 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       if (!value.trim()) {
         return;
       }
-      
+
+      setRangeError('');
       let expression: string;
-      
+
       // Handle between operator
       if (operator === 'between') {
         if (!secondValue.trim()) {
           return;
         }
+
+        if (column.type === 'date' || column.type === 'daterange') {
+          const fromDate = parseValue(value, 'date') as Date;
+          const toDate = parseValue(secondValue, 'date') as Date;
+          if (fromDate.getTime() > toDate.getTime()) {
+            setRangeError('"From" date must not be after "To" date.');
+            return;
+          }
+        } else if (column.type === 'number') {
+          const fromNum = parseValue(value, 'number') as number;
+          const toNum = parseValue(secondValue, 'number') as number;
+          if (fromNum > toNum) {
+            setRangeError('"From" value must not be greater than "To" value.');
+            return;
+          }
+        }
+
         expression = `${column.key},${operator},${formatValue(value)},${formatValue(secondValue)}`;
       } else {
         expression = `${column.key},${operator},${formatValue(value)}`;
       }
-      
+
       onApplyFilter(expression);
       setHasActiveFilter(true);
       setOpened(false);
@@ -360,6 +381,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       setSelectedEnumValues([]);
       setSelectedLookupValues([]);
       setHasActiveFilter(false);
+      setRangeError('');
       onClearFilter(column.key);
       setOpened(false);
     }
@@ -439,22 +461,30 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'number':
           return (
             <NumberInput
-              label="Value"
+              label={operator === 'between' ? 'From' : 'Value'}
               value={value ? parseValue(value, 'number') as number : undefined}
-              onChange={(val) => setValue(formatValueToString(val || 0))}
+              onChange={(val) => {
+                setValue(formatValueToString(val || 0));
+                setRangeError('');
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Enter number..."
+              error={operator === 'between' && !!rangeError}
             />
           );
-          
+
         case 'date':
           return (
             <DateInput
-              label="Value"
+              label={operator === 'between' ? 'From' : 'Value'}
               value={value ? parseValue(value, 'date') as Date : null}
-              onChange={(val) => setValue(val ? formatValueToString(val) : '')}
+              onChange={(val) => {
+                setValue(val ? formatValueToString(val) : '');
+                setRangeError('');
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Select date..."
+              error={operator === 'between' && !!rangeError}
             />
           );
 
@@ -511,21 +541,29 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             <NumberInput
               label="To"
               value={secondValue ? parseValue(secondValue, 'number') as number : undefined}
-              onChange={(val) => setSecondValue(formatValueToString(val || 0))}
+              onChange={(val) => {
+                setSecondValue(formatValueToString(val || 0));
+                setRangeError('');
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Enter number..."
+              error={!!rangeError}
             />
           );
-          
+
         case 'date':
         case 'daterange':
           return (
             <DateInput
               label="To"
               value={secondValue ? parseValue(secondValue, 'date') as Date : null}
-              onChange={(val) => setSecondValue(val ? formatValueToString(val) : '')}
+              onChange={(val) => {
+                setSecondValue(val ? formatValueToString(val) : '');
+                setRangeError('');
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Select end date..."
+              error={!!rangeError}
             />
           );
           
@@ -568,12 +606,19 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             <Stack gap="md" style={{ minWidth: 250 }}>
               <Text size="sm" fw={500}>Filter by {column.title}</Text>
 
+              {rangeError && (
+                <Text size="xs" c="red">{rangeError}</Text>
+              )}
+
               {column.type !== 'enum' && column.type !== 'lookup' && column.type !== 'daterange' && (
                 <Select
                   label="Operator"
                   data={getOperators(column.type)}
                   value={operator}
-                  onChange={(val) => setOperator(val || getDefaultOperator(column.type))}
+                  onChange={(val) => {
+                    setOperator(val || getDefaultOperator(column.type));
+                    setRangeError('');
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       handleApply();

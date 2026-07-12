@@ -428,6 +428,11 @@ public static class FilterExpressionBuilder
 
     private static Expression? BuildEqualExpression(Expression propertyExpression, object? value)
     {
+        if (value is DateTime dateTimeValue && dateTimeValue.TimeOfDay == TimeSpan.Zero && IsDateLikeType(propertyExpression.Type))
+        {
+            return BuildDateOnlyEqualExpression(propertyExpression, dateTimeValue, negate: false);
+        }
+
         var constantExpression = GetConstantExpression(value, propertyExpression.Type);
         if (constantExpression == null)
             return null;
@@ -437,11 +442,40 @@ public static class FilterExpressionBuilder
 
     private static Expression? BuildNotEqualExpression(Expression propertyExpression, object? value)
     {
+        if (value is DateTime dateTimeValue && dateTimeValue.TimeOfDay == TimeSpan.Zero && IsDateLikeType(propertyExpression.Type))
+        {
+            return BuildDateOnlyEqualExpression(propertyExpression, dateTimeValue, negate: true);
+        }
+
         var constantExpression = GetConstantExpression(value, propertyExpression.Type);
         if (constantExpression == null)
             return null;
 
         return Expression.NotEqual(propertyExpression, constantExpression);
+    }
+
+    private static bool IsDateLikeType(Type type)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+        return underlyingType == typeof(DateTime) || underlyingType == typeof(DateTimeOffset);
+    }
+
+    // A date-only value (e.g. filter "CreatedAt,eq,2026-07-01") must match the whole day,
+    // not the exact midnight instant, since DateTime/DateTimeOffset columns carry a time component.
+    private static Expression? BuildDateOnlyEqualExpression(Expression propertyExpression, DateTime dayStart, bool negate)
+    {
+        var dayEnd = dayStart.AddDays(1);
+
+        var lowerBound = GetConstantExpression(dayStart, propertyExpression.Type);
+        var upperBound = GetConstantExpression(dayEnd, propertyExpression.Type);
+        if (lowerBound == null || upperBound == null)
+            return null;
+
+        var rangeExpression = Expression.AndAlso(
+            Expression.GreaterThanOrEqual(propertyExpression, lowerBound),
+            Expression.LessThan(propertyExpression, upperBound));
+
+        return negate ? Expression.Not(rangeExpression) : rangeExpression;
     }
 
     private static Expression? BuildGreaterThanExpression(Expression propertyExpression, object? value)
@@ -629,6 +663,13 @@ public static class FilterExpressionBuilder
             if (underlyingType.IsEnum)
             {
                 return HandleEnumConversion(value, targetType, underlyingType);
+            }
+
+            // DateTime -> DateTimeOffset isn't supported by Convert.ChangeType
+            if (underlyingType == typeof(DateTimeOffset) && value is DateTime dateTimeValue)
+            {
+                var offsetValue = new DateTimeOffset(DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified));
+                return Expression.Constant(offsetValue, targetType);
             }
 
             // Convert value to target type
