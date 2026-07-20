@@ -1016,9 +1016,10 @@ export function DataGrid<T extends Record<string, unknown>>({
                       width: columnWidths[column.key] || column.width,
                       textAlign: column.align || 'left',
                       position: 'relative',
+                      overflow: 'hidden',
                     }}
                   >
-                    <Group gap="xs" justify={column.align === 'center' ? 'center' : column.align === 'right' ? 'flex-end' : 'flex-start'}>
+                    <Group gap="xs" wrap="nowrap" justify={column.align === 'center' ? 'center' : column.align === 'right' ? 'flex-end' : 'flex-start'}>
                       {selectable && colIndex === 0 && (
                         <Checkbox
                           size="xs"
@@ -1034,13 +1035,14 @@ export function DataGrid<T extends Record<string, unknown>>({
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
+                            minWidth: 0,
                           }}
                         >
-                          <span>{column.title}</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>
                           {getSortIcon(String(column.dataIndex))}
                         </UnstyledButton>
                       ) : (
-                        <span>{column.title}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>
                       )}
                       
                       {(column.filterable !== false) && (

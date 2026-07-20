@@ -82,7 +82,7 @@ tr:hover .stickyActionsCell {
   position: sticky;
   right: 0;
   z-index: 2;
-  background-color: inherit;
+  background-color: var(--mantine-color-clay-1, var(--mantine-color-body));
 }
 
 .clickableCard {
