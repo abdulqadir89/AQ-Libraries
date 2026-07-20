@@ -62,7 +62,8 @@ public sealed class MarkdownContent : ValueObject
         {
             "a", "b", "i", "strong", "em", "u", "p", "ul", "ol", "li",
             "br", "hr", "blockquote", "code", "pre", "span", "div",
-            "h1", "h2", "h3", "h4", "h5", "h6", "img", "table", "thead", "tbody", "tr", "th", "td"
+            "h1", "h2", "h3", "h4", "h5", "h6", "img", "table", "thead", "tbody", "tr", "th", "td",
+            "del", "s", "strike"
         };
 
         foreach (var t in allowedTags)
