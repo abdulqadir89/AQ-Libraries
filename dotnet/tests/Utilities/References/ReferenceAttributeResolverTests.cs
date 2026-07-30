@@ -14,6 +14,22 @@ public class ReferenceAttributeResolverTests
         public string? Undecorated { get; set; }
     }
 
+    private class SampleEntityWithPrivateSetter
+    {
+        [GeneratedReference(typeof(ShortCodeReferenceGenerator), 6, Prefix = "ACT")]
+        public string? Reference { get; private set; }
+    }
+
+    private abstract class SampleBaseWithPrivateSetter
+    {
+        [GeneratedReference(typeof(ShortCodeReferenceGenerator), 6, Prefix = "ACT")]
+        public string? Reference { get; private set; }
+    }
+
+    private class SampleDerivedFromBaseWithPrivateSetter : SampleBaseWithPrivateSetter
+    {
+    }
+
     [Fact]
     public void ResolveContext_DecoratedProperty_ReturnsContextFromAttribute()
     {
@@ -92,5 +108,31 @@ public class ReferenceAttributeResolverTests
 
         // Assert
         entity.Undecorated.Should().BeNull();
+    }
+
+    [Fact]
+    public void ApplyGeneratedReferences_PrivateSetterDecoratedProperty_FillsInGeneratedValue()
+    {
+        // Arrange
+        var entity = new SampleEntityWithPrivateSetter();
+
+        // Act
+        ReferenceAttributeResolver.ApplyGeneratedReferences(entity);
+
+        // Assert
+        entity.Reference.Should().MatchRegex("^ACT-[0-9A-HJKMNP-TV-Z]{6}$");
+    }
+
+    [Fact]
+    public void ApplyGeneratedReferences_InheritedPrivateSetterDecoratedProperty_FillsInGeneratedValue()
+    {
+        // Arrange
+        var entity = new SampleDerivedFromBaseWithPrivateSetter();
+
+        // Act
+        ReferenceAttributeResolver.ApplyGeneratedReferences(entity);
+
+        // Assert
+        entity.Reference.Should().MatchRegex("^ACT-[0-9A-HJKMNP-TV-Z]{6}$");
     }
 }

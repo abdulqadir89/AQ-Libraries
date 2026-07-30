@@ -44,8 +44,8 @@ public static class ReferenceAttributeResolver
     public static void ApplyGeneratedReferences(object entity)
     {
         var decoratedProperties = DecoratedPropertiesByType.GetOrAdd(entity.GetType(), static type =>
-            [.. type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.PropertyType == typeof(string) && p.CanRead && p.CanWrite)
+            [.. GetPropertiesIncludingInheritedPrivate(type)
+                .Where(p => p.PropertyType == typeof(string) && p.CanRead && p.GetSetMethod(nonPublic: true) is not null)
                 .Select(p => (Property: p, Attribute: p.GetCustomAttribute<GeneratedReferenceAttribute>()))
                 .Where(x => x.Attribute is not null)
                 .Select(x => (x.Property, Attribute: x.Attribute!))]);
@@ -58,6 +58,24 @@ public static class ReferenceAttributeResolver
             var generator = (IReferenceGenerator)Activator.CreateInstance(attribute.GeneratorType)!;
             var value = generator.Generate(new ReferenceGenerationContext(Prefix: attribute.Prefix, Length: attribute.Length));
             property.SetValue(entity, value);
+        }
+    }
+
+    /// <summary>
+    /// Walks the type hierarchy declaring-type by declaring-type so private properties declared on a base
+    /// class are found too. <see cref="Type.GetProperties(BindingFlags)"/> with only <see cref="BindingFlags.NonPublic"/>
+    /// does not surface private members declared on a base type when queried via a derived type.
+    /// </summary>
+    private static IEnumerable<PropertyInfo> GetPropertiesIncludingInheritedPrivate(Type type)
+    {
+        var seen = new HashSet<string>();
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            foreach (var property in current.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (seen.Add(property.Name))
+                    yield return property;
+            }
         }
     }
 
