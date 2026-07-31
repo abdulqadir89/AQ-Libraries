@@ -3,14 +3,14 @@ import {
   ActionIcon, Badge, Box, Button, Group, Stack, Text, Tooltip,
 } from '@mantine/core';
 import { IconTrash, IconUpload } from '@tabler/icons-react';
+import type { AttachmentLimits } from './types';
 
 export interface AttachmentUploadProps {
   entityType: string;
   entityId: string;
   category: string;
   onUploaded?: () => void;
-  accept?: string;
-  maxFiles?: number;
+  limits?: AttachmentLimits;
   onUpload: (entityType: string, entityId: string, category: string, file: File) => Promise<unknown>;
   onError: (err: unknown) => void;
 }
@@ -20,9 +20,22 @@ interface PendingFile {
   file: File;
 }
 
+function formatSize(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function formatContentTypes(types: string[]): string {
+  const extensions = types.map((t) => t.split('/')[1]?.replace('vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx').toUpperCase());
+  return [...new Set(extensions)].join(', ');
+}
+
 export function AttachmentUpload({
-  entityType, entityId, category, onUploaded, accept, maxFiles = 10, onUpload, onError,
+  entityType, entityId, category, onUploaded, limits, onUpload, onError,
 }: AttachmentUploadProps) {
+  const maxFiles = limits?.maxFiles ?? 10;
+  const accept = limits?.allowedContentTypes.join(',');
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -34,7 +47,12 @@ export function AttachmentUpload({
       const remaining = maxFiles - prev.length;
       if (remaining <= 0) return prev;
       const toAdd = arr.slice(0, remaining).map((f) => ({ id: crypto.randomUUID(), file: f }));
-      return [...prev, ...toAdd];
+      const oversized = toAdd.filter((f) => limits && f.file.size > limits.maxFileSizeBytes);
+      if (oversized.length > 0) {
+        onError(new Error(`File too large (max ${formatSize(limits!.maxFileSizeBytes)}): ${oversized.map((f) => f.file.name).join(', ')}`));
+      }
+      const accepted = toAdd.filter((f) => !limits || f.file.size <= limits.maxFileSizeBytes);
+      return [...prev, ...accepted];
     });
   };
 
@@ -97,9 +115,10 @@ export function AttachmentUpload({
             ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
             : 'Drag & drop files here or click to browse'}
         </Text>
-        {!atLimit && maxFiles > 1 && (
-          <Text size="xs" c="dimmed">Up to {maxFiles - pending.length} more file{maxFiles - pending.length === 1 ? '' : 's'}</Text>
-        )}
+        <Text size="xs" c="dimmed">
+          {pending.length}/{maxFiles} files
+          {limits && ` · ${formatContentTypes(limits.allowedContentTypes)} · up to ${formatSize(limits.maxFileSizeBytes)} each`}
+        </Text>
         <input
           ref={inputRef}
           type="file"

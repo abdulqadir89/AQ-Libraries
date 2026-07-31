@@ -3,6 +3,7 @@ import {
   ActionIcon, Badge, Box, Group, Select, Stack, Text, Title, Tooltip,
 } from '@mantine/core';
 import { IconTrash, IconUpload } from '@tabler/icons-react';
+import type { AttachmentLimits } from './types';
 
 interface StagedFile {
   id: string;
@@ -18,13 +19,20 @@ export interface StagedAttachmentPickerHandle {
 export interface StagedAttachmentPickerProps {
   categories: string[];
   defaultCategory?: string;
-  maxFiles?: number;
+  limits?: AttachmentLimits;
   onUpload: (entityType: string, entityId: string, category: string, file: File) => Promise<unknown>;
   onError: (err: unknown) => void;
 }
 
+function formatSize(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${(bytes / 1024).toFixed(1)} KB`;
+}
+
 export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, StagedAttachmentPickerProps>(
-  function StagedAttachmentPicker({ categories, defaultCategory, maxFiles = 10, onUpload, onError }, ref) {
+  function StagedAttachmentPicker({ categories, defaultCategory, limits, onUpload, onError }, ref) {
+    const maxFiles = limits?.maxFiles ?? 10;
     const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
     const [pendingCategory, setPendingCategory] = useState<string>(defaultCategory ?? categories[0] ?? 'general');
     const [dragging, setDragging] = useState(false);
@@ -42,7 +50,12 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
           file: f,
           category: pendingCategory,
         }));
-        return [...prev, ...toAdd];
+        const oversized = toAdd.filter((f) => limits && f.file.size > limits.maxFileSizeBytes);
+        if (oversized.length > 0) {
+          onError(new Error(`File too large (max ${formatSize(limits!.maxFileSizeBytes)}): ${oversized.map((f) => f.file.name).join(', ')}`));
+        }
+        const accepted = toAdd.filter((f) => !limits || f.file.size <= limits.maxFileSizeBytes);
+        return [...prev, ...accepted];
       });
     };
 
@@ -118,13 +131,15 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
               ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
               : 'Drag & drop or click to browse'}
           </Text>
-          {!atLimit && maxFiles > 1 && (
-            <Text size="xs" c="dimmed">{maxFiles - stagedFiles.length} remaining</Text>
-          )}
+          <Text size="xs" c="dimmed">
+            {stagedFiles.length}/{maxFiles} files
+            {limits && ` · up to ${formatSize(limits.maxFileSizeBytes)} each`}
+          </Text>
           <input
             ref={inputRef}
             type="file"
             multiple={maxFiles > 1}
+            accept={limits?.allowedContentTypes.join(',')}
             onChange={handleInputChange}
             style={{ display: 'none' }}
           />

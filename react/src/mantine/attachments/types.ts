@@ -9,3 +9,9 @@ export interface AttachmentDto {
   downloadUrl?: string;
   createdAt?: string;
 }
+
+export interface AttachmentLimits {
+  maxFiles: number;
+  maxFileSizeBytes: number;
+  allowedContentTypes: string[];
+}

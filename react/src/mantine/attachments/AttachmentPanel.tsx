@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack, Tabs } from '@mantine/core';
 import { AttachmentList } from './AttachmentList';
 import { AttachmentUpload } from './AttachmentUpload';
 import type { AttachmentListProps } from './AttachmentList';
 import type { AttachmentUploadProps } from './AttachmentUpload';
+import type { AttachmentLimits } from './types';
 
 export interface AttachmentPanelProps {
   entityType: string;
@@ -11,8 +12,8 @@ export interface AttachmentPanelProps {
   categories: string[];
   canUpload?: boolean;
   canDelete?: boolean;
-  maxFiles?: number;
   onFetchList: AttachmentListProps['onFetchList'];
+  onFetchLimits: (entityType: string) => Promise<AttachmentLimits>;
   onUpload: AttachmentUploadProps['onUpload'];
   onDelete: AttachmentListProps['onDelete'];
   fetchAuthenticated: AttachmentListProps['fetchAuthenticated'];
@@ -20,10 +21,16 @@ export interface AttachmentPanelProps {
 }
 
 export function AttachmentPanel({
-  entityType, entityId, categories, canUpload, canDelete, maxFiles = 10,
-  onFetchList, onUpload, onDelete, fetchAuthenticated, onError,
+  entityType, entityId, categories, canUpload, canDelete,
+  onFetchList, onFetchLimits, onUpload, onDelete, fetchAuthenticated, onError,
 }: AttachmentPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [limits, setLimits] = useState<AttachmentLimits | undefined>(undefined);
+
+  useEffect(() => {
+    onFetchLimits(entityType).then(setLimits).catch(onError);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityType]);
 
   const handleUploaded = () => setRefreshKey((k) => k + 1);
 
@@ -37,7 +44,7 @@ export function AttachmentPanel({
             entityId={entityId}
             category={category}
             onUploaded={handleUploaded}
-            maxFiles={maxFiles}
+            limits={limits}
             onUpload={onUpload}
             onError={onError}
           />

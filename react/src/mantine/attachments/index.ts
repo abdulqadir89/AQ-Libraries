@@ -6,4 +6,4 @@ export { AttachmentPanel } from './AttachmentPanel';
 export type { AttachmentPanelProps } from './AttachmentPanel';
 export { StagedAttachmentPicker } from './StagedAttachmentPicker';
 export type { StagedAttachmentPickerHandle, StagedAttachmentPickerProps } from './StagedAttachmentPicker';
-export type { AttachmentDto } from './types';
+export type { AttachmentDto, AttachmentLimits } from './types';
