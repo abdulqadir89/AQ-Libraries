@@ -11,6 +11,9 @@ export interface AttachmentUploadProps {
   category: string;
   onUploaded?: () => void;
   limits?: AttachmentLimits;
+  existingCount?: number;
+  variant?: 'button' | 'dropzone';
+  buttonPosition?: 'left' | 'right';
   onUpload: (entityType: string, entityId: string, category: string, file: File) => Promise<unknown>;
   onError: (err: unknown) => void;
 }
@@ -32,7 +35,7 @@ function formatContentTypes(types: string[]): string {
 }
 
 export function AttachmentUpload({
-  entityType, entityId, category, onUploaded, limits, onUpload, onError,
+  entityType, entityId, category, onUploaded, limits, existingCount = 0, variant = 'button', buttonPosition = 'right', onUpload, onError,
 }: AttachmentUploadProps) {
   const maxFiles = limits?.maxFiles ?? 10;
   const accept = limits?.allowedContentTypes.join(',');
@@ -44,7 +47,7 @@ export function AttachmentUpload({
   const addFiles = (files: FileList | File[]) => {
     const arr = Array.from(files);
     setPending((prev) => {
-      const remaining = maxFiles - prev.length;
+      const remaining = maxFiles - existingCount - prev.length;
       if (remaining <= 0) return prev;
       const toAdd = arr.slice(0, remaining).map((f) => ({ id: crypto.randomUUID(), file: f }));
       const oversized = toAdd.filter((f) => limits && f.file.size > limits.maxFileSizeBytes);
@@ -90,44 +93,79 @@ export function AttachmentUpload({
     onUploaded?.();
   };
 
-  const atLimit = pending.length >= maxFiles;
+  const atLimit = existingCount + pending.length >= maxFiles;
+  const helperText = (
+    <>
+      {existingCount + pending.length}/{maxFiles} files
+      {limits && ` · ${formatContentTypes(limits.allowedContentTypes)} · up to ${formatSize(limits.maxFileSizeBytes)} each`}
+    </>
+  );
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      multiple={maxFiles > 1}
+      accept={accept}
+      onChange={handleInputChange}
+      style={{ display: 'none' }}
+    />
+  );
 
   return (
     <Stack gap="xs">
-      <Box
-        onClick={() => !atLimit && inputRef.current?.click()}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        style={{
-          border: `2px dashed var(--mantine-color-${dragging ? 'blue-5' : 'default-border'})`,
-          borderRadius: 'var(--mantine-radius-sm)',
-          padding: '20px',
-          textAlign: 'center',
-          cursor: atLimit ? 'not-allowed' : 'pointer',
-          background: dragging ? 'var(--mantine-color-blue-light)' : undefined,
-          transition: 'border-color 120ms, background 120ms',
-        }}
-      >
-        <IconUpload size={24} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', marginBottom: 6 }} />
-        <Text size="sm" c="dimmed">
-          {atLimit
-            ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
-            : 'Drag & drop files here or click to browse'}
-        </Text>
-        <Text size="xs" c="dimmed">
-          {pending.length}/{maxFiles} files
-          {limits && ` · ${formatContentTypes(limits.allowedContentTypes)} · up to ${formatSize(limits.maxFileSizeBytes)} each`}
-        </Text>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple={maxFiles > 1}
-          accept={accept}
-          onChange={handleInputChange}
-          style={{ display: 'none' }}
-        />
-      </Box>
+      {variant === 'dropzone' ? (
+        <Box
+          onClick={() => !atLimit && inputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            border: `2px dashed var(--mantine-color-${dragging ? 'blue-5' : 'default-border'})`,
+            borderRadius: 'var(--mantine-radius-sm)',
+            padding: '20px',
+            textAlign: 'center',
+            cursor: atLimit ? 'not-allowed' : 'pointer',
+            background: dragging ? 'var(--mantine-color-blue-light)' : undefined,
+            transition: 'border-color 120ms, background 120ms',
+          }}
+        >
+          <IconUpload size={24} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', marginBottom: 6 }} />
+          <Text size="sm" c="dimmed">
+            {atLimit
+              ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
+              : 'Drag & drop files here or click to browse'}
+          </Text>
+          <Text size="xs" c="dimmed">{helperText}</Text>
+          {fileInput}
+        </Box>
+      ) : (
+        <Group gap="sm" wrap="nowrap" align="center" justify={buttonPosition === 'right' ? 'space-between' : 'flex-start'}>
+          {buttonPosition === 'left' && (
+            <Button
+              size="xs"
+              leftSection={<IconUpload size={14} />}
+              disabled={atLimit}
+              onClick={() => inputRef.current?.click()}
+            >
+              Add files
+            </Button>
+          )}
+          <Text size="xs" c="dimmed">
+            {atLimit ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached` : helperText}
+          </Text>
+          {buttonPosition === 'right' && (
+            <Button
+              size="xs"
+              leftSection={<IconUpload size={14} />}
+              disabled={atLimit}
+              onClick={() => inputRef.current?.click()}
+            >
+              Add files
+            </Button>
+          )}
+          {fileInput}
+        </Group>
+      )}
 
       {pending.length > 0 && (
         <Stack gap="xs">

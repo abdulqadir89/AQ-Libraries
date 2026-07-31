@@ -12,6 +12,8 @@ export interface AttachmentPanelProps {
   categories: string[];
   canUpload?: boolean;
   canDelete?: boolean;
+  uploadVariant?: AttachmentUploadProps['variant'];
+  uploadButtonPosition?: AttachmentUploadProps['buttonPosition'];
   onFetchList: AttachmentListProps['onFetchList'];
   onFetchLimits: (entityType: string) => Promise<AttachmentLimits>;
   onUpload: AttachmentUploadProps['onUpload'];
@@ -21,11 +23,12 @@ export interface AttachmentPanelProps {
 }
 
 export function AttachmentPanel({
-  entityType, entityId, categories, canUpload, canDelete,
+  entityType, entityId, categories, canUpload, canDelete, uploadVariant, uploadButtonPosition,
   onFetchList, onFetchLimits, onUpload, onDelete, fetchAuthenticated, onError,
 }: AttachmentPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [limits, setLimits] = useState<AttachmentLimits | undefined>(undefined);
+  const [existingCounts, setExistingCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     onFetchLimits(entityType).then(setLimits).catch(onError);
@@ -33,6 +36,9 @@ export function AttachmentPanel({
   }, [entityType]);
 
   const handleUploaded = () => setRefreshKey((k) => k + 1);
+  const handleCountChange = (cat: string) => (count: number) => {
+    setExistingCounts((prev) => (prev[cat] === count ? prev : { ...prev, [cat]: count }));
+  };
 
   if (categories.length === 1) {
     const category = categories[0];
@@ -45,6 +51,9 @@ export function AttachmentPanel({
             category={category}
             onUploaded={handleUploaded}
             limits={limits}
+            existingCount={existingCounts[category] ?? 0}
+            variant={uploadVariant}
+            buttonPosition={uploadButtonPosition}
             onUpload={onUpload}
             onError={onError}
           />
@@ -59,6 +68,7 @@ export function AttachmentPanel({
           onDelete={onDelete}
           fetchAuthenticated={fetchAuthenticated}
           onError={onError}
+          onCountChange={handleCountChange(category)}
         />
       </Stack>
     );
@@ -83,7 +93,10 @@ export function AttachmentPanel({
                 entityId={entityId}
                 category={cat}
                 onUploaded={handleUploaded}
-                maxFiles={maxFiles}
+                limits={limits}
+                existingCount={existingCounts[cat] ?? 0}
+                variant={uploadVariant}
+                buttonPosition={uploadButtonPosition}
                 onUpload={onUpload}
                 onError={onError}
               />
@@ -98,6 +111,7 @@ export function AttachmentPanel({
               onDelete={onDelete}
               fetchAuthenticated={fetchAuthenticated}
               onError={onError}
+              onCountChange={handleCountChange(cat)}
             />
           </Stack>
         </Tabs.Panel>

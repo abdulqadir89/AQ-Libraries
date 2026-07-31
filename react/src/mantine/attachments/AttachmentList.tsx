@@ -46,6 +46,7 @@ export interface AttachmentListProps {
   onDelete: (entityType: string, entityId: string, category: string, fileName: string) => Promise<void>;
   fetchAuthenticated: (url: string) => Promise<Response>;
   onError: (err: unknown) => void;
+  onCountChange?: (count: number) => void;
 }
 
 interface AttachmentRowProps {
@@ -119,7 +120,7 @@ function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, on
 
 export function AttachmentList({
   entityType, entityId, category, canDelete, refreshKey,
-  onFetchList, onDelete, fetchAuthenticated, onError,
+  onFetchList, onDelete, fetchAuthenticated, onError, onCountChange,
 }: AttachmentListProps) {
   const [attachments, setAttachments] = useState<AttachmentDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,12 +130,13 @@ export function AttachmentList({
     try {
       const data = await onFetchList(entityType, entityId, category);
       setAttachments(data);
+      onCountChange?.(data.length);
     } catch (err) {
       onError(err);
     } finally {
       setLoading(false);
     }
-  }, [entityType, entityId, category, onFetchList, onError]);
+  }, [entityType, entityId, category, onFetchList, onError, onCountChange]);
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
