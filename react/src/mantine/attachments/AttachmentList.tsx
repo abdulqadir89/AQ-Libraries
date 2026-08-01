@@ -3,7 +3,7 @@ import {
   ActionIcon, Badge, Group, Image, Skeleton, Stack, Text, Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconDownload, IconFile, IconTrash } from '@tabler/icons-react';
+import { IconCheck, IconDownload, IconFile, IconLink, IconTrash } from '@tabler/icons-react';
 import { DateTimeOffsetDisplay } from '../datetime';
 import type { AttachmentDto } from './types';
 
@@ -60,6 +60,17 @@ interface AttachmentRowProps {
 function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, onError }: AttachmentRowProps) {
   const isImage = attachment.contentType?.startsWith('image/');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    if (!attachment.downloadUrl) return;
+    navigator.clipboard.writeText(attachment.downloadUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(onError);
+  };
 
   useEffect(() => {
     if (!isImage || !attachment.downloadUrl) return;
@@ -97,6 +108,13 @@ function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, on
       </Group>
 
       <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
+        {attachment.downloadUrl && (
+          <Tooltip label={copied ? 'Copied!' : 'Copy link'} withArrow>
+            <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={handleCopyLink}>
+              {copied ? <IconCheck size={16} /> : <IconLink size={16} />}
+            </ActionIcon>
+          </Tooltip>
+        )}
         {attachment.downloadUrl && (
           <Tooltip label="Download" withArrow>
             <ActionIcon variant="subtle" color="blue" onClick={() => {
