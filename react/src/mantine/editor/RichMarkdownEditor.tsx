@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
-import { Markdown } from '@tiptap/markdown';
 import {
   ActionIcon, Divider, FileButton, Group, Paper, Tooltip,
 } from '@mantine/core';
@@ -58,7 +57,6 @@ export function RichMarkdownEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({ link: { openOnClick: false } }),
-      Markdown,
       VideoEmbed,
       AudioEmbed,
       ...(onUploadFile && fetchAuthenticated
@@ -72,9 +70,9 @@ export function RichMarkdownEditor({
       },
     },
     onUpdate({ editor: currentEditor }) {
-      const markdown = currentEditor.getMarkdown();
-      lastEmittedValue.current = markdown;
-      onChange(markdown);
+      const html = currentEditor.getHTML();
+      lastEmittedValue.current = html;
+      onChange(html);
     },
   }, []);
 
@@ -85,7 +83,7 @@ export function RichMarkdownEditor({
       // setContent uses flushSync internally; defer outside React's commit phase
       // to avoid "flushSync called from inside a lifecycle method".
       queueMicrotask(() => {
-        if (!editor.isDestroyed) editor.commands.setContent(value, { contentType: 'markdown', emitUpdate: false });
+        if (!editor.isDestroyed) editor.commands.setContent(value, { contentType: 'html', emitUpdate: false });
       });
     }
   }, [editor, value]);

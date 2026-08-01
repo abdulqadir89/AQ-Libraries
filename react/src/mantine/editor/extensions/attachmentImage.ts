@@ -55,20 +55,6 @@ export const AttachmentImage = Node.create<AttachmentImageOptions>({
     ];
   },
 
-  markdownTokenName: 'image',
-
-  parseMarkdown: (token) => ({
-    type: 'attachmentImage',
-    attrs: { src: token.href, alt: token.text ?? '' },
-  }),
-
-  renderMarkdown({ attrs }) {
-    const src = attrs?.src as string | null;
-    const alt = (attrs?.alt as string | null) ?? '';
-    if (!src) return '';
-    return `![${alt}](${src})\n\n`;
-  },
-
   addNodeView() {
     return ReactNodeViewRenderer(AttachmentImageView);
   },

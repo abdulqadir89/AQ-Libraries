@@ -9,7 +9,7 @@ public class CollectedValue : ValueObject
     public DataType DataType { get; private set; }
 
     public string? StringValue { get; private set; }
-    public MarkdownContent? MarkdownContent { get; private set; }
+    public HtmlContent? MarkdownContent { get; private set; }
     public decimal? NumericValue { get; private set; }
     public bool? BoolValue { get; private set; }
     public DateTimeOffset? DateTimeOffsetValue { get; private set; }
@@ -18,7 +18,7 @@ public class CollectedValue : ValueObject
 
     private CollectedValue(DataType type,
         string? str = null,
-        MarkdownContent? markdown = null,
+        HtmlContent? markdown = null,
         decimal? num = null,
         bool? b = null,
         DateTimeOffset? dto = null)
@@ -51,7 +51,7 @@ public class CollectedValue : ValueObject
                 return new CollectedValue(DataType.MultilineText, str: rawValue.ToString());
 
             case DataType.Markdown:
-                var markdownContent = MarkdownContent.Create(rawValue.ToString() ?? string.Empty);
+                var markdownContent = HtmlContent.FromMarkdown(rawValue.ToString() ?? string.Empty);
                 return new CollectedValue(DataType.Markdown, markdown: markdownContent);
 
             case DataType.Numeric:

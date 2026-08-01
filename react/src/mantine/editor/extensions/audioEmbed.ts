@@ -51,12 +51,6 @@ export const AudioEmbed = Node.create<AudioEmbedOptions>({
     ];
   },
 
-  renderMarkdown({ attrs }) {
-    const src = attrs?.src as string | null;
-    if (!src) return '';
-    return `<audio controls style="width:100%;border-radius:8px"><source src="${src}"><a href="${src}">Download audio</a></audio>\n\n`;
-  },
-
   addCommands() {
     return {
       setAudioEmbed:
