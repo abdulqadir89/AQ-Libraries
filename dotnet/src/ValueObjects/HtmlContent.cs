@@ -81,9 +81,9 @@ public sealed class HtmlContent : ValueObject
             "a", "b", "i", "strong", "em", "u", "p", "ul", "ol", "li",
             "br", "hr", "blockquote", "code", "pre", "span", "div",
             "h1", "h2", "h3", "h4", "h5", "h6", "img", "table", "thead", "tbody", "tr", "th", "td",
-            "del", "s", "strike",
-            // Tiptap custom nodes: videoEmbed (iframe), audioEmbed (audio/source)
-            "iframe", "audio", "source"
+            "del", "s", "strike", "sub", "sup", "mark",
+            // Tiptap: Youtube (iframe), Audio (audio/source), TaskList/TaskItem, Mathematics
+            "iframe", "audio", "source", "input", "label"
         };
 
         foreach (var t in allowedTags)
@@ -97,12 +97,24 @@ public sealed class HtmlContent : ValueObject
         sanitizer.AllowedAttributes.Add("width");
         sanitizer.AllowedAttributes.Add("height");
         sanitizer.AllowedAttributes.Add("class");
-        // Tiptap custom nodes: videoEmbed (iframe) / audioEmbed (audio) attributes
+        sanitizer.AllowedAttributes.Add("style");
+        // Tiptap: Youtube (iframe) / Audio attributes
         sanitizer.AllowedAttributes.Add("allow");
         sanitizer.AllowedAttributes.Add("allowfullscreen");
         sanitizer.AllowedAttributes.Add("loading");
         sanitizer.AllowedAttributes.Add("frameborder");
         sanitizer.AllowedAttributes.Add("controls");
+        // Tiptap: TaskList/TaskItem checkbox
+        sanitizer.AllowedAttributes.Add("type");
+        sanitizer.AllowedAttributes.Add("checked");
+        sanitizer.AllowedAttributes.Add("disabled");
+        // Tiptap: TextAlign reads/writes inline style="text-align:..."
+        sanitizer.AllowedCssProperties.Add("text-align");
+
+        // Tiptap: TaskList/TaskItem (data-type, data-checked) and Mathematics (data-type, data-latex)
+        sanitizer.AllowedAttributes.Add("data-type");
+        sanitizer.AllowedAttributes.Add("data-checked");
+        sanitizer.AllowedAttributes.Add("data-latex");
 
         // Restrict allowed URI schemes for links and images
         sanitizer.AllowedSchemes.Clear();
@@ -110,7 +122,6 @@ public sealed class HtmlContent : ValueObject
         sanitizer.AllowedSchemes.Add("https");
         sanitizer.AllowedSchemes.Add("mailto");
 
-        // Remove any potentially dangerous css properties
         sanitizer.AllowDataAttributes = false;
 
         return sanitizer.Sanitize(rawHtml);
