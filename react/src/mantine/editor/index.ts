@@ -1,2 +1,2 @@
-export { RichMarkdownEditor } from './RichMarkdownEditor';
-export type { RichMarkdownEditorProps, AttachmentRef } from './types';
+export { RichTextEditor } from './RichTextEditor';
+export type { RichTextEditorProps, AttachmentRef } from './types';

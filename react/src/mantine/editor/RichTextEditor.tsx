@@ -13,6 +13,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { TableKit } from '@tiptap/extension-table';
 import { TaskList, TaskItem } from '@tiptap/extension-list';
 import { TextAlign } from '@tiptap/extension-text-align';
+import { Markdown } from '@tiptap/markdown';
 import {
   ActionIcon, Divider, FileButton, Group, Menu, Paper, Tooltip,
 } from '@mantine/core';
@@ -25,7 +26,7 @@ import {
   IconSubscript, IconSuperscript, IconTable, IconUnderline,
 } from '@tabler/icons-react';
 import { AttachmentImage } from './extensions/attachmentImage';
-import type { RichMarkdownEditorProps } from './types';
+import type { RichTextEditorProps } from './types';
 import 'katex/dist/katex.min.css';
 
 function promptForUrl(title: string, onSubmit: (url: string) => void) {
@@ -72,9 +73,10 @@ function promptForText(title: string, placeholder: string, onSubmit: (text: stri
   });
 }
 
-export function RichMarkdownEditor({
+export function RichTextEditor({
   value,
   onChange,
+  contentFormat = 'html',
   label,
   description,
   placeholder,
@@ -84,14 +86,14 @@ export function RichMarkdownEditor({
   onUploadFile,
   fetchAuthenticated,
   onError,
-}: RichMarkdownEditorProps) {
+}: RichTextEditorProps) {
   const pendingImageFiles = useMemo(() => new Map<string, File>(), []);
   const lastEmittedValue = useRef(value);
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ link: { openOnClick: false } }),
+      StarterKit.configure({ link: { openOnClick: false }, underline: false }),
       Youtube,
       Audio.configure({ addPasteHandler: true }),
       Mathematics,
@@ -103,20 +105,22 @@ export function RichMarkdownEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Markdown,
       ...(onUploadFile && fetchAuthenticated
         ? [AttachmentImage.configure({ onUploadFile, fetchAuthenticated, onError, pendingFiles: pendingImageFiles })]
         : []),
     ],
     content: value,
+    contentType: contentFormat,
     editorProps: {
       attributes: {
         'data-placeholder': placeholder ?? '',
       },
     },
     onUpdate({ editor: currentEditor }) {
-      const html = currentEditor.getHTML();
-      lastEmittedValue.current = html;
-      onChange(html);
+      const output = contentFormat === 'markdown' ? currentEditor.getMarkdown() : currentEditor.getHTML();
+      lastEmittedValue.current = output;
+      onChange(output);
     },
   }, []);
 
@@ -127,10 +131,10 @@ export function RichMarkdownEditor({
       // setContent uses flushSync internally; defer outside React's commit phase
       // to avoid "flushSync called from inside a lifecycle method".
       queueMicrotask(() => {
-        if (!editor.isDestroyed) editor.commands.setContent(value, { contentType: 'html', emitUpdate: false });
+        if (!editor.isDestroyed) editor.commands.setContent(value, { contentType: contentFormat, emitUpdate: false });
       });
     }
-  }, [editor, value]);
+  }, [editor, value, contentFormat]);
 
   if (!editor) return null;
 

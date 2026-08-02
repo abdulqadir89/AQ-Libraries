@@ -6,9 +6,11 @@ export interface AttachmentRef {
   url: string;
 }
 
-export interface RichMarkdownEditorProps {
+export interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
+  /** Persistence format for `value`/`onChange` and content loading. Defaults to 'html'. */
+  contentFormat?: 'html' | 'markdown';
   label?: string;
   description?: string;
   placeholder?: string;
