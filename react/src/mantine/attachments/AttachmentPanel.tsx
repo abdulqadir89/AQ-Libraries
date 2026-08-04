@@ -14,6 +14,8 @@ export interface AttachmentPanelProps {
   canDelete?: boolean;
   uploadVariant?: AttachmentUploadProps['variant'];
   uploadButtonPosition?: AttachmentUploadProps['buttonPosition'];
+  /** Bump this to force the attachment list to refetch, e.g. after an upload from outside this panel. */
+  externalRefreshKey?: number;
   onFetchList: AttachmentListProps['onFetchList'];
   onFetchLimits: (entityType: string) => Promise<AttachmentLimits>;
   onUpload: AttachmentUploadProps['onUpload'];
@@ -24,6 +26,7 @@ export interface AttachmentPanelProps {
 
 export function AttachmentPanel({
   entityType, entityId, categories, canUpload, canDelete, uploadVariant, uploadButtonPosition,
+  externalRefreshKey,
   onFetchList, onFetchLimits, onUpload, onDelete, fetchAuthenticated, onError,
 }: AttachmentPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -35,6 +38,7 @@ export function AttachmentPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityType]);
 
+  const combinedRefreshKey = refreshKey + (externalRefreshKey ?? 0);
   const handleUploaded = () => setRefreshKey((k) => k + 1);
   const handleCountChange = (cat: string) => (count: number) => {
     setExistingCounts((prev) => (prev[cat] === count ? prev : { ...prev, [cat]: count }));
@@ -63,7 +67,7 @@ export function AttachmentPanel({
           entityId={entityId}
           category={category}
           canDelete={canDelete}
-          refreshKey={refreshKey}
+          refreshKey={combinedRefreshKey}
           onFetchList={onFetchList}
           onDelete={onDelete}
           fetchAuthenticated={fetchAuthenticated}
@@ -106,7 +110,7 @@ export function AttachmentPanel({
               entityId={entityId}
               category={cat}
               canDelete={canDelete}
-              refreshKey={refreshKey}
+              refreshKey={combinedRefreshKey}
               onFetchList={onFetchList}
               onDelete={onDelete}
               fetchAuthenticated={fetchAuthenticated}
