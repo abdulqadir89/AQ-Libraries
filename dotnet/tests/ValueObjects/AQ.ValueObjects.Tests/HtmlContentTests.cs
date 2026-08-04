@@ -179,4 +179,99 @@ public class HtmlContentTests
         content.Value.Should().Contain("<audio");
         content.Value.Should().Contain("<source");
     }
+
+    [Fact]
+    public void FromMarkdown_ConvertsInlineMathToTiptapSpan()
+    {
+        var content = HtmlContent.FromMarkdown("Simplify $3^{6n+15}$ please.");
+
+        content.Value.Should().Contain("data-type=\"inline-math\"");
+        content.Value.Should().Contain("data-latex=\"3^{6n+15}\"");
+    }
+
+    [Fact]
+    public void FromMarkdown_ConvertsBlockMathToTiptapDiv()
+    {
+        // $$ must be alone on its own line to trigger Markdig's block (not inline) math rule.
+        var content = HtmlContent.FromMarkdown("$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$");
+
+        content.Value.Should().Contain("data-type=\"block-math\"");
+        content.Value.Should().Contain("data-latex=\"x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\"");
+    }
+
+    [Fact]
+    public void FromMarkdown_EscapesSpecialCharactersInLatexAttribute()
+    {
+        var content = HtmlContent.FromMarkdown("Compare $a < b > c \\text{\"quoted\"}$ here.");
+
+        content.Value.Should().NotContain("data-latex=\"a < b");
+        content.Value.Should().Contain("data-latex=\"a &lt; b &gt; c");
+        content.Value.Should().Contain("&quot;quoted&quot;");
+    }
+
+    [Fact]
+    public void FromMarkdown_NonMathContentUnaffectedByMathExtension()
+    {
+        var content = HtmlContent.FromMarkdown("# Title\n\n**bold** text, cost is $5 total.");
+
+        content.Value.Should().Contain("<h1>Title</h1>");
+        content.Value.Should().Contain("<strong>bold</strong>");
+    }
+
+    [Fact]
+    public void FromMarkdown_ConvertsEscapedInlineParensToMath()
+    {
+        // AI-generated content uses \(...\) instead of $...$ since the LLM is inconsistent
+        // about bare $ (currency vs. math).
+        var content = HtmlContent.FromMarkdown("Simplify \\(3^{6n+15}\\) please.");
+
+        content.Value.Should().Contain("data-type=\"inline-math\"");
+        content.Value.Should().Contain("data-latex=\"3^{6n+15}\"");
+    }
+
+    [Fact]
+    public void FromMarkdown_ConvertsEscapedBlockBracketsToMath()
+    {
+        var content = HtmlContent.FromMarkdown("\\[x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\\]");
+
+        content.Value.Should().Contain("data-type=\"block-math\"");
+        content.Value.Should().Contain("data-latex=\"x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\"");
+    }
+
+    [Fact]
+    public void FromMarkdown_UndelimitedCurrencyDollarNeverBecomesMath()
+    {
+        var content = HtmlContent.FromMarkdown("The item costs $5 and shipping is $10 extra.");
+
+        content.Value.Should().NotContain("data-type=\"inline-math\"");
+        content.Value.Should().Contain("$5");
+        content.Value.Should().Contain("$10");
+    }
+
+    [Fact]
+    public void FromMarkdown_EscapedParensInsideCodeSpanNotConvertedToMath()
+    {
+        var content = HtmlContent.FromMarkdown("Use the pattern `\\(foo\\)` in your regex.");
+
+        content.Value.Should().NotContain("data-type=\"inline-math\"");
+        content.Value.Should().Contain("\\(foo\\)");
+    }
+
+    [Fact]
+    public void ToMarkdown_RoundTripsInlineMathWithoutLosingLatex()
+    {
+        var content = HtmlContent.FromMarkdown("Simplify $3^{6n+15}$ please.");
+
+        // ReverseMarkdown's math writer emits \(...\) rather than $...$ — both are
+        // valid input Markdig accepts on the way back in. The bar is "not silently dropped".
+        content.ToMarkdown().Should().Contain("3^{6n+15}");
+    }
+
+    [Fact]
+    public void ToMarkdown_RoundTripsBlockMathWithoutLosingLatex()
+    {
+        var content = HtmlContent.FromMarkdown("$$\nx = y + 1\n$$");
+
+        content.ToMarkdown().Should().Contain("x = y + 1");
+    }
 }

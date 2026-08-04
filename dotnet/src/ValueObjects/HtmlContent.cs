@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.RegularExpressions;
 using Ganss.Xss;
 using Markdig;
 using ReverseMarkdown;
@@ -50,20 +52,89 @@ public sealed class HtmlContent : ValueObject
         return ConvertHtmlToMarkdown(Value);
     }
 
+    // AI-generated markdown uses \(...\) / \[...\] for math (not $...$), since the LLM is
+    // inconsistent about bare $ (currency vs. math). Convert to $...$ / $$...$$ before Markdig
+    // runs its Mathematics extension, which only recognizes dollar delimiters. Skips fenced/inline
+    // code spans so literal backslash-paren in code isn't mistaken for math.
+    private static readonly Regex CodeSpanOrFence =
+        new(@"```.*?```|`[^`\n]*`", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    private static readonly Regex EscapedInlineMath =
+        new(@"\\\((.+?)\\\)", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    private static readonly Regex EscapedBlockMath =
+        new(@"\\\[(.+?)\\\]", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    private static string ConvertEscapedDelimitersToDollar(string markdown)
+    {
+        var codeRanges = CodeSpanOrFence.Matches(markdown)
+            .Select(m => (m.Index, End: m.Index + m.Length))
+            .ToList();
+
+        bool InCode(int index) => codeRanges.Any(r => index >= r.Index && index < r.End);
+
+        // Markdig only treats $$...$$ as block (not inline) math when it stands alone on its
+        // own line, so the replacement must force line breaks around the delimiters.
+        markdown = EscapedBlockMath.Replace(markdown, m =>
+            InCode(m.Index) ? m.Value : $"\n\n$$\n{m.Groups[1].Value}\n$$\n\n");
+
+        markdown = EscapedInlineMath.Replace(markdown, m =>
+            InCode(m.Index) ? m.Value : $"${m.Groups[1].Value}$");
+
+        return markdown;
+    }
+
+    // Matches Markdig's Mathematics extension output: <span class="math">\(...\)</span> (inline)
+    // and <div class="math">\[...\]</div> (block). Captures the delimiter-wrapped LaTeX body.
+    private static readonly Regex InlineMathSpan =
+        new(@"<span class=""math"">\\\((.*?)\\\)</span>", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    // Markdig's block output has whitespace/newlines around the \[ \] delimiters, e.g.
+    // "<div class=\"math\">\n\[\nx = y\n\]</div>".
+    private static readonly Regex BlockMathDiv =
+        new(@"<div class=""math"">\s*\\\[(.*?)\\\]\s*</div>", RegexOptions.Compiled | RegexOptions.Singleline);
+
     private static string ConvertMarkdownToHtml(string value)
     {
         // Uses Markdig for Markdown to HTML conversion
         var pipeline = new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
+            .UseMathematics()
             .DisableHtml()
             .Build();
 
-        return Markdown.ToHtml(value, pipeline);
+        var html = Markdig.Markdown.ToHtml(ConvertEscapedDelimitersToDollar(value), pipeline);
+        return AddTiptapMathAttributes(html);
+    }
+
+    // Adds Tiptap's expected data-type/data-latex attributes onto Markdig's math spans/divs,
+    // keeping the original class + delimiter-wrapped text content intact so ReverseMarkdown's
+    // native `class="math"` span reader (and our custom div reader) can still round-trip them.
+    private static string AddTiptapMathAttributes(string html)
+    {
+        html = InlineMathSpan.Replace(html, m =>
+        {
+            // Markdig HTML-encodes the captured text content (e.g. "<" -> "&lt;"); decode it back
+            // to raw LaTeX before re-encoding it for the data-latex attribute, or entities double-escape.
+            var rawLatex = WebUtility.HtmlDecode(m.Groups[1].Value);
+            var attrLatex = WebUtility.HtmlEncode(rawLatex);
+            return $"<span class=\"math\" data-type=\"inline-math\" data-latex=\"{attrLatex}\">\\({m.Groups[1].Value}\\)</span>";
+        });
+
+        html = BlockMathDiv.Replace(html, m =>
+        {
+            var rawLatex = WebUtility.HtmlDecode(m.Groups[1].Value).Trim();
+            var attrLatex = WebUtility.HtmlEncode(rawLatex);
+            return $"<div class=\"math display\" data-type=\"block-math\" data-latex=\"{attrLatex}\">\\[{m.Groups[1].Value}\\]</div>";
+        });
+
+        return html;
     }
 
     private static string ConvertHtmlToMarkdown(string html)
     {
         var converter = new Converter();
+        converter.RegisterReader("div", new MathDivReader());
         return converter.Convert(html);
     }
 
