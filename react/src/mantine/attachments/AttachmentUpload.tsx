@@ -77,14 +77,12 @@ export function AttachmentUpload({
   const handleUpload = async () => {
     if (pending.length === 0) return;
     setUploading(true);
-    const errors: string[] = [];
-    for (const { file } of pending) {
-      try {
-        await onUpload(entityType, entityId, category, file);
-      } catch {
-        errors.push(file.name);
-      }
-    }
+    const results = await Promise.allSettled(
+      pending.map(({ file }) => onUpload(entityType, entityId, category, file)),
+    );
+    const errors = pending
+      .filter((_, i) => results[i].status === 'rejected')
+      .map(({ file }) => file.name);
     setPending([]);
     setUploading(false);
     if (errors.length > 0) {
