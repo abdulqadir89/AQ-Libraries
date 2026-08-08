@@ -8,3 +8,4 @@ export * from './money';
 export * from './attachments';
 export * from './split-button';
 export * from './editor';
+export * from './html-display';
