@@ -26,11 +26,6 @@ public class SearchCondition
     public double Weight { get; set; } = 1.0;
 
     /// <summary>
-    /// Maximum edit distance for fuzzy matching
-    /// </summary>
-    public int MaxEditDistance { get; set; } = 2;
-
-    /// <summary>
     /// Indicates if the search should be case-sensitive
     /// </summary>
     public bool CaseSensitive { get; set; } = false;
@@ -93,19 +88,9 @@ public class SearchSpecification
     public double MinScore { get; set; } = 0.1;
 
     /// <summary>
-    /// Ranking algorithm to use for scoring results
-    /// </summary>
-    public SearchRankingAlgorithm RankingAlgorithm { get; set; } = SearchRankingAlgorithm.WeightBased;
-
-    /// <summary>
     /// Whether to enable fuzzy matching globally
     /// </summary>
     public bool EnableFuzzyMatch { get; set; } = true;
-
-    /// <summary>
-    /// Whether to highlight matching terms in results
-    /// </summary>
-    public bool EnableHighlighting { get; set; } = false;
 
     /// <summary>
     /// Creates a simple search specification with a single global search term
@@ -167,11 +152,6 @@ public class SearchResult<T>
     /// Detailed scoring breakdown by field
     /// </summary>
     public Dictionary<string, double> FieldScores { get; set; } = new();
-
-    /// <summary>
-    /// Highlighted search results (if highlighting is enabled)
-    /// </summary>
-    public Dictionary<string, string> Highlights { get; set; } = new();
 
     /// <summary>
     /// Matching conditions that contributed to this result

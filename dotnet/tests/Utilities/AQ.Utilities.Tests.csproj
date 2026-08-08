@@ -22,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Utilities\AQ.Utilities.csproj" />
+    <ProjectReference Include="..\..\src\Utilities\AQ.Utilities.csproj" />
+    <ProjectReference Include="..\..\src\Utilities\SqlServer\AQ.Utilities.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Utilities\PostgreSql\AQ.Utilities.PostgreSql.csproj" />
   </ItemGroup>
 
 </Project>

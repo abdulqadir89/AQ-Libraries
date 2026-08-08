@@ -30,6 +30,7 @@ public class SigningKeyManager : ISigningKeyManager
     public async Task<SigningKey> GetActiveKeyAsync(CancellationToken cancellationToken)
     {
         var activeKey = _context.SigningKeys
+            .AsEnumerable()
             .Where(k => !k.IsRetired && !k.IsExpired)
             .OrderByDescending(k => k.CreatedAt)
             .FirstOrDefault();
@@ -78,6 +79,7 @@ public class SigningKeyManager : ISigningKeyManager
     public async Task RetireExpiredKeysAsync(CancellationToken cancellationToken)
     {
         var expiredKeys = _context.SigningKeys
+            .AsEnumerable()
             .Where(k => k.IsExpired && !k.IsRetired)
             .ToList();
 
@@ -101,6 +103,7 @@ public class SigningKeyManager : ISigningKeyManager
     public IReadOnlyList<SigningKey> GetValidationKeys()
     {
         return _context.SigningKeys
+            .AsEnumerable()
             .Where(k => !k.IsRetired && !k.IsExpired)
             .OrderByDescending(k => k.CreatedAt)
             .ToList();

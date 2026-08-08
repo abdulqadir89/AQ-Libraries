@@ -22,13 +22,16 @@ dotnet/
       Entities/              # AQ.StateMachine.Entities — Core state machine types
       Services/              # AQ.StateMachine.Services — Transition execution
     Utilities/
-      Filter/                # AQ.Utilities.Filter  — Query filtering
-      Search/                # AQ.Utilities.Search  — Search query helpers
-      Sort/                  # AQ.Utilities.Sort    — Sorting/ordering
-      Results/               # AQ.Utilities.Results — Result pattern
+      Filter/                # AQ.Utilities.Filter        — Query filtering
+      Search/                # AQ.Utilities.Search        — Search core (provider-agnostic; see Search/README.md)
+      SqlServer/Search/      # AQ.Utilities.SqlServer     — SQL Server search dialect (Fuzzy/Phonetic/FullText)
+      PostgreSql/Search/     # AQ.Utilities.PostgreSql    — PostgreSQL search dialect (Fuzzy/Phonetic/FullText)
+      Sort/                  # AQ.Utilities.Sort          — Sorting/ordering
+      Results/               # AQ.Utilities.Results       — Result pattern
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
   tests/
     StateMachine/Services/   # AQ.StateMachine.Services.Tests
+    Utilities/               # AQ.Utilities.Tests — covers core + both search providers
 ```
 
 ## Commands

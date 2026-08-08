@@ -256,39 +256,15 @@ public static class SearchableFieldExtractor
     }
 
     /// <summary>
-    /// Determines if a property is a computed property (expression-bodied property with no setter).
-    /// This is a heuristic check that covers most common computed property patterns.
+    /// Determines if a property is computed (has no setter, including non-public setters).
+    /// A private setter is not computed — DDD entities commonly use private setters for
+    /// mapped, real columns.
     /// </summary>
     /// <param name="property">The property to check</param>
-    /// <returns>True if the property appears to be computed, false otherwise</returns>
+    /// <returns>True if the property has no setter at all, false otherwise</returns>
     private static bool IsComputedProperty(PropertyInfo property)
     {
-        // If there's no setter, it might be computed
-        if (!property.CanWrite)
-            return true;
-
-        // If the setter is private and getter exists, it might be computed
-        var setMethod = property.GetSetMethod(true); // Include non-public setters
-        if (setMethod != null && setMethod.IsPrivate && property.CanRead)
-        {
-            // Additional check: if the getter has a very simple implementation pattern
-            // This is a heuristic - we can't easily detect expression body syntax at runtime
-            // but we can make educated guesses based on naming patterns and return types
-
-            // For properties like "FullName" that combine other properties, 
-            // they often follow naming patterns that indicate computed nature
-            if (property.Name.Contains("Full") ||
-                property.Name.Contains("Display") ||
-                property.Name.Contains("Computed") ||
-                property.Name.Contains("Combined") ||
-                property.Name.EndsWith("Text") ||
-                property.Name.EndsWith("Label"))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return !property.CanWrite;
     }
 
     private static bool IsSearchableType(Type type)
@@ -323,6 +299,9 @@ public static class SearchableFieldExtractor
 
     private static bool IsCollectionType(Type type)
     {
+        if (type == typeof(string))
+            return false;
+
         return type.IsArray ||
                type.IsGenericType && (
                    type.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||

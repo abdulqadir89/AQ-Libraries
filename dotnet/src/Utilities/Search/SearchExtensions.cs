@@ -36,59 +36,52 @@ public static class SearchExtensions
             Statistics = new Dictionary<string, object>()
         };
 
-        try
+        // Handle global search term
+        if (!string.IsNullOrWhiteSpace(specification.GlobalSearchTerm))
         {
-            // Handle global search term
-            if (!string.IsNullOrWhiteSpace(specification.GlobalSearchTerm))
-            {
-                var globalSearchSpec = SearchableFieldExtractor.CreateGlobalSearchSpecification<T>(specification.GlobalSearchTerm);
-                query = ApplySearchConditions(query, globalSearchSpec.RootGroup);
-            }
-
-            // Apply specific search conditions
-            if (specification.RootGroup.Conditions.Any() || specification.RootGroup.Groups.Any())
-            {
-                query = ApplySearchConditions(query, specification.RootGroup);
-            }
-
-            // Get total count before scoring and limiting
-            var totalCount = query.Count();
-            searchResults.TotalCount = totalCount;
-
-            // Convert to list for in-memory scoring (this is where we apply fuzzy matching)
-            var entities = query.ToList();
-
-            // Apply scoring and fuzzy matching
-            var scoredResults = new List<SearchResult<T>>();
-
-            foreach (var entity in entities)
-            {
-                var searchResult = ScoreEntity(entity, specification);
-
-                if (searchResult.Score >= specification.MinScore)
-                {
-                    scoredResults.Add(searchResult);
-                }
-            }
-
-            // Sort by score (descending) and apply limit
-            scoredResults = scoredResults
-                .OrderByDescending(r => r.Score)
-                .ToList();
-
-            if (specification.MaxResults.HasValue)
-            {
-                scoredResults = scoredResults.Take(specification.MaxResults.Value).ToList();
-            }
-
-            searchResults.Results = scoredResults;
-            searchResults.Statistics["EntitiesEvaluated"] = entities.Count;
-            searchResults.Statistics["ResultsAfterScoring"] = scoredResults.Count;
+            var globalSearchSpec = SearchableFieldExtractor.CreateGlobalSearchSpecification<T>(specification.GlobalSearchTerm);
+            query = ApplySearchConditions(query, globalSearchSpec.RootGroup);
         }
-        catch (Exception ex)
+
+        // Apply specific search conditions
+        if (specification.RootGroup.Conditions.Any() || specification.RootGroup.Groups.Any())
         {
-            searchResults.Statistics["Error"] = ex.Message;
+            query = ApplySearchConditions(query, specification.RootGroup);
         }
+
+        // Get total count before scoring and limiting
+        var totalCount = query.Count();
+        searchResults.TotalCount = totalCount;
+
+        // Convert to list for in-memory scoring (this is where we apply fuzzy matching)
+        var entities = query.ToList();
+
+        // Apply scoring and fuzzy matching
+        var scoredResults = new List<SearchResult<T>>();
+
+        foreach (var entity in entities)
+        {
+            var searchResult = ScoreEntity(entity, specification);
+
+            if (searchResult.Score >= specification.MinScore)
+            {
+                scoredResults.Add(searchResult);
+            }
+        }
+
+        // Sort by score (descending) and apply limit
+        scoredResults = scoredResults
+            .OrderByDescending(r => r.Score)
+            .ToList();
+
+        if (specification.MaxResults.HasValue)
+        {
+            scoredResults = scoredResults.Take(specification.MaxResults.Value).ToList();
+        }
+
+        searchResults.Results = scoredResults;
+        searchResults.Statistics["EntitiesEvaluated"] = entities.Count;
+        searchResults.Statistics["ResultsAfterScoring"] = scoredResults.Count;
 
         stopwatch.Stop();
         searchResults.ExecutionTimeMs = stopwatch.ElapsedMilliseconds;
@@ -285,32 +278,32 @@ public static class SearchExtensions
 
     private static Expression<Func<T, bool>>? BuildSearchExpression<T>(SearchCondition condition) where T : class
     {
-        try
-        {
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var property = BuildPropertyExpression(parameter, condition.PropertyPath);
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var property = BuildPropertyExpression(parameter, condition.PropertyPath);
 
-            if (property == null)
-                return null;
-
-            // Handle different search operators
-            Expression searchExpression = condition.Operator switch
-            {
-                SearchOperator.Exact => BuildExactExpression(property, condition),
-                SearchOperator.Contains => BuildContainsExpression(property, condition),
-                SearchOperator.StartsWith => BuildStartsWithExpression(property, condition),
-                SearchOperator.EndsWith => BuildEndsWithExpression(property, condition),
-                SearchOperator.Fuzzy => BuildFuzzyExpression(property, condition),
-                _ => BuildContainsExpression(property, condition)
-            };
-
-            return Expression.Lambda<Func<T, bool>>(searchExpression, parameter);
-        }
-        catch
-        {
+        if (property == null)
             return null;
-        }
+
+        // Handle different search operators
+        Expression searchExpression = condition.Operator switch
+        {
+            SearchOperator.Exact => BuildExactExpression(property, condition),
+            SearchOperator.Contains => BuildContainsExpression(property, condition),
+            SearchOperator.StartsWith => BuildStartsWithExpression(property, condition),
+            SearchOperator.EndsWith => BuildEndsWithExpression(property, condition),
+            SearchOperator.Fuzzy => RequireDialect(condition).BuildFuzzyPredicate(property, condition),
+            SearchOperator.Phonetic => RequireDialect(condition).BuildPhoneticPredicate(property, condition),
+            SearchOperator.FullText => RequireDialect(condition).BuildFullTextPredicate(property, condition),
+            _ => BuildContainsExpression(property, condition)
+        };
+
+        return Expression.Lambda<Func<T, bool>>(searchExpression, parameter);
     }
+
+    private static ISearchDialect RequireDialect(SearchCondition condition) =>
+        SearchDialect.Current ?? throw new NotSupportedException(
+            $"SearchOperator.{condition.Operator} requires a provider dialect. " +
+            "Reference AQ.Utilities.SqlServer or AQ.Utilities.PostgreSql and register it at startup.");
 
     private static Expression? BuildPropertyExpression(ParameterExpression parameter, string propertyPath)
     {
@@ -340,7 +333,8 @@ public static class SearchExtensions
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
             var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            return Expression.Equal(compareProperty, Expression.Constant(searchValue));
+            var comparison = Expression.Equal(compareProperty, Expression.Constant(searchValue));
+            return GuardStringNull(property, comparison);
         }
         else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
         {
@@ -372,7 +366,8 @@ public static class SearchExtensions
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
             var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            return Expression.Call(compareProperty, typeof(string).GetMethod("Contains", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            var comparison = Expression.Call(compareProperty, typeof(string).GetMethod("Contains", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            return GuardStringNull(property, comparison);
         }
         else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
         {
@@ -404,7 +399,8 @@ public static class SearchExtensions
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
             var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            return Expression.Call(compareProperty, typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            var comparison = Expression.Call(compareProperty, typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            return GuardStringNull(property, comparison);
         }
         else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
         {
@@ -427,7 +423,8 @@ public static class SearchExtensions
         {
             var searchValue = condition.CaseSensitive ? condition.SearchTerm : condition.SearchTerm.ToLowerInvariant();
             var compareProperty = condition.CaseSensitive ? property : Expression.Call(property, typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            return Expression.Call(compareProperty, typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            var comparison = Expression.Call(compareProperty, typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, Expression.Constant(searchValue));
+            return GuardStringNull(property, comparison);
         }
         else if (underlyingType.IsPrimitive || underlyingType == typeof(Guid) || underlyingType == typeof(decimal))
         {
@@ -439,11 +436,10 @@ public static class SearchExtensions
         return Expression.Constant(false);
     }
 
-    private static Expression BuildFuzzyExpression(Expression property, SearchCondition condition)
+    private static Expression GuardStringNull(Expression property, Expression comparison)
     {
-        // For database queries, fuzzy matching will be handled in post-processing
-        // Here we apply a basic contains filter to reduce the dataset
-        return BuildContainsExpression(property, condition);
+        var notNull = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));
+        return Expression.AndAlso(notNull, comparison);
     }
 
     private static Expression<Func<T, bool>> CombineExpressions<T>(
