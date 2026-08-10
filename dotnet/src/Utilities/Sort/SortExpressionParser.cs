@@ -20,6 +20,7 @@ public static class SortExpressionParser
     /// <summary>
     /// Parses a simple sort condition from comma-separated format
     /// Format: "PropertyPath,Direction" or just "PropertyPath" (defaults to ascending)
+    /// Also supports "-PropertyPath" as shorthand for descending (cannot be combined with ",Direction")
     /// </summary>
     public static SortCondition ParseCondition(string sortExpression)
     {
@@ -34,8 +35,21 @@ public static class SortExpressionParser
         var propertyPath = parts[0].Trim();
         var direction = SortDirection.Ascending; // Default
 
+        var isDashPrefixed = propertyPath.StartsWith('-');
+        if (isDashPrefixed)
+        {
+            propertyPath = propertyPath[1..].Trim();
+            if (string.IsNullOrEmpty(propertyPath))
+                throw new ArgumentException($"Invalid sort expression format: {sortExpression}", nameof(sortExpression));
+
+            direction = SortDirection.Descending;
+        }
+
         if (parts.Length > 1)
         {
+            if (isDashPrefixed)
+                throw new ArgumentException($"Sort expression cannot combine '-' prefix with explicit direction: {sortExpression}", nameof(sortExpression));
+
             var directionStr = parts[1].Trim();
             if (!DirectionMap.TryGetValue(directionStr, out direction))
                 throw new ArgumentException($"Unknown sort direction: {directionStr}", nameof(sortExpression));

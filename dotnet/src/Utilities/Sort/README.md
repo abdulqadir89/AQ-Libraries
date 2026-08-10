@@ -22,6 +22,9 @@ var spec = SortExpressionParser.Parse("Name");
 
 // Single field with explicit direction
 var spec = SortExpressionParser.Parse("Name,desc");
+
+// "-" prefix shorthand for descending (cannot combine with ",Direction")
+var spec = SortExpressionParser.Parse("-Name");
 ```
 
 ### Complex Multi-Field Sorting
