@@ -111,9 +111,8 @@ public class SearchSpecificationBuilder<T> where T : class
     /// <param name="searchTerm">The term to search for</param>
     /// <param name="weight">Weight for this condition</param>
     /// <param name="minSimilarity">Minimum similarity threshold (0.0 to 1.0)</param>
-    /// <param name="maxEditDistance">Maximum edit distance for fuzzy matching</param>
     /// <returns>The builder instance for method chaining</returns>
-    public SearchSpecificationBuilder<T> Fuzzy(string propertyPath, string searchTerm, double weight = 1.0, double minSimilarity = 0.6, int maxEditDistance = 2)
+    public SearchSpecificationBuilder<T> Fuzzy(string propertyPath, string searchTerm, double weight = 1.0, double minSimilarity = 0.6)
     {
         _currentGroup.Conditions.Add(new SearchCondition
         {
@@ -121,14 +120,13 @@ public class SearchSpecificationBuilder<T> where T : class
             SearchTerm = searchTerm,
             Operator = SearchOperator.Fuzzy,
             Weight = weight,
-            MinSimilarity = minSimilarity,
-            MaxEditDistance = maxEditDistance
+            MinSimilarity = minSimilarity
         });
         return this;
     }
 
     /// <summary>
-    /// Sets the match type for the current group (Any/All/BestMatch)
+    /// Sets the match type for the current group (Any/All)
     /// </summary>
     /// <param name="matchType">The match type to use</param>
     /// <returns>The builder instance for method chaining</returns>
@@ -154,15 +152,6 @@ public class SearchSpecificationBuilder<T> where T : class
     public SearchSpecificationBuilder<T> All()
     {
         return MatchType(SearchMatchType.All);
-    }
-
-    /// <summary>
-    /// Sets the match type to BestMatch
-    /// </summary>
-    /// <returns>The builder instance for method chaining</returns>
-    public SearchSpecificationBuilder<T> BestMatch()
-    {
-        return MatchType(SearchMatchType.BestMatch);
     }
 
     /// <summary>
@@ -232,28 +221,6 @@ public class SearchSpecificationBuilder<T> where T : class
     public SearchSpecificationBuilder<T> EnableFuzzyMatch(bool enableFuzzyMatch = true)
     {
         _specification.EnableFuzzyMatch = enableFuzzyMatch;
-        return this;
-    }
-
-    /// <summary>
-    /// Enables or disables result highlighting
-    /// </summary>
-    /// <param name="enableHighlighting">Whether to enable highlighting</param>
-    /// <returns>The builder instance for method chaining</returns>
-    public SearchSpecificationBuilder<T> EnableHighlighting(bool enableHighlighting = true)
-    {
-        _specification.EnableHighlighting = enableHighlighting;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the ranking algorithm
-    /// </summary>
-    /// <param name="algorithm">The ranking algorithm to use</param>
-    /// <returns>The builder instance for method chaining</returns>
-    public SearchSpecificationBuilder<T> RankingAlgorithm(SearchRankingAlgorithm algorithm)
-    {
-        _specification.RankingAlgorithm = algorithm;
         return this;
     }
 

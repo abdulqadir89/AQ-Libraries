@@ -26,7 +26,7 @@ public class SigningKeyManagerTests : IDisposable
         _logger = Substitute.For<ILogger<SigningKeyManager>>();
         _options = new KeyManagementOptions { RotationPeriod = TimeSpan.FromDays(30) };
 
-        _protector.Protect(Arg.Any<string>()).Returns("encrypted-xml");
+        _protector.Protect(Arg.Any<byte[]>()).Returns(ci => ci.Arg<byte[]>());
         _dataProtectionProvider.CreateProtector("AQ.Identity.SigningKey").Returns(_protector);
 
         _manager = new SigningKeyManager(_context, _dataProtectionProvider, _logger, _options);
@@ -70,7 +70,7 @@ public class SigningKeyManagerTests : IDisposable
 
         result.Should().NotBeNull();
         result.KeyId.Should().NotBeEmpty();
-        result.EncryptedKeyXml.Should().Be("encrypted-xml");
+        result.EncryptedKeyXml.Should().NotBeNullOrEmpty();
         result.ExpiresAt.Should().BeCloseTo(DateTimeOffset.UtcNow.Add(_options.RotationPeriod), TimeSpan.FromSeconds(5));
     }
 

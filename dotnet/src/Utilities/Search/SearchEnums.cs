@@ -54,36 +54,5 @@ public enum SearchMatchType
     /// <summary>
     /// All fields must match (AND logic)
     /// </summary>
-    All,
-
-    /// <summary>
-    /// Best match based on weighted scoring
-    /// </summary>
-    BestMatch
-}
-
-/// <summary>
-/// Search result ranking algorithm
-/// </summary>
-public enum SearchRankingAlgorithm
-{
-    /// <summary>
-    /// Simple weight-based scoring
-    /// </summary>
-    WeightBased,
-
-    /// <summary>
-    /// TF-IDF (Term Frequency-Inverse Document Frequency)
-    /// </summary>
-    TfIdf,
-
-    /// <summary>
-    /// BM25 algorithm
-    /// </summary>
-    Bm25,
-
-    /// <summary>
-    /// Custom scoring based on multiple factors
-    /// </summary>
-    Custom
+    All
 }

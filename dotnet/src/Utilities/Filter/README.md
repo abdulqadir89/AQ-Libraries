@@ -179,22 +179,15 @@ public class GetUsersRequest : IFilterableRequest
 {
     // Implement the interface
     public string? FilterExpression { get; set; }
-    
+
     // Additional properties can be added here
     public bool? IncludeInactive { get; set; }
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }
 
-// Or inherit from PagedFilterableRequest which already implements IFilterableRequest
-public class GetUsersRequest : PagedFilterableRequest
-{
-    // Additional properties can be added here
-    public bool? IncludeInactive { get; set; }
-}
-
 // In your handler/controller
-public async Task<PagedResult<UserDto>> GetUsers(GetUsersRequest request)
+public async Task<DataSet<UserDto>> GetUsers(GetUsersRequest request)
 {
     var query = _context.Users.AsQueryable();
     
@@ -207,14 +200,14 @@ public async Task<PagedResult<UserDto>> GetUsers(GetUsersRequest request)
     // Apply dynamic filters from request
     query = query.ApplyFilters(request);
     
-    // Get total count and apply pagination
-    var totalCount = await query.CountAsync();
-    var users = await query
-        .Skip((request.PageNumber - 1) * request.PageSize)
-        .Take(request.PageSize)
-        .ToListAsync();
-    
-    return PagedResult<UserDto>.Create(users, request.PageNumber, request.PageSize, totalCount);
+    // Pagination is handled by AQ.Utilities.Results, not the Filter library
+    return await query
+        .Select(u => new UserDto(u))
+        .ToDataResultAsync(
+            skip: (request.PageNumber - 1) * request.PageSize,
+            take: request.PageSize,
+            countAsync: (q, ct) => q.CountAsync(ct),
+            toListAsync: (q, ct) => q.ToListAsync(ct));
 }
 ```
 

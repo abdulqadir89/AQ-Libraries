@@ -1,85 +1,106 @@
 # Search System
 
-This library provides a comprehensive fuzzy search and approximate matching system that works with Entity Framework Core, LINQ, and IQueryable. It supports auto-extraction of searchable fields via attributes, multiple search algorithms, and scoring-based result ranking.
+Provider-agnostic search over `IQueryable<T>`, split into three packages:
 
-## Features
+- **`AQ.Utilities`** (`AQ.Utilities.Search` namespace) — attribute-driven field extraction, Exact/Contains/StartsWith/EndsWith, group logic, weighted scoring. Zero EF-provider dependency; every predicate here is plain LINQ that any EF Core provider translates.
+- **`AQ.Utilities.SqlServer`** (`AQ.Utilities.Search.SqlServer`) — SQL Server implementation of Fuzzy/Phonetic/FullText via `DIFFERENCE`, `SOUNDEX`, `FREETEXT`.
+- **`AQ.Utilities.PostgreSql`** (`AQ.Utilities.Search.PostgreSql`) — PostgreSQL implementation of Fuzzy/Phonetic/FullText via `pg_trgm`, `fuzzystrmatch`, `tsvector`.
 
-- **Auto-Field Extraction**: Automatically extract searchable fields using `[Searchable]` attribute or default string properties
-- **Fuzzy Matching**: Multiple fuzzy matching algorithms including Levenshtein distance, Jaro, Jaro-Winkler, and Soundex
-- **Multiple Search Operators**: Exact, Contains, StartsWith, EndsWith, Fuzzy, Phonetic, and FullText search
-- **Weighted Scoring**: Assign different weights to fields for relevance-based ranking
-- **Nested Property Support**: Search on nested objects (e.g., `User.Profile.Name`)
-- **Database Independent**: Works with any EF Core provider
-- **Fluent API**: Easy-to-use fluent interface for building complex search queries
-- **Request Integration**: Built-in support for API request models
-- **Performance Optimized**: Initial database filtering followed by in-memory fuzzy scoring
+Reference only the provider package matching your database. `Fuzzy`, `Phonetic`, and `FullText` operators throw `NotSupportedException` unless a provider is registered — there is no silent fallback.
 
-## Quick Start
+Pagination is **not** part of this library. Search returns a filtered, scored `SearchResults<T>`; page it the same way you page any other result set.
 
-### 1. Mark Properties as Searchable
+## Operator support matrix
+
+| Operator | Core (no provider) | SQL Server | PostgreSQL |
+|---|---|---|---|
+| Exact / Contains / StartsWith / EndsWith | ✅ (LINQ `Equal`/`Contains`/`StartsWith`/`EndsWith`) | ✅ | ✅ |
+| Fuzzy | ❌ throws | `DIFFERENCE(col, term) >= 3` (or `4` when `MinSimilarity >= 0.8`) | `similarity(col, term) >= MinSimilarity` (pg_trgm) |
+| Phonetic | ❌ throws | `SOUNDEX(col) = SOUNDEX(term)` | `soundex(col) = soundex(term)` (fuzzystrmatch; term computed client-side via `FuzzyMatcher.Soundex`) |
+| FullText | ❌ throws | `FREETEXT(col, term)` — requires a full-text index | `to_tsvector('english', col) @@ plainto_tsquery('english', term)` |
+
+## Quick start
+
+### 1. Mark properties as searchable
 
 ```csharp
 public class User : Entity
 {
-    [Searchable(Weight = 2.0, EnableFuzzyMatch = true)]
+    [Searchable(Weight = 2.0)]
     public string Name { get; set; } = default!;
-    
+
     [Searchable(Weight = 1.5)]
     public string Email { get; set; } = default!;
-    
-    [Searchable(Weight = 1.0, MinSearchLength = 2)]
+
+    // Not [Searchable] — only included by GetDefaultSearchableFields fallback
     public string Department { get; set; } = default!;
-    
-    // This won't be searchable unless using default extraction
-    public DateTime CreatedDate { get; set; }
 }
 ```
 
-### 2. Simple Global Search
+### 2. Register a provider dialect (only if you use Fuzzy/Phonetic/FullText)
+
+SQL Server, at startup:
 
 ```csharp
-// Search across all searchable fields
-var results = dbContext.Users
-    .GlobalSearch("john smith")
-    .Results;
+using AQ.Utilities.Search.SqlServer;
 
-// With fuzzy matching
-var fuzzyResults = dbContext.Users
-    .GlobalSearch("jon smyth", SearchOperator.Fuzzy, minScore: 0.6)
-    .Results;
+services.AddSqlServerSearch();
 ```
 
-### 3. Field-Specific Search
-
 ```csharp
-// Search in a specific field
-var results = dbContext.Users
-    .SearchField("Name", "John", SearchOperator.Fuzzy)
-    .Results;
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.AddSqlServerSearchFunctions();
+}
 ```
 
-### 4. Fluent API
+PostgreSQL, at startup:
 
 ```csharp
+using AQ.Utilities.Search.PostgreSql;
+
+services.AddPostgreSqlSearch();
+```
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.AddPostgreSqlSearchExtensions(); // HasPostgresExtension("pg_trgm"), ("fuzzystrmatch")
+}
+```
+
+**Consumer migration duties** (not handled by these packages, per the project's "no auto migrations" rule — write it into your own `/db` migration scripts):
+
+- **SQL Server**: create a full-text catalog and full-text index on any column searched with `SearchOperator.FullText`.
+- **PostgreSQL**: the `HasPostgresExtension` calls above generate `CREATE EXTENSION IF NOT EXISTS pg_trgm/fuzzystrmatch` in your EF migration — the connecting role needs `CREATE` privilege (or a DBA pre-creates the extensions). For fuzzy search performance at scale, add a trigram index: `CREATE INDEX ... USING GIN (Name gin_trgm_ops);`.
+
+### 3. Search
+
+```csharp
+// Global search across [Searchable] fields (or default string/primitive fields as fallback)
+var results = dbContext.Users.GlobalSearch("john smith").Results;
+
+// Composable — stays IQueryable, use in CQRS query handlers
+var query = dbContext.Users.ApplyGlobalSearch(request.SearchTerm);
+
+// Field-specific
+var results = dbContext.Users.SearchField("Name", "John", SearchOperator.Contains).Results;
+
+// Fluent builder
 var results = dbContext.Users
     .CreateSearch()
-    .GlobalSearch("john")
     .Contains("Department", "Engineering", weight: 1.5)
-    .Fuzzy("Name", "jon", weight: 2.0, minSimilarity: 0.7)
+    .Fuzzy("Name", "jon", weight: 2.0, minSimilarity: 0.7)  // requires a registered provider dialect
     .MinScore(0.5)
     .MaxResults(20)
-    .EnableFuzzyMatch()
     .Build();
-```
 
-### 5. Complex Search Groups
-
-```csharp
+// Groups
 var results = dbContext.Users
     .CreateSearch()
     .BeginGroup(SearchMatchType.All)
         .Contains("Department", "IT")
-        .Fuzzy("Name", "john", minSimilarity: 0.6)
+        .Contains("Name", "john")
     .EndGroup()
     .BeginGroup(SearchMatchType.Any)
         .StartsWith("Email", "admin")
@@ -89,215 +110,81 @@ var results = dbContext.Users
     .Build();
 ```
 
-## Searchable Attribute Options
+## `[Searchable]` attribute options
 
 ```csharp
 [Searchable(
-    Weight = 2.0,                    // Higher weight = more important in results
-    EnableFuzzyMatch = true,         // Enable fuzzy matching for this field
-    EnableExactMatch = true,         // Enable exact matching
-    EnablePrefixMatch = true,        // Enable prefix matching
-    SearchFieldName = "FullName",    // Custom field name for searching
-    MinSearchLength = 2,             // Minimum search term length
-    IgnoreCase = true               // Case-insensitive search
+    Weight = 2.0,
+    EnableFuzzyMatch = true,
+    EnableExactMatch = true,
+    EnablePrefixMatch = true,
+    SearchFieldName = "FullName",
+    MinSearchLength = 2,
+    IgnoreCase = true
 )]
 public string Name { get; set; }
 ```
 
-## Search Operators
+A property with a private setter is still eligible — only a missing setter (get-only/computed) excludes it. `[NotMapped]` always excludes it.
 
-- **Exact**: Exact string matching
-- **Contains**: Partial string matching (default)
-- **StartsWith**: Prefix matching
-- **EndsWith**: Suffix matching
-- **Fuzzy**: Fuzzy matching using multiple algorithms
-- **Phonetic**: Phonetic matching using Soundex
-- **FullText**: Full-text search (database dependent)
-
-## Search Result Structure
+## Search result structure
 
 ```csharp
 public class SearchResult<T>
 {
-    public T Entity { get; set; }                           // The matched entity
-    public double Score { get; set; }                       // Overall score (0.0 to 1.0)
-    public Dictionary<string, double> FieldScores { get; set; }     // Score per field
-    public Dictionary<string, string> Highlights { get; set; }      // Highlighted matches
-    public List<SearchCondition> MatchingConditions { get; set; }  // Conditions that matched
+    public T Entity { get; set; }
+    public double Score { get; set; }
+    public Dictionary<string, double> FieldScores { get; set; }
+    public List<SearchCondition> MatchingConditions { get; set; }
 }
 
 public class SearchResults<T>
 {
-    public List<SearchResult<T>> Results { get; set; }      // Ordered by relevance
-    public int TotalCount { get; set; }                     // Total matches found
+    public List<SearchResult<T>> Results { get; set; }
+    public int TotalCount { get; set; }
     public SearchSpecification SearchSpecification { get; set; }
-    public long ExecutionTimeMs { get; set; }               // Execution time
-    public Dictionary<string, object> Statistics { get; set; }     // Debug info
+    public long ExecutionTimeMs { get; set; }
+    public Dictionary<string, object> Statistics { get; set; }
 }
 ```
 
-## API Request Integration
+## API request integration
 
 ```csharp
-public class SearchUsersQuery : PagedSearchableRequest
+public class SearchUsersQuery : SearchableRequest
 {
-    // Inherits: SearchTerm, SearchOperator, MinScore, EnableFuzzyMatch, etc.
     public bool IncludeInactive { get; set; } = false;
 }
 
-// In your handler
 public async Task<SearchResults<UserDto>> Handle(SearchUsersQuery query)
 {
     var usersQuery = _context.Users.AsQueryable();
-    
     if (!query.IncludeInactive)
         usersQuery = usersQuery.Where(u => u.IsActive);
-    
-    var searchResults = usersQuery.ApplySearchAndPaging(query);
-    
-    // Map to DTOs
-    var dtos = searchResults.Results.Select(r => new SearchResult<UserDto>
-    {
-        Entity = MapToDto(r.Entity),
-        Score = r.Score,
-        FieldScores = r.FieldScores
-    }).ToList();
-    
-    return new SearchResults<UserDto>
-    {
-        Results = dtos,
-        TotalCount = searchResults.TotalCount,
-        ExecutionTimeMs = searchResults.ExecutionTimeMs
-    };
+
+    var searchResults = usersQuery.ApplySearch(query);
+
+    // Page separately — search does not paginate.
+    var page = searchResults.Results.Skip(skip).Take(pageSize).ToList();
+    ...
 }
 ```
 
-## Auto-Field Extraction
+## Fuzzy matching algorithms (in-memory scoring, provider-independent)
 
-### With Attributes
-```csharp
-// Only properties with [Searchable] will be included
-var searchableFields = SearchableFieldExtractor.ExtractSearchableFields<User>();
-```
-
-### Default Extraction
-```csharp
-// All string and primitive properties will be included with default settings
-var defaultFields = SearchableFieldExtractor.GetDefaultSearchableFields<User>();
-```
-
-### Global Search Specification
-```csharp
-// Creates a search specification that targets all searchable fields
-var spec = SearchableFieldExtractor.CreateGlobalSearchSpecification<User>(
-    "search term", 
-    SearchOperator.Contains,
-    includeNestedProperties: true
-);
-```
-
-## Fuzzy Matching Algorithms
-
-### Available Algorithms
-- **Levenshtein Distance**: Edit distance between strings
-- **Jaro Similarity**: Character-based similarity
-- **Jaro-Winkler**: Enhanced Jaro with prefix bonus
-- **Soundex**: Phonetic algorithm for similar sounding words
-
-### Example Usage
-```csharp
-// Individual algorithms
-var distance = FuzzyMatcher.LevenshteinDistance("john", "jon");        // Returns: 1
-var similarity = FuzzyMatcher.SimilarityRatio("john", "jon");           // Returns: 0.75
-var jaro = FuzzyMatcher.JaroSimilarity("john", "jon");                  // Returns: 0.83
-var jaroWinkler = FuzzyMatcher.JaroWinklerSimilarity("john", "jon");    // Returns: 0.9
-var soundex = FuzzyMatcher.Soundex("john");                             // Returns: "J500"
-
-// Combined scoring
-var combinedScore = FuzzyMatcher.CombinedFuzzyScore("john", "jon");     // Returns: 0.78
-```
-
-## Performance Considerations
-
-1. **Database Filtering First**: The system applies basic filters to the database first, then performs fuzzy matching in memory
-2. **Use Weights Wisely**: Higher weights on more important fields improve relevance
-3. **Set Appropriate MinScore**: Higher minimum scores reduce processing time
-4. **Limit MaxResults**: Prevent excessive in-memory processing
-5. **Index Searchable Fields**: Ensure database indexes on frequently searched fields
-
-## Advanced Examples
-
-### Nested Property Search
-```csharp
-public class Employee : Entity
-{
-    [Searchable(Weight = 2.0)]
-    public string Name { get; set; } = default!;
-    
-    public Department Department { get; set; } = default!;
-    public Profile Profile { get; set; } = default!;
-}
-
-public class Department : Entity
-{
-    [Searchable(Weight = 1.5)]
-    public string Name { get; set; } = default!;
-}
-
-// Search nested properties
-var results = dbContext.Employees
-    .CreateSearch()
-    .Contains("Department.Name", "Engineering")
-    .Fuzzy("Profile.Skills", "javascript")
-    .Build();
-```
-
-### Custom Scoring
-```csharp
-var results = dbContext.Products
-    .CreateSearch()
-    .GlobalSearch("laptop")
-    .Contains("Category", "Electronics", weight: 1.5)
-    .Fuzzy("Brand", "appl", weight: 2.0, minSimilarity: 0.6)
-    .StartsWith("Model", "Mac", weight: 1.8)
-    .RankingAlgorithm(SearchRankingAlgorithm.Custom)
-    .MinScore(0.4)
-    .Build();
-```
-
-### Multiple Search Groups
-```csharp
-var results = dbContext.Users
-    .CreateSearch()
-    .GlobalSearch("admin")
-    .BeginGroup(SearchMatchType.Any)
-        .Contains("Role", "Administrator")
-        .Contains("Role", "Manager")
-    .EndGroup()
-    .BeginGroup(SearchMatchType.All)
-        .StartsWith("Email", "admin")
-        .Contains("Department", "IT")
-    .EndGroup()
-    .Build();
-```
-
-## Error Handling
-
-The search system gracefully handles various error scenarios:
-
-- **Invalid Property Names**: Skips invalid property paths
-- **Type Conversion Errors**: Continues with other fields
-- **Null Values**: Properly handles null comparisons
-- **Empty Search Terms**: Returns appropriate default results
-
-## Integration with Existing Systems
-
-The search system is designed to work alongside existing filtering and sorting systems:
+`FuzzyMatcher` implements Levenshtein distance, Jaro/Jaro-Winkler similarity, and Soundex — used for in-memory re-ranking of the candidate set a provider's DB-side predicate returns (see `ApplySearch`'s `ScoreEntity` step). This is separate from provider dialects, which decide *which rows reach the database result set* in the first place.
 
 ```csharp
-var results = dbContext.Users
-    .ApplyFilter("IsActive,eq,true")           // Apply filters first
-    .GlobalSearch("john engineer")              // Then search
-    .ApplySort("Department.Name,asc")          // Finally sort
-    .Results;
+var distance = FuzzyMatcher.LevenshteinDistance("john", "jon");     // 1
+var similarity = FuzzyMatcher.SimilarityRatio("john", "jon");        // 0.75
+var soundex = FuzzyMatcher.Soundex("john");                          // "J500"
+var combined = FuzzyMatcher.CombinedFuzzyScore("john", "jon");       // weighted blend
 ```
+
+## Breaking changes from the pre-split version
+
+- **Pagination removed from search.** `PagedSearchableRequest` and `ApplySearchAndPaging` are gone. Use `SearchableRequest` (has `MaxResults` but no page number/size/sort) and page `SearchResults<T>.Results` yourself.
+- **Fuzzy/Phonetic/FullText now throw without a registered provider.** Previously `Fuzzy` silently degraded to a `Contains` prefilter, which meant it could never actually find typos. Reference `AQ.Utilities.SqlServer` or `AQ.Utilities.PostgreSql` and call `AddSqlServerSearch()`/`AddPostgreSqlSearch()` at startup.
+- **Removed decorative API that had no implementation**: `SearchRankingAlgorithm`, `SearchMatchType.BestMatch`, `EnableHighlighting`/`Highlights`, `SearchCondition.MaxEditDistance`.
+- **Bug fix**: `GetDefaultSearchableFields` (the fallback used when a type has no `[Searchable]` attributes) previously excluded every `string` property, because `string` implements `IEnumerable<char>` and was misclassified as a collection. Fixed — plain string properties are now included by default.
+- **Bug fix**: private-setter properties were excluded from default extraction based on name heuristics (`*Text`, `*Label`, `Display*`, `Full*`, `*Combined*`). Removed — only a missing setter excludes a property now.
