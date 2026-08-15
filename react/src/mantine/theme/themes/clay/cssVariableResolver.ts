@@ -240,10 +240,10 @@ export const shadcnCssVariableResolver: CSSVariablesResolver = () => ({
         '--mantine-color-placeholder': 'var(--mantine-color-secondary-4)',
         '--mantine-color-anchor': 'var(--mantine-color-secondary-4)',
 
-        '--mantine-color-default': 'var(--mantine-color-secondary-9)',
+        '--mantine-color-default': 'var(--mantine-color-secondary-8)',
         '--mantine-color-default-hover': 'var(--mantine-color-secondary-7)',
         '--mantine-color-default-color': 'var(--mantine-color-secondary-1)',
-        '--mantine-color-default-border': 'var(--mantine-color-secondary-7)',
+        '--mantine-color-default-border': 'var(--mantine-color-secondary-6)',
         '--mantine-color-dimmed': 'var(--mantine-color-secondary-4)',
 
         '--mantine-color-secondary-filled': 'var(--mantine-color-secondary-8)',

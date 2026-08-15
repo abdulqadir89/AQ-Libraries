@@ -491,7 +491,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                         backgroundColor:
                             theme.primaryColor === "rose" || theme.primaryColor === "green"
                                 ? "var(--mantine-color-secondary-filled)"
-                                : undefined,
+                                : "light-dark(var(--mantine-color-body), var(--mantine-color-default))",
                     },
                 };
             },
@@ -567,6 +567,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
             defaultProps: {
                 shadow: "xl",
             },
+            styles: () => ({
+                root: {
+                    backgroundColor: "light-dark(var(--mantine-color-body), var(--mantine-color-default))",
+                },
+            }),
         }),
     },
 });

@@ -511,6 +511,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                 shadow: "xl",
                 withBorder: true,
             },
+            styles: () => ({
+                root: {
+                    backgroundColor: "light-dark(var(--mantine-color-body), var(--mantine-color-default))",
+                },
+            }),
         }),
         Indicator: Indicator.extend({
             vars: (theme, props) => {
@@ -582,6 +587,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
             defaultProps: {
                 shadow: "xl",
             },
+            styles: () => ({
+                root: {
+                    backgroundColor: "light-dark(var(--mantine-color-body), var(--mantine-color-default))",
+                },
+            }),
         }),
     },
 });
