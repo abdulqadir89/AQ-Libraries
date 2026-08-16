@@ -110,7 +110,8 @@ public class AuthorizationController(
 
         identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
                 .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
-                .SetClaim(Claims.Name, user.FullName);
+                .SetClaim(Claims.Name, user.FullName)
+                .SetClaim(Claims.EmailVerified, user.EmailConfirmed ? "true" : "false");
 
         identity.SetScopes(request.GetScopes());
         identity.SetDestinations(GetDestinations);
@@ -143,6 +144,12 @@ public class AuthorizationController(
                 yield break;
 
             case Claims.Email:
+                yield return Destinations.AccessToken;
+                if (claim.Subject!.HasScope(Scopes.Email))
+                    yield return Destinations.IdentityToken;
+                yield break;
+
+            case Claims.EmailVerified:
                 yield return Destinations.AccessToken;
                 if (claim.Subject!.HasScope(Scopes.Email))
                     yield return Destinations.IdentityToken;
