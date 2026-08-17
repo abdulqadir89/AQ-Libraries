@@ -228,6 +228,16 @@ export function AddressInput({
   };
 
   const handleCityChange = (city: string) => {
+    // If no state is selected yet, try to infer it from the chosen city
+    if (!value.state && countryObj) {
+      const match = countryObj.states.find(
+        s => s.cities.some(c => c.name.toLowerCase() === city.toLowerCase())
+      );
+      if (match) {
+        update({ city, state: match.code });
+        return;
+      }
+    }
     update({ city });
   };
 
@@ -241,17 +251,13 @@ export function AddressInput({
   // Dropdown data
   const countryOptions = COUNTRIES_SORTED.map(c => c.name);
   const stateOptions = countryObj?.states.map(s => s.name) ?? [];
-  // Collect all cities from the selected country (all states), deduplicated
+  // Cities for the selected state only; if no state is selected, collect all
+  // cities from the country (all states), deduplicated
   const cityOptions = useMemo(() => {
     if (!countryObj) return [];
+    if (stateObj) return stateObj.cities.map(c => c.name);
     const seen = new Set<string>();
     const all: string[] = [];
-    // If a state is selected, put its cities first
-    if (stateObj) {
-      for (const c of stateObj.cities) {
-        if (!seen.has(c.name)) { seen.add(c.name); all.push(c.name); }
-      }
-    }
     for (const s of countryObj.states) {
       for (const c of s.cities) {
         if (!seen.has(c.name)) { seen.add(c.name); all.push(c.name); }
