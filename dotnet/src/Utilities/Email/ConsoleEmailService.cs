@@ -1,7 +1,6 @@
-using AQ.Identity.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace AQ.Identity.Email;
+namespace AQ.Utilities.Email;
 
 public class ConsoleEmailService(ILogger<ConsoleEmailService> logger) : IEmailService
 {

@@ -1,4 +1,4 @@
-namespace AQ.Identity.Core.Abstractions;
+namespace AQ.Utilities.Email;
 
 public interface IEmailService
 {

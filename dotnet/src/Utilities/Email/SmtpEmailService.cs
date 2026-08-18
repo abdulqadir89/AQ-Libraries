@@ -1,33 +1,32 @@
-using AQ.Identity.Core.Abstractions;
-using AQ.Identity.Core.Configuration;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace AQ.Identity.Email;
+namespace AQ.Utilities.Email;
 
 public class SmtpEmailService(
-    IOptions<EmailOptions> options,
+    IOptionsMonitor<EmailOptions> options,
     ILogger<SmtpEmailService> logger) : IEmailService
 {
     public async Task SendAsync(EmailMessage message, CancellationToken ct = default)
     {
+        var value = options.CurrentValue;
         using var smtpClient = new SmtpClient();
 
         try
         {
-            await smtpClient.ConnectAsync(options.Value.Host, options.Value.Port,
-                options.Value.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None, ct);
+            await smtpClient.ConnectAsync(value.Host, value.Port,
+                value.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None, ct);
 
-            if (!string.IsNullOrEmpty(options.Value.Username) && !string.IsNullOrEmpty(options.Value.Password))
+            if (!string.IsNullOrEmpty(value.Username) && !string.IsNullOrEmpty(value.Password))
             {
-                await smtpClient.AuthenticateAsync(options.Value.Username, options.Value.Password, ct);
+                await smtpClient.AuthenticateAsync(value.Username, value.Password, ct);
             }
 
             var mimeMessage = new MimeMessage();
-            mimeMessage.From.Add(new MailboxAddress(options.Value.FromName, options.Value.FromAddress));
+            mimeMessage.From.Add(new MailboxAddress(value.FromName, value.FromAddress));
             mimeMessage.To.Add(new MailboxAddress(message.To, message.To));
             mimeMessage.Subject = message.Subject;
 

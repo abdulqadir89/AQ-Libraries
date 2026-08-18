@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Utilities.Email;
 
 namespace AQ.Identity.UI.Pages.Auth;
 

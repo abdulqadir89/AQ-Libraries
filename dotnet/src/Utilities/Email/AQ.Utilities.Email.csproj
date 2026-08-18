@@ -6,13 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\AQ.Identity.Core.csproj" />
+    <ProjectReference Include="..\AQ.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 
 </Project>

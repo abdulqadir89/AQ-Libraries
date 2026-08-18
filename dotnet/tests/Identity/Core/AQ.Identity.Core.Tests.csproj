@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Identity\Core\AQ.Identity.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\Identity\Email\AQ.Identity.Email.csproj" />
   </ItemGroup>
 
 </Project>

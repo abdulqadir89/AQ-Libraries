@@ -1,8 +1,8 @@
-using AQ.Identity.Email;
+using AQ.Utilities.Email;
 using FluentAssertions;
 using Xunit;
 
-namespace AQ.Identity.Core.Tests;
+namespace AQ.Utilities.Tests.Email;
 
 public class DefaultEmailTemplateServiceTests
 {

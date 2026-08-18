@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Utilities\AQ.Utilities.csproj" />
     <ProjectReference Include="..\..\src\Utilities\SqlServer\AQ.Utilities.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\Utilities\PostgreSql\AQ.Utilities.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\src\Utilities\Email\AQ.Utilities.Email.csproj" />
   </ItemGroup>
 
 </Project>

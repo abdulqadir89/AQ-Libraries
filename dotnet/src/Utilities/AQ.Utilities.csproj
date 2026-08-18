@@ -12,6 +12,7 @@
   <ItemGroup>
     <Compile Remove="SqlServer\**\*.cs" />
     <Compile Remove="PostgreSql\**\*.cs" />
+    <Compile Remove="Email\**\*.cs" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-namespace AQ.Identity.Core.Configuration;
+namespace AQ.Utilities.Email;
 
 public class EmailOptions
 {

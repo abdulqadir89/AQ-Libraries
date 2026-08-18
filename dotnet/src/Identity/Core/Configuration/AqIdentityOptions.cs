@@ -1,3 +1,5 @@
+using AQ.Utilities.Email;
+
 namespace AQ.Identity.Core.Configuration;
 
 public class AqIdentityOptions
