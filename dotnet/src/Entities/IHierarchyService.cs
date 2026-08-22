@@ -10,4 +10,6 @@ public interface IHierarchyService<T> where T : IHierarchicalEntity
     Task<bool> IsAncestorAsync(T entity, Guid descendantId);
 
     Task<int> RecomputeClosureAsync(Guid? entityId = null);
+
+    Task RemoveClosureForEntityAsync(Guid entityId);
 }

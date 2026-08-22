@@ -21,6 +21,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useResizeObserver } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import { ColumnFilter } from './ColumnFilter';
 import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
@@ -87,6 +88,8 @@ export function DataGrid<T extends Record<string, unknown>>({
   onDelete,
   deleteConfirmTitle = 'Confirm Delete',
   deleteConfirmContent = 'Are you sure you want to delete this item? This action cannot be undone.',
+  deleteErrorMessage,
+  suppressDefaultDeleteErrorToast = false,
   striped = true,
   highlightOnHover = true,
   withBorder = true,
@@ -98,6 +101,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   onFilterChange,
   bulkActions,
   actionButtonStyle = 'icon',
+  emptyStateText = 'No data available',
 }: DataGridProps<T>) {
   const [state, setState] = useState<ExtendedDataGridState>({
     searchText: '',
@@ -210,7 +214,22 @@ export function DataGrid<T extends Record<string, unknown>>({
           children: <Text size="sm">{deleteConfirmContent}</Text>,
           labels: { confirm: 'Delete', cancel: 'Cancel' },
           confirmProps: { color: 'red' },
-          onConfirm: () => onDelete?.(record),
+          onConfirm: async () => {
+            try {
+              await onDelete?.(record);
+            } catch (error) {
+              if (!suppressDefaultDeleteErrorToast) {
+                notifications.show({
+                  title: 'Error',
+                  message: deleteErrorMessage ?? 'Failed to delete item. Please try again.',
+                  color: 'red',
+                });
+              }
+              // Swallow after showing the toast — this is the top of the call stack
+              // for this action, and re-throwing here would surface as an unhandled
+              // rejection through Mantine's modal lifecycle for no benefit.
+            }
+          },
         });
       },
       visible: () => {
@@ -800,7 +819,8 @@ export function DataGrid<T extends Record<string, unknown>>({
       );
     }
 
-    return String(record[column.dataIndex] || '');
+    const rawValue = record[column.dataIndex];
+    return rawValue == null ? '' : String(rawValue);
   }, []);
 
   // Table rows
@@ -1098,7 +1118,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     colSpan={visibleColumns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0)}
                     style={{ textAlign: 'center', padding: '2rem' }}
                   >
-                    <Text c="dimmed">No data available</Text>
+                    <Text c="dimmed">{emptyStateText}</Text>
                   </Table.Td>
                 </Table.Tr>
               )}

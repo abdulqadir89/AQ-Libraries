@@ -159,9 +159,15 @@ export interface DataGridProps<T = Record<string, unknown>> {
   detailsHref?: (record: T) => string;
   
   // Delete confirmation
-  onDelete?: (record: T) => void;
+  onDelete?: (record: T) => void | Promise<void>;
   deleteConfirmTitle?: string;
   deleteConfirmContent?: string;
+  // Fallback error toast shown if onDelete throws/rejects and the consumer hasn't
+  // already handled the error itself (see suppressDefaultDeleteErrorToast).
+  deleteErrorMessage?: string;
+  // Set true if the consumer's onDelete already shows its own error toast, to avoid
+  // a duplicate toast when it also happens to re-throw.
+  suppressDefaultDeleteErrorToast?: boolean;
   
   // Table settings
   striped?: boolean;
@@ -180,6 +186,9 @@ export interface DataGridProps<T = Record<string, unknown>> {
 
   // Controls whether action buttons render as icon-only or icon+label
   actionButtonStyle?: 'icon' | 'text';
+
+  // Customizable empty-state message (default: 'No data available')
+  emptyStateText?: string;
 }
 
 export type GridViewMode = 'table' | 'card';
