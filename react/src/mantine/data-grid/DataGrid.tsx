@@ -518,9 +518,6 @@ export function DataGrid<T extends Record<string, unknown>>({
   }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(() => {
-    suppressNextSearch.current = true;
-    setState(prev => ({ ...prev, searchText: '', columnFilters: {} }));
-    setSortConditions([]);
     onRefresh?.();
   }, [onRefresh]);
 
@@ -599,75 +596,54 @@ export function DataGrid<T extends Record<string, unknown>>({
   }, [sortConditions, sortable, onSortChange]);
 
   // Handle column filter changes
+  const buildFilterConditions = (newFilters: Record<string, string>): FilterCondition[] =>
+    Object.values(newFilters)
+      .map(expression => {
+        const parts = expression.split(',');
+        if (parts.length >= 2) {
+          const op = parts[1] as FilterCondition['operator'];
+          let value: string;
+          let secondValue: string | undefined;
+          if (op === 'between' || op === 'notbetween') {
+            value = parts[2]?.replace(/%2C/g, ',') || '';
+            secondValue = parts[3]?.replace(/%2C/g, ',');
+          } else {
+            value = parts.slice(2).join(',').replace(/%2C/g, ',');
+          }
+          return { property: parts[0], operator: op, value, secondValue };
+        }
+        return null;
+      })
+      .filter(Boolean) as FilterCondition[];
+
   const handleApplyFilter = useCallback((filterExpression: string) => {
     // Extract column key from filter expression
     const columnKey = filterExpression.split(',')[0];
-    
+
+    let newFilters: Record<string, string> = {};
     setState(prev => {
-      const newFilters = { ...prev.columnFilters };
-      newFilters[columnKey] = filterExpression;
-      
-      // Build filter conditions and notify parent
-      const filterConditions: FilterCondition[] = Object.values(newFilters)
-        .map(expression => {
-          const parts = expression.split(',');
-          if (parts.length >= 2) {
-            const op = parts[1] as FilterCondition['operator'];
-            let value: string;
-            let secondValue: string | undefined;
-            if (op === 'between' || op === 'notbetween') {
-              value = parts[2]?.replace(/%2C/g, ',') || '';
-              secondValue = parts[3]?.replace(/%2C/g, ',');
-            } else {
-              value = parts.slice(2).join(',').replace(/%2C/g, ',');
-            }
-            return { property: parts[0], operator: op, value, secondValue };
-          }
-          return null;
-        })
-        .filter(Boolean) as FilterCondition[];
-
-      onFilterChange?.(filterConditions, 'and');
-
+      newFilters = { ...prev.columnFilters, [columnKey]: filterExpression };
       return {
         ...prev,
         columnFilters: newFilters,
       };
     });
+
+    onFilterChange?.(buildFilterConditions(newFilters), 'and');
   }, [onFilterChange]);
 
   const handleClearFilter = useCallback((columnKey: string) => {
+    let newFilters: Record<string, string> = {};
     setState(prev => {
-      const newFilters = { ...prev.columnFilters };
+      newFilters = { ...prev.columnFilters };
       delete newFilters[columnKey];
-
-      // Build filter conditions and notify parent
-      const filterConditions: FilterCondition[] = Object.values(newFilters)
-        .map(expression => {
-          const parts = expression.split(',');
-          if (parts.length >= 2) {
-            const op = parts[1] as FilterCondition['operator'];
-            let value: string;
-            let secondValue: string | undefined;
-            if (op === 'between' || op === 'notbetween') {
-              value = parts[2]?.replace(/%2C/g, ',') || '';
-              secondValue = parts[3]?.replace(/%2C/g, ',');
-            } else {
-              value = parts.slice(2).join(',').replace(/%2C/g, ',');
-            }
-            return { property: parts[0], operator: op, value, secondValue };
-          }
-          return null;
-        })
-        .filter(Boolean) as FilterCondition[];
-      
-      onFilterChange?.(filterConditions, 'and');
-      
       return {
         ...prev,
         columnFilters: newFilters,
       };
     });
+
+    onFilterChange?.(buildFilterConditions(newFilters), 'and');
   }, [onFilterChange]);
 
   const handleFilterOpen = useCallback((columnKey: string) => {

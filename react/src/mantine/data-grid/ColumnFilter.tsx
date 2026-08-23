@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import {
   Popover,
   ActionIcon,
@@ -139,6 +139,10 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
   ({ column, onApplyFilter, onClearFilter, onFilterOpen }, ref) => {
     const [opened, setOpened] = useState(false);
     const [hasActiveFilter, setHasActiveFilter] = useState(false);
+    // Popover's onClose also fires for our own programmatic close (setOpened(false) in
+    // handleApply/handleClear), which would otherwise re-run handlePopoverClose and
+    // double-apply/clear the filter. Suppress that one follow-up call.
+    const suppressNextClose = useRef(false);
     
     // Local state for form inputs - store as strings but convert for display
     const [operator, setOperator] = useState(getDefaultOperator(column.type));
@@ -223,6 +227,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setHasActiveFilter(true);
       },
       close: () => {
+        suppressNextClose.current = true;
         setOpened(false);
       },
       isOpen: () => {
@@ -264,6 +269,11 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     }
 
     function handlePopoverClose() {
+      if (suppressNextClose.current) {
+        suppressNextClose.current = false;
+        return;
+      }
+
       // Auto-apply enum selections on close
       if (column.type === 'enum' && selectedEnumValues.length > 0) {
         handleApply();
@@ -295,6 +305,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         return;
       }
 
+      suppressNextClose.current = true;
       setOpened(false);
     }
 
@@ -304,10 +315,11 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const expression = `${column.key},${operator},`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
+        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
-      
+
       // Handle enum 'in' and 'notin' operators with multiple selection
       if (column.type === 'enum' && (operator === 'in' || operator === 'notin')) {
         if (selectedEnumValues.length === 0) {
@@ -317,6 +329,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const expression = `${column.key},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
+        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -330,6 +343,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const expression = `${column.key},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
+        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -371,6 +385,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
       onApplyFilter(expression);
       setHasActiveFilter(true);
+      suppressNextClose.current = true;
       setOpened(false);
     }
 
@@ -383,6 +398,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       setHasActiveFilter(false);
       setRangeError('');
       onClearFilter(column.key);
+      suppressNextClose.current = true;
       setOpened(false);
     }
 
@@ -595,7 +611,13 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             variant={hasActiveFilter ? 'filled' : 'subtle'}
             color={hasActiveFilter ? 'blue' : 'gray'}
             size="sm"
-            onClick={() => opened ? setOpened(false) : handleOpenFilter()}
+            onClick={() => {
+              if (opened) {
+                handlePopoverClose();
+              } else {
+                handleOpenFilter();
+              }
+            }}
           >
             <IconFilter size={14} />
           </ActionIcon>
