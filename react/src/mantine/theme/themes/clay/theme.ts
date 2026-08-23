@@ -231,7 +231,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
             },
             styles: () => ({
                 thead: {
-                    backgroundColor: 'var(--mantine-color-clay-1)',
+                    backgroundColor: 'light-dark(var(--mantine-color-clay-1), var(--mantine-color-secondary-8))',
                 },
             }),
         }),
