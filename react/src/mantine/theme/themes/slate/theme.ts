@@ -41,21 +41,22 @@ const CONTAINER_SIZES: Record<string, string> = {
     xxl: rem("1600px"),
 };
 
-// Clay palette: warm amber-to-brown progression matching the design's OKLCH clay tokens
-const clayColors: MantineColorsTuple = [
-    "#faf7f2",  // 0 paper (lightest)
-    "#f0e8d8",  // 1 accent-soft
-    "#e8d5b8",  // 2
-    "#d4b896",  // 3
-    "#c09070",  // 4
-    "#b05c2c",  // 5 clay accent (primary in light mode)
-    "#9a4e22",  // 6
-    "#7c3c18",  // 7
-    "#622e10",  // 8
-    "#3d2f1f",  // 9 ink (darkest)
-    "#b05c2c",  // 10 Mantine primary shade alias
+// Steel palette: muted blue progression — restrained, institutional, aimed at faculty/admins
+const steelColors: MantineColorsTuple = [
+    "#f4f6f8",  // 0 paper (lightest)
+    "#e5eef7",  // 1 accent-soft
+    "#c7dbee",  // 2
+    "#9dc1e0",  // 3
+    "#7aa9d3",  // 4
+    "#2b6cb0",  // 5 steel accent (primary in light mode)
+    "#25609e",  // 6
+    "#1d4d82",  // 7
+    "#173e69",  // 8
+    "#131b24",  // 9 ink (darkest)
+    "#2b6cb0",  // 10 Mantine primary shade alias
 ];
 
+const graphite: MantineColorsTuple = ["#f7f8f9", "#eef0f2", "#dde3e9", "#c3ccd4", "#9aa7b3", "#6b7684", "#4a5563", "#2b3746", "#1c2733", "#131b24", "#6b7684"];
 const stoneColors: MantineColorsTuple = ["#fafaf9", "#f5f5f4", "#e7e5e4", "#d6d3d1", "#a8a29e", "#57534e", "#44403c", "#292524", "#1c1917", "#0c0a09", "#78716C"];
 const slateColors: MantineColorsTuple = ["#f8fafc", "#f1f5f9", "#e2e8f0", "#cbd5e1", "#94a3b8", "#475569", "#334155", "#1e293b", "#0f172a", "#020817", "#64748B"];
 const grayColors: MantineColorsTuple = ["#f9fafb", "#f3f4f6", "#e5e7eb", "#d1d5db", "#9ca3af", "#4b5563", "#374151", "#1f2937", "#111827", "#030712", "#6B7280"];
@@ -86,7 +87,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         zinc: zincColors,
         neutral: neutralColors,
         stone: stoneColors,
-        clay: clayColors,
+        graphite: graphite,
+        steel: steelColors,
 
         red: redColors,
         rose: roseColors,
@@ -109,9 +111,9 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         fuchsia: fuchsiaColors,
         pink: pinkColors,
 
-        primary: clayColors,
-        secondary: stoneColors,
-        dark: stoneColors,
+        primary: steelColors,
+        secondary: graphite,
+        dark: graphite,
 
         error: redColors as MantineColorsTuple,
         success: greenColors,
@@ -121,64 +123,65 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
     focusRing: "never",
     scale: 1,
     primaryColor: "primary",
-    primaryShade: { "light": 5, "dark": 1 },
+    primaryShade: { "light": 5, "dark": 4 },
     autoContrast: true,
     luminanceThreshold: 0.3,
-    fontFamily: "Geist",
+    fontFamily: "Inter, -apple-system, sans-serif",
     radius: {
-        xs: rem("6px"),
-        sm: rem("8px"),
-        md: rem("12px"),
-        lg: rem("16px"),
-        xl: rem("24px"),
+        xs: rem("3px"),
+        sm: rem("4px"),
+        md: rem("6px"),
+        lg: rem("8px"),
+        xl: rem("10px"),
     },
     defaultRadius: "sm",
     spacing: {
         "4xs": rem("2px"),
         "3xs": rem("4px"),
-        "2xs": rem("8px"),
-        xs: rem("10px"),
-        sm: rem("12px"),
-        md: rem("16px"),
-        lg: rem("20px"),
-        xl: rem("24px"),
-        "2xl": rem("28px"),
-        "3xl": rem("32px"),
-        "4xl": rem("40px"),
-    },
-    fontSizes: {
-        xs: rem("12px"),
-        sm: rem("14px"),
-        md: rem("16px"),
+        "2xs": rem("6px"),
+        xs: rem("8px"),
+        sm: rem("10px"),
+        md: rem("14px"),
         lg: rem("18px"),
-        xl: rem("20px"),
-        "2xl": rem("24px"),
+        xl: rem("22px"),
+        "2xl": rem("26px"),
         "3xl": rem("30px"),
         "4xl": rem("36px"),
-        "5xl": rem("48px"),
+    },
+    fontSizes: {
+        xs: rem("11px"),
+        sm: rem("12.5px"),
+        md: rem("14px"),
+        lg: rem("16px"),
+        xl: rem("18px"),
+        "2xl": rem("21px"),
+        "3xl": rem("26px"),
+        "4xl": rem("32px"),
+        "5xl": rem("42px"),
     },
     lineHeights: {
-        xs: rem("18px"),
-        sm: rem("20px"),
-        md: rem("24px"),
-        lg: rem("28px"),
+        xs: rem("16px"),
+        sm: rem("18px"),
+        md: rem("22px"),
+        lg: rem("26px"),
     },
     headings: {
-        fontFamily: "Newsreader, Georgia, serif",
+        fontFamily: "Source Serif 4, Georgia, serif",
+        fontWeight: "500",
         sizes: {
-            h1: { fontSize: rem("36px"), lineHeight: rem("44px"), fontWeight: "400" },
-            h2: { fontSize: rem("30px"), lineHeight: rem("38px"), fontWeight: "400" },
-            h3: { fontSize: rem("24px"), lineHeight: rem("32px"), fontWeight: "400" },
-            h4: { fontSize: rem("20px"), lineHeight: rem("30px"), fontWeight: "500" },
+            h1: { fontSize: rem("30px"), lineHeight: rem("38px"), fontWeight: "500" },
+            h2: { fontSize: rem("25px"), lineHeight: rem("32px"), fontWeight: "500" },
+            h3: { fontSize: rem("20px"), lineHeight: rem("27px"), fontWeight: "500" },
+            h4: { fontSize: rem("17px"), lineHeight: rem("24px"), fontWeight: "600" },
         },
     },
     shadows: {
-        xs: "0 1px 2px rgba(0, 0, 0, 0.05)",
-        sm: "0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)",
-        md: "0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)",
-        lg: "0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)",
-        xl: "0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04)",
-        xxl: "0 25px 50px rgba(0, 0, 0, 0.25)",
+        xs: "0 1px 2px rgba(16, 24, 32, 0.05)",
+        sm: "0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 3px rgba(16, 24, 32, 0.04)",
+        md: "0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 3px rgba(16, 24, 32, 0.04)",
+        lg: "0 2px 6px rgba(16, 24, 32, 0.08), 0 1px 3px rgba(16, 24, 32, 0.05)",
+        xl: "0 4px 12px rgba(43, 108, 176, 0.14)",
+        xxl: "0 10px 24px rgba(43, 108, 176, 0.18)",
     },
     cursorType: "pointer",
     other: {
@@ -196,30 +199,25 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                 },
             }),
         }),
-        // Dark sidebar via AppShell Navbar component override
+        // Deep charcoal-navy sidebar via AppShell Navbar component override
         AppShell: AppShell.extend({
             styles: () => ({
                 navbar: {
                     backgroundColor: 'var(--els-navbar-bg)',
                     borderColor: 'var(--els-navbar-border)',
                     color: 'var(--els-navbar-text)',
-                    // Override Mantine's text/dimmed vars scoped to the navbar so all
-                    // child components (NavLink labels, Text, Divider) inherit cream text
                     '--mantine-color-text': 'var(--els-navbar-text)',
                     '--mantine-color-dimmed': 'var(--els-navbar-text-muted)',
                     '--mantine-color-default-color': 'var(--els-navbar-text)',
-                    // Active NavLink light-variant bg: solid clay fill, clearly distinct from dark bg
-                    '--els-navlink-active-bg': '#b05c2c',
+                    // Active NavLink light-variant bg: solid steel fill, clearly distinct from dark bg
+                    '--els-navlink-active-bg': '#2b6cb0',
                     '--els-navlink-active-color': '#ffffff',
-                    // ActionIcon/default variant on dark navbar: dark background with visible border
-                    '--mantine-color-default': 'rgba(240, 232, 216, 0.08)',
-                    '--mantine-color-default-border': 'rgba(240, 232, 216, 0.2)',
-                    // NavLink hover on dark bg: subtle warm tint instead of light grey
-                    '--mantine-color-default-hover': 'rgba(240, 232, 216, 0.14)',
+                    '--mantine-color-default': 'rgba(228,233,239,0.06)',
+                    '--mantine-color-default-border': 'rgba(228,233,239,0.16)',
+                    '--mantine-color-default-hover': 'rgba(228,233,239,0.1)',
                 },
             }),
         }),
-        // Clay table style: striped with paper-toned header
         Table: Table.extend({
             defaultProps: {
                 striped: true,
@@ -231,7 +229,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
             },
             styles: () => ({
                 thead: {
-                    backgroundColor: 'light-dark(var(--mantine-color-clay-1), var(--mantine-color-secondary-8))',
+                    backgroundColor: 'light-dark(var(--mantine-color-steel-1), var(--mantine-color-secondary-8))',
                 },
             }),
         }),
@@ -289,7 +287,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                 root: {
                     "--sc-color": props.color
                         ? Object.keys(theme.colors).includes(props.color)
-                            ? ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(props.color)
+                            ? ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(props.color)
                                 ? "var(--mantine-color-body)"
                                 : `var(--mantine-color-${props.color}-filled)`
                             : props.color
@@ -316,8 +314,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         ActionIcon: ActionIcon.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "filled";
                 return {
                     root: {
@@ -339,8 +337,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         Button: Button.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "filled";
                 return {
                     root: {
@@ -408,8 +406,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         Alert: Alert.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "light";
                 return {
                     root: {
@@ -443,8 +441,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         Avatar: Avatar.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "light";
                 return {
                     root: {
@@ -491,8 +489,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         Badge: Badge.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "filled";
                 return {
                     root: {
@@ -511,8 +509,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         }),
         Card: Card.extend({
             defaultProps: {
-                p: "xl",
-                shadow: "xl",
+                p: "lg",
+                shadow: "sm",
                 withBorder: true,
             },
             styles: () => ({
@@ -536,8 +534,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         ThemeIcon: ThemeIcon.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : undefined;
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
-                const isNeutralPrimaryColor = !colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralPrimaryColor = !colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(theme.primaryColor);
                 const variant = props.variant ?? "filled";
                 return {
                     root: {
@@ -578,7 +576,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         Mark: Mark.extend({
             vars: (theme, props) => {
                 const colorKey = props.color && Object.keys(theme.colors).includes(props.color) ? props.color : 'yellow';
-                const isNeutralColor = colorKey && ["clay", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
+                const isNeutralColor = colorKey && ["steel", "graphite", "stone", "zinc", "slate", "gray", "neutral"].includes(colorKey);
                 return {
                     root: {
                         "--mark-bg-light": `var(--mantine-color-${colorKey}-${isNeutralColor ? '3' : 'filled-hover'})`,
@@ -589,7 +587,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         }),
         Paper: Paper.extend({
             defaultProps: {
-                shadow: "xl",
+                shadow: "sm",
             },
             styles: () => ({
                 root: {

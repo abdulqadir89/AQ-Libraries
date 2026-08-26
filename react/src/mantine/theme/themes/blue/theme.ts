@@ -343,7 +343,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                 return {
                     root: {
                         "--nl-color":
-                            variant === "filled" ? colorKey ? `var(--mantine-color-${colorKey}-contrast)` : 'var(--mantine-primary-color-contrast)' : undefined,
+                            variant === "filled" ? colorKey ? `var(--mantine-color-${colorKey}-contrast)` : 'var(--mantine-primary-color-contrast)'
+                            : variant === "light" && props.active ? (colorKey ? `var(--mantine-color-${colorKey}-contrast)` : "var(--mantine-primary-color-contrast)")
+                            : undefined,
+                        "--nl-bg":
+                            variant === "light" && props.active ? (colorKey ? `var(--mantine-color-${colorKey}-filled)` : "var(--mantine-primary-color-filled)") : undefined,
                     },
                     children: {},
                 };
