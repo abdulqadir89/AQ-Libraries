@@ -1,2 +1,139 @@
 @import "tailwindcss";
 @source "./Pages/**/*.cshtml";
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
+/*
+ * Theme system
+ * -------------
+ * All pages only ever use the `slate-*` (neutral) and `indigo-*` (accent) Tailwind
+ * color scales, plus theme-agnostic semantic colors (red/green/amber/yellow) for
+ * alerts. Redefining what `--color-slate-*` and `--color-indigo-*` resolve to per
+ * `[data-theme]` reskins every page without touching any .cshtml file.
+ *
+ * IMPORTANT: every page's dark-mode look already comes for free from the existing
+ * `dark:bg-slate-900` / `dark:text-slate-100` / `dark:text-white` classes, which rely
+ * on Tailwind's *stock* slate scale keeping low numbers light and high numbers dark
+ * (900/950 = dark backgrounds, 50/100 = light text). Do NOT redefine `--color-slate-*`
+ * under a `[data-mode="dark"]` block — that would invert the scale and break every
+ * `dark:*` class in the app (dark backgrounds would flip light while text stays
+ * white, wrecking contrast). Only light-mode neutral overrides are safe; dark mode
+ * only needs the accent (`--color-indigo-*`) adjusted for readability.
+ *
+ * `slate` (the current look) is the default and needs no override block — it's
+ * already Tailwind's built-in scale.
+ */
+
+/* ---- clay: warm amber/brown accent (default theme) ---- */
+[data-theme="clay"] {
+  --color-slate-50: #faf7f2;
+  --color-slate-100: #f0e8d8;
+  --color-slate-200: #e8d5b8;
+  --color-slate-300: #d4b896;
+  --color-slate-400: #c09070;
+  --color-slate-500: #a9835f;
+  --color-slate-600: #8a6a4a;
+  --color-slate-700: #6b5138;
+  --color-slate-800: #4a3826;
+  --color-slate-900: #3d2f1f;
+  --color-slate-950: #241c13;
+
+  --color-indigo-50: #fdf3ee;
+  --color-indigo-100: #f7e2d4;
+  --color-indigo-200: #f0c8a8;
+  --color-indigo-300: #e3a578;
+  --color-indigo-400: #c9834e;
+  --color-indigo-500: #b05c2c;
+  --color-indigo-600: #9a4e22;
+  --color-indigo-700: #7c3c18;
+  --color-indigo-800: #622e10;
+  --color-indigo-900: #4f260e;
+}
+[data-theme="clay"][data-mode="dark"] {
+  --color-indigo-400: #e3a578;
+  --color-indigo-500: #d4915f;
+  --color-indigo-600: #c9834e;
+}
+
+/* ---- blue: standard blue accent ---- */
+[data-theme="blue"] {
+  --color-indigo-50: #eff6ff;
+  --color-indigo-100: #dbeafe;
+  --color-indigo-200: #bfdbfe;
+  --color-indigo-300: #93c5fd;
+  --color-indigo-400: #60a5fa;
+  --color-indigo-500: #3b82f6;
+  --color-indigo-600: #2563eb;
+  --color-indigo-700: #1e40af;
+  --color-indigo-800: #1e3a8a;
+  --color-indigo-900: #172554;
+}
+[data-theme="blue"][data-mode="dark"] {
+  --color-indigo-400: #93c5fd;
+  --color-indigo-500: #60a5fa;
+  --color-indigo-600: #3b82f6;
+}
+
+/* ---- zinc: monochrome, near-black/white accent ---- */
+[data-theme="zinc"] {
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #e4e4e7;
+  --color-slate-300: #d4d4d8;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
+
+  --color-indigo-400: #52525b;
+  --color-indigo-500: #27272a;
+  --color-indigo-600: #18181b;
+  --color-indigo-700: #09090b;
+  --color-indigo-800: #09090b;
+  --color-indigo-900: #09090b;
+}
+[data-theme="zinc"][data-mode="dark"] {
+  --color-indigo-400: #a1a1aa;
+  --color-indigo-500: #d4d4d8;
+  --color-indigo-600: #fafafa;
+}
+
+/* ---- bloom: soft coral accent, playful ---- */
+[data-theme="bloom"] {
+  --color-indigo-50: #fffaf5;
+  --color-indigo-100: #ffe8e2;
+  --color-indigo-200: #ffd0c5;
+  --color-indigo-300: #ffb2a2;
+  --color-indigo-400: #ff9c8c;
+  --color-indigo-500: #ff8b7a;
+  --color-indigo-600: #f0715f;
+  --color-indigo-700: #e8654f;
+  --color-indigo-800: #c94f3c;
+  --color-indigo-900: #a13d2d;
+}
+[data-theme="bloom"][data-mode="dark"] {
+  --color-indigo-400: #ffb2a2;
+  --color-indigo-500: #ff9c8c;
+  --color-indigo-600: #ff8b7a;
+}
+
+/* ---- spark: vibrant violet accent ---- */
+[data-theme="spark"] {
+  --color-indigo-50: #fbf7ff;
+  --color-indigo-100: #efe7ff;
+  --color-indigo-200: #ddceff;
+  --color-indigo-300: #c4b0ff;
+  --color-indigo-400: #a78bfa;
+  --color-indigo-500: #7c5cfc;
+  --color-indigo-600: #6c3ff0;
+  --color-indigo-700: #5a2fe0;
+  --color-indigo-800: #4c26bd;
+  --color-indigo-900: #3d1f97;
+}
+[data-theme="spark"][data-mode="dark"] {
+  --color-indigo-400: #c4b0ff;
+  --color-indigo-500: #a78bfa;
+  --color-indigo-600: #7c5cfc;
+}

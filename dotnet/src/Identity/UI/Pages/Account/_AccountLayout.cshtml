@@ -1,14 +1,22 @@
 @using AQ.Identity.Core.Abstractions
 @using AQ.Identity.Core.Configuration
 @using AQ.Identity.Core.Entities
+@using AQ.Identity.UI.Pages
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Options
 @inject IOptions<AqIdentityOptions> options
 @inject UserManager<ApplicationUser> userManager
 @inject IIdentityDbContext identityDb
+@{
+    var themeCookie = Context.Request.Cookies[ThemeModel.CookieName]?.Split(':') ?? [];
+    var currentTheme = themeCookie.Length > 0 ? themeCookie[0] : "clay";
+    var currentMode = themeCookie.Length > 1 ? themeCookie[1] : "light";
+    ViewData["CurrentTheme"] = currentTheme;
+    ViewData["CurrentMode"] = currentMode;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="@currentTheme" data-mode="@currentMode">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -42,10 +50,11 @@
     <aside class="w-56 shrink-0 min-h-screen bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col">
 
         <!-- App brand -->
-        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <a href="/" class="text-base font-black tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 @options.Value.AppName
             </a>
+            <partial name="_ThemePicker" />
         </div>
 
         <!-- User identity -->

@@ -1,0 +1,100 @@
+@{
+    var themes = new[] { "clay", "blue", "slate", "zinc", "bloom", "spark" };
+    var currentTheme = ViewData["CurrentTheme"]?.ToString() ?? "clay";
+    var currentMode = ViewData["CurrentMode"]?.ToString() ?? "light";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<div class="relative inline-block text-left" id="themePicker">
+    <button type="button" id="themePickerToggle"
+            class="flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            aria-label="Change theme" aria-haspopup="true" aria-expanded="false">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+            <path d="M12 2a10 10 0 1 0 0 20 2.5 2.5 0 0 0 2-4 2.5 2.5 0 0 1 2-4h1.5a2.5 2.5 0 0 0 2.45-3A10 10 0 0 0 12 2z"/>
+        </svg>
+    </button>
+
+    <div id="themePickerMenu" class="hidden absolute left-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg shadow-slate-200/60 dark:shadow-slate-950/60 p-3">
+        <form method="post" action="/theme" id="themePickerForm">
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            @Html.AntiForgeryToken()
+
+            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mode</p>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <label class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors @(currentMode == "light" ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")">
+                    <input type="radio" name="mode" value="light" class="hidden themePickerModeInput" @(currentMode == "light" ? "checked" : "") />
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    Light
+                </label>
+                <label class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors @(currentMode == "dark" ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")">
+                    <input type="radio" name="mode" value="dark" class="hidden themePickerModeInput" @(currentMode == "dark" ? "checked" : "") />
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    Dark
+                </label>
+            </div>
+
+            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Theme</p>
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                @foreach (var t in themes)
+                {
+                    <label class="flex flex-col items-center gap-1 px-2 py-2 rounded-lg border text-xs cursor-pointer transition-colors @(currentTheme == t ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")">
+                        <input type="radio" name="theme" value="@t" class="hidden themePickerThemeInput" @(currentTheme == t ? "checked" : "") />
+                        <span class="w-4 h-4 rounded-full theme-swatch theme-swatch-@t border border-black/10 dark:border-white/10"></span>
+                        <span class="capitalize">@t</span>
+                    </label>
+                }
+            </div>
+
+            <noscript>
+                <button type="submit" class="w-full text-sm font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg py-2">Apply</button>
+            </noscript>
+        </form>
+    </div>
+</div>
+
+<style>
+    .theme-swatch-clay { background: #b05c2c; }
+    .theme-swatch-blue { background: #3b82f6; }
+    .theme-swatch-slate { background: #4f46e5; }
+    .theme-swatch-zinc { background: #18181b; }
+    .theme-swatch-bloom { background: #ff8b7a; }
+    .theme-swatch-spark { background: #7c5cfc; }
+</style>
+
+<script>
+(function () {
+    var toggle = document.getElementById('themePickerToggle');
+    var menu = document.getElementById('themePickerMenu');
+    var form = document.getElementById('themePickerForm');
+    if (!toggle || !menu || !form) return;
+
+    toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isOpen = !menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        toggle.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!menu.contains(e.target) && e.target !== toggle) {
+            menu.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    form.querySelectorAll('.themePickerModeInput, .themePickerThemeInput').forEach(function (input) {
+        input.addEventListener('change', function () {
+            var mode = form.querySelector('.themePickerModeInput:checked').value;
+            var theme = form.querySelector('.themePickerThemeInput:checked').value;
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-mode', mode);
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+    });
+})();
+</script>

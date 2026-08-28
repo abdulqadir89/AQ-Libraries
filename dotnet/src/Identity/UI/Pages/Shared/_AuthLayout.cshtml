@@ -1,8 +1,16 @@
 @using AQ.Identity.Core.Configuration
+@using AQ.Identity.UI.Pages
 @using Microsoft.Extensions.Options
 @inject IOptions<AqIdentityOptions> options
+@{
+    var themeCookie = Context.Request.Cookies[ThemeModel.CookieName]?.Split(':') ?? [];
+    var currentTheme = themeCookie.Length > 0 ? themeCookie[0] : "clay";
+    var currentMode = themeCookie.Length > 1 ? themeCookie[1] : "light";
+    ViewData["CurrentTheme"] = currentTheme;
+    ViewData["CurrentMode"] = currentMode;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="@currentTheme" data-mode="@currentMode">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,17 +25,19 @@
             -webkit-box-shadow: 0 0 0 1000px #fff inset;
             -webkit-text-fill-color: #0f172a;
         }
-        @@media (prefers-color-scheme: dark) {
-            input:-webkit-autofill,
-            input:-webkit-autofill:hover,
-            input:-webkit-autofill:focus {
-                -webkit-box-shadow: 0 0 0 1000px #1e293b inset;
-                -webkit-text-fill-color: #f1f5f9;
-            }
+        html[data-mode="dark"] input:-webkit-autofill,
+        html[data-mode="dark"] input:-webkit-autofill:hover,
+        html[data-mode="dark"] input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #1e293b inset;
+            -webkit-text-fill-color: #f1f5f9;
         }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center px-4 py-8">
+
+    <div class="absolute top-4 right-4">
+        <partial name="_ThemePicker" />
+    </div>
 
     <div class="w-full max-w-md">
 
