@@ -4,9 +4,13 @@ using Microsoft.EntityFrameworkCore;
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
 /// <summary>
-/// Prevents removing the manage_api claim from the last administrator, which would
+/// Prevents removing the manage_api claim from the last administrator — directly (claim
+/// upsert/delete) or indirectly (deactivating that user, which is practically equivalent
+/// since a deactivated user is rejected at both token validation and sign-in) — which would
 /// otherwise silently re-open the unauthenticated initial-setup flow (SetupStateService
-/// treats "no manage_api claim exists" as "setup required").
+/// treats "no manage_api claim exists" as "setup required"). Used by
+/// UpsertUserClaimsEndpoint, DeleteUserClaimTypeEndpoint, and SetUserActiveEndpoint; any
+/// future account-deletion endpoint must call this too before allowing a self-delete.
 /// </summary>
 public static class AdminClaimGuard
 {

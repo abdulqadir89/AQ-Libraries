@@ -1,4 +1,5 @@
 using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +40,8 @@ public class DeleteUserClaimTypeEndpoint(IIdentityDbContext context) : Endpoint<
         }
 
         context.StoredClaims.RemoveRange(claims);
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimRemoved, userId: req.UserId, ip: null, ua: null));
         await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);

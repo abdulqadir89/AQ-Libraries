@@ -1,3 +1,5 @@
+using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using OpenIddict.Abstractions;
@@ -5,7 +7,8 @@ using System.Text.Json;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
-public class CreateScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoint<UpsertIdentityScopeRequest, IdentityScopeDto>
+public class CreateScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentityDbContext context)
+    : Endpoint<UpsertIdentityScopeRequest, IdentityScopeDto>
 {
     public override void Configure()
     {
@@ -27,6 +30,9 @@ public class CreateScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoin
         var scope = await scopeManager.CreateAsync(descriptor, ct);
 
         var id = await scopeManager.GetIdAsync(scope, ct) ?? string.Empty;
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(ct);
 
         await Send.CreatedAtAsync<GetAllScopesEndpoint>(null, new IdentityScopeDto
         {

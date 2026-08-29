@@ -22,6 +22,7 @@ public class CreateClientModel(
     [BindProperty] public string Type { get; set; } = "public";
     [BindProperty] public string GrantType { get; set; } = "authorization_code";
     [BindProperty] public bool RequirePkce { get; set; }
+    [BindProperty] public bool IsFirstParty { get; set; }
     [BindProperty] public List<string> SelectedScopes { get; set; } = [];
     [BindProperty] public string RedirectUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
@@ -91,6 +92,7 @@ public class CreateClientModel(
             ClientSecret = clientSecret,
             GrantType = GrantType,
             RequirePkce = RequirePkce,
+            IsFirstParty = IsFirstParty,
             Scopes = SelectedScopes,
             RedirectUris = redirectUris,
             PostLogoutRedirectUris = postLogoutUris,
@@ -98,8 +100,8 @@ public class CreateClientModel(
         };
     }
 
-    private static List<string> ParseLines(string raw) =>
-        raw.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    private static List<string> ParseLines(string? raw) =>
+        (raw ?? string.Empty).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
            .Where(s => !string.IsNullOrEmpty(s))
            .Distinct()
            .ToList();

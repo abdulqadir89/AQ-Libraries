@@ -60,6 +60,11 @@ public static class ClientDescriptorBuilder
             ClientId = config.ClientId,
             DisplayName = config.DisplayName,
             ClientType = config.Type,
+            // First-party clients (the IdP operator's own apps) are pre-authorized and never
+            // prompt for consent; every other client requires explicit, per-scope-set consent
+            // the first time (OIDC Core sec 3.1.2.4) with the grant persisted for subsequent
+            // logins via IOpenIddictAuthorizationManager.
+            ConsentType = config.IsFirstParty ? ConsentTypes.Implicit : ConsentTypes.Explicit,
         };
 
         if (config.RequirePkce)

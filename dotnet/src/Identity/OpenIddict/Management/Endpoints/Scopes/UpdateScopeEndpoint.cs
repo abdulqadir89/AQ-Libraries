@@ -1,10 +1,13 @@
+using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using OpenIddict.Abstractions;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
-public class UpdateScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoint<UpdateIdentityScopeRequest, IdentityScopeDto>
+public class UpdateScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentityDbContext context)
+    : Endpoint<UpdateIdentityScopeRequest, IdentityScopeDto>
 {
     public override void Configure()
     {
@@ -27,6 +30,9 @@ public class UpdateScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoin
         await scopeManager.UpdateAsync(scope, descriptor, ct);
 
         var claimTypes = req.ClaimTypes.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(ct);
 
         await Send.OkAsync(new IdentityScopeDto
         {

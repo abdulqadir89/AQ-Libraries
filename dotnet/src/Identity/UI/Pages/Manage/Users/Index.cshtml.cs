@@ -1,5 +1,6 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Management.Endpoints.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,18 @@ public class UsersIndexModel(
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user == null) return NotFound();
+
+        if (user.IsActive)
+        {
+            var holdsAdminClaim = await context.StoredClaims
+                .AnyAsync(c => c.UserId == userId && c.Type == AdminClaimGuard.ManageApiClaimType, HttpContext.RequestAborted);
+
+            if (holdsAdminClaim && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, userId, HttpContext.RequestAborted))
+            {
+                TempData["Error"] = "Cannot deactivate the last administrator.";
+                return RedirectToPage(new { Search });
+            }
+        }
 
         user.IsActive = !user.IsActive;
         await userManager.UpdateAsync(user);

@@ -59,6 +59,23 @@
                 <p role="alert" class="text-xs text-red-600 dark:text-red-400 mt-1">@passwordErrors.First().ErrorMessage</p>
             }
         }
+        <ul id="passwordChecklist" class="text-xs text-slate-500 dark:text-slate-400 mt-2 space-y-0.5">
+            <li data-rule="length" class="flex items-center gap-1.5">
+                <span class="checkmark">○</span> At least @Model.PasswordMinLength characters
+            </li>
+            @if (Model.PasswordRequireDigit)
+            {
+                <li data-rule="digit" class="flex items-center gap-1.5"><span class="checkmark">○</span> At least one digit</li>
+            }
+            @if (Model.PasswordRequireUppercase)
+            {
+                <li data-rule="uppercase" class="flex items-center gap-1.5"><span class="checkmark">○</span> At least one uppercase letter</li>
+            }
+            @if (Model.PasswordRequireNonAlphanumeric)
+            {
+                <li data-rule="symbol" class="flex items-center gap-1.5"><span class="checkmark">○</span> At least one symbol</li>
+            }
+        </ul>
     </div>
 
     <div class="space-y-1">
@@ -87,35 +104,71 @@
 </form>
 
 <script>
-document.querySelector('form[action="/auth/register"]').addEventListener('submit', function (e) {
+(function () {
     var password = document.getElementById('password');
-    var confirmPassword = document.getElementById('confirmPassword');
+    var checklist = document.getElementById('passwordChecklist');
+    var minLength = @Model.PasswordMinLength;
 
-    function reject(field, message) {
-        e.preventDefault();
-        field.setCustomValidity(message);
-        field.reportValidity();
-        // _SubmitButton's own submit listener (registered on document, capture phase)
-        // disables the button before this handler runs — undo that since we're
-        // blocking the submission rather than letting it proceed.
-        var btn = document.getElementById('submitBtn');
-        var spinner = document.getElementById('spinner');
-        if (btn) btn.disabled = false;
-        if (spinner) spinner.classList.add('hidden');
+    function ruleMet(rule, value) {
+        switch (rule) {
+            case 'length': return value.length >= minLength;
+            case 'digit': return /[0-9]/.test(value);
+            case 'uppercase': return /[A-Z]/.test(value);
+            case 'symbol': return /[^a-zA-Z0-9]/.test(value);
+            default: return true;
+        }
     }
 
-    if (password.value.length < 8) {
-        reject(password, 'Password must be at least 8 characters.');
-        return;
+    function allRulesMet(value) {
+        if (!checklist) return value.length >= minLength;
+        var items = checklist.querySelectorAll('li[data-rule]');
+        var allMet = true;
+        items.forEach(function (li) {
+            var met = ruleMet(li.getAttribute('data-rule'), value);
+            if (!met) allMet = false;
+            var mark = li.querySelector('.checkmark');
+            mark.textContent = met ? '●' : '○';
+            li.classList.toggle('text-green-600', met);
+            li.classList.toggle('dark:text-green-400', met);
+            li.classList.toggle('text-slate-500', !met);
+            li.classList.toggle('dark:text-slate-400', !met);
+        });
+        return allMet;
     }
-    password.setCustomValidity('');
 
-    if (password.value !== confirmPassword.value) {
-        reject(confirmPassword, 'Passwords do not match.');
-        return;
+    if (password) {
+        password.addEventListener('input', function () { allRulesMet(password.value); });
     }
-    confirmPassword.setCustomValidity('');
-});
+
+    document.querySelector('form[action="/auth/register"]').addEventListener('submit', function (e) {
+        var confirmPassword = document.getElementById('confirmPassword');
+
+        function reject(field, message) {
+            e.preventDefault();
+            field.setCustomValidity(message);
+            field.reportValidity();
+            // _SubmitButton's own submit listener (registered on document, capture phase)
+            // disables the button before this handler runs — undo that since we're
+            // blocking the submission rather than letting it proceed.
+            var btn = document.getElementById('submitBtn');
+            var spinner = document.getElementById('spinner');
+            if (btn) btn.disabled = false;
+            if (spinner) spinner.classList.add('hidden');
+        }
+
+        if (!allRulesMet(password.value)) {
+            reject(password, 'Password does not meet the requirements above.');
+            return;
+        }
+        password.setCustomValidity('');
+
+        if (password.value !== confirmPassword.value) {
+            reject(confirmPassword, 'Passwords do not match.');
+            return;
+        }
+        confirmPassword.setCustomValidity('');
+    });
+})();
 </script>
 
 <p class="text-sm text-center text-slate-500 dark:text-slate-400 mt-6">

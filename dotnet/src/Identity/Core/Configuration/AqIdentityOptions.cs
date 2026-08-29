@@ -10,6 +10,7 @@ public class AqIdentityOptions
     public PasswordPolicyOptions Password { get; set; } = new();
     public LockoutPolicyOptions Lockout { get; set; } = new();
     public KeyManagementOptions Keys { get; set; } = new();
+    public HstsOptions Hsts { get; set; } = new();
     public EmailOptions Email { get; set; } = new();
     public GoogleOptions? Google { get; set; }
     public AdminUserOptions? AdminUser { get; set; }

@@ -25,10 +25,9 @@ public class SecurityHeadersMiddleware
         context.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
 
-        if (context.Request.IsHttps)
-        {
-            context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-        }
+        // Strict-Transport-Security is set by ASP.NET Core's built-in HstsMiddleware
+        // (see UseAqIdentity/app.UseHsts()), not here — that gives correct preload/
+        // max-age/excluded-host semantics instead of a hand-rolled duplicate.
 
         await _next(context);
     }

@@ -1,11 +1,11 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Management.Endpoints.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace AQ.Identity.UI.Pages.Manage.Users;
 
@@ -66,13 +66,10 @@ public class ClaimsModel(
 
         if (claim == null) return NotFound();
 
-        // Prevent revoking own manage_api claim
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (Guid.TryParse(currentUserId, out var currentId) &&
-            currentId == Id &&
-            claim.Type == "manage_api")
+        if (claim.Type == AdminClaimGuard.ManageApiClaimType &&
+            await AdminClaimGuard.WouldRemoveLastAdminAsync(context, Id, HttpContext.RequestAborted))
         {
-            Error = "You cannot remove your own manage_api claim.";
+            Error = "Cannot remove the last administrator's manage_api claim.";
             return await ReloadAndReturn();
         }
 

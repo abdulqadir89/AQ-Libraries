@@ -1,3 +1,5 @@
+using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,7 +9,7 @@ using System.Text.Json;
 namespace AQ.Identity.UI.Pages.Manage.Scopes;
 
 [Authorize(Policy = "ManageApi")]
-public class ScopesIndexModel(IOpenIddictScopeManager scopeManager) : PageModel
+public class ScopesIndexModel(IOpenIddictScopeManager scopeManager, IIdentityDbContext context) : PageModel
 {
     public List<ScopeRow> Scopes { get; set; } = [];
 
@@ -55,6 +57,9 @@ public class ScopesIndexModel(IOpenIddictScopeManager scopeManager) : PageModel
 
         await scopeManager.CreateAsync(descriptor, HttpContext.RequestAborted);
 
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(HttpContext.RequestAborted);
+
         TempData["Success"] = $"Scope '{NewName}' has been created.";
         return RedirectToPage();
     }
@@ -66,6 +71,9 @@ public class ScopesIndexModel(IOpenIddictScopeManager scopeManager) : PageModel
 
         var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
         await scopeManager.DeleteAsync(scope, HttpContext.RequestAborted);
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{name}' has been deleted.";
         return RedirectToPage();
@@ -89,6 +97,9 @@ public class ScopesIndexModel(IOpenIddictScopeManager scopeManager) : PageModel
             descriptor.Properties["claim_types"] = JsonSerializer.SerializeToElement(claimTypes);
 
         await scopeManager.UpdateAsync(scope, descriptor, HttpContext.RequestAborted);
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{name}' has been updated.";
         return RedirectToPage();
@@ -130,8 +141,8 @@ public class ScopesIndexModel(IOpenIddictScopeManager scopeManager) : PageModel
         Scopes = [.. rows.OrderBy(s => s.Name)];
     }
 
-    private static List<string> ParseLines(string raw) =>
-        raw.Split(['\r', '\n', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    private static List<string> ParseLines(string? raw) =>
+        (raw ?? string.Empty).Split(['\r', '\n', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
            .Where(s => !string.IsNullOrEmpty(s))
            .Distinct(StringComparer.OrdinalIgnoreCase)
            .ToList();

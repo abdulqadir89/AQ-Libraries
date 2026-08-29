@@ -15,7 +15,8 @@ namespace AQ.Identity.UI.Controllers;
 public class AuthorizationController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IOpenIddictApplicationManager applicationManager) : Controller
+    IOpenIddictApplicationManager applicationManager,
+    IOpenIddictAuthorizationManager authorizationManager) : Controller
 {
     [HttpPost("~/connect/token")]
     public async Task<IActionResult> Exchange()
@@ -101,6 +102,44 @@ public class AuthorizationController(
 
         var user = await userManager.GetUserAsync(result.Principal)
             ?? throw new InvalidOperationException("The user details cannot be retrieved.");
+
+        var application = await applicationManager.FindByClientIdAsync(request.ClientId!)
+            ?? throw new InvalidOperationException("The application details cannot be retrieved.");
+
+        // OIDC Core sec 3.1.2.4 / sec 11: obtain end-user consent before releasing an
+        // authorization code for scopes the user hasn't already approved. First-party clients
+        // (ConsentTypes.Implicit, set via IdentityClientConfig.IsFirstParty) are pre-authorized
+        // and skip this; other clients get one prompt per distinct scope set, then reuse the
+        // resulting permanent authorization on subsequent logins (matches OpenIddict's own
+        // documented sample pattern).
+        var consentType = await applicationManager.GetConsentTypeAsync(application);
+        if (consentType != ConsentTypes.Implicit && consentType != ConsentTypes.Systematic)
+        {
+            var userId = await userManager.GetUserIdAsync(user);
+            var applicationId = (await applicationManager.GetIdAsync(application))!;
+            var hasExistingGrant = false;
+
+            var authorizations = authorizationManager.FindAsync(
+                subject: userId,
+                client: applicationId,
+                status: Statuses.Valid,
+                type: AuthorizationTypes.Permanent,
+                scopes: request.GetScopes());
+            await foreach (var _ in authorizations)
+            {
+                hasExistingGrant = true;
+                break;
+            }
+
+            if (!hasExistingGrant)
+            {
+                return RedirectToPage("/Auth/Consent", new
+                {
+                    ReturnUrl = Request.PathBase + Request.Path + QueryString.Create(
+                        Request.HasFormContentType ? Request.Form.ToList() : Request.Query.ToList())
+                });
+            }
+        }
 
         // Build the claims principal for the authorization code.
         var identity = new ClaimsIdentity(

@@ -1,0 +1,38 @@
+@page "/auth/consent"
+@model ConsentModel
+@{
+    ViewData["Title"] = "Authorize access";
+    Layout = "~/Pages/Shared/_AuthLayout.cshtml";
+}
+
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">Authorize @Model.ClientDisplayName</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
+    This app is requesting access to your account. Review what it can do before continuing.
+</p>
+
+<ul class="space-y-2 mb-8">
+    @foreach (var scope in Model.ScopeDisplayNames)
+    {
+        <li class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5"></path>
+            </svg>
+            @scope
+        </li>
+    }
+</ul>
+
+<div class="flex gap-3">
+    <form method="post" asp-page-handler="Deny" asp-antiforgery="true" class="flex-1">
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <button type="submit" class="w-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-sm">
+            Deny
+        </button>
+    </form>
+    <form method="post" asp-page-handler="Allow" asp-antiforgery="true" class="flex-1">
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-700 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
+            Allow
+        </button>
+    </form>
+</div>

@@ -32,6 +32,11 @@ public class RegisterModel : PageModel
     [BindProperty]
     public string ConfirmPassword { get; set; } = default!;
 
+    public int PasswordMinLength => _options.Value.Password.MinLength;
+    public bool PasswordRequireDigit => _options.Value.Password.RequireDigit;
+    public bool PasswordRequireUppercase => _options.Value.Password.RequireUppercase;
+    public bool PasswordRequireNonAlphanumeric => _options.Value.Password.RequireNonAlphanumeric;
+
     public RegisterModel(
         UserManager<ApplicationUser> userManager,
         IEmailService emailService,

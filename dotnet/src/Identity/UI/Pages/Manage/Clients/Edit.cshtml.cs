@@ -22,6 +22,7 @@ public class EditClientModel(
     [BindProperty] public string Type { get; set; } = "public";
     [BindProperty] public string GrantType { get; set; } = "authorization_code";
     [BindProperty] public bool RequirePkce { get; set; }
+    [BindProperty] public bool IsFirstParty { get; set; }
     [BindProperty] public List<string> SelectedScopes { get; set; } = [];
     [BindProperty] public string RedirectUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
@@ -52,6 +53,9 @@ public class EditClientModel(
             : "authorization_code";
 
         RequirePkce = requirements.Contains(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
+
+        var consentType = await applicationManager.GetConsentTypeAsync(existing, HttpContext.RequestAborted);
+        IsFirstParty = consentType == OpenIddictConstants.ConsentTypes.Implicit;
 
         SelectedScopes = permissions
             .Where(p => p.StartsWith(OpenIddictConstants.Permissions.Prefixes.Scope))
@@ -92,6 +96,7 @@ public class EditClientModel(
             Type = Type,
             GrantType = GrantType,
             RequirePkce = RequirePkce,
+            IsFirstParty = IsFirstParty,
             Scopes = SelectedScopes,
             RedirectUris = redirectUris,
             PostLogoutRedirectUris = ParseLines(PostLogoutUrisRaw),
@@ -100,9 +105,19 @@ public class EditClientModel(
 
         var descriptor = ClientDescriptorBuilder.Build(config);
 
-        // Don't set ClientSecret here — null preserves the existing stored hash.
-        // Secret resets are handled separately via OnPostResetSecretAsync.
-        descriptor.ClientSecret = null;
+        // ClientDescriptorBuilder.Build() never sets ClientSecret when config.ClientSecret is
+        // null/empty (see its config.ClientSecret guard), so a fresh descriptor here has no
+        // secret at all. For a confidential client, applying that descriptor as-is would wipe
+        // the existing stored secret hash, which OpenIddict's UpdateAsync then rejects outright
+        // ("client secret cannot be null or empty for a confidential application"). Populate
+        // the descriptor from the existing entity first so its already-hashed secret carries
+        // through — secret resets are handled separately via OnPostResetSecretAsync.
+        if (IsConfidential)
+        {
+            var existingSecret = new OpenIddictApplicationDescriptor();
+            await applicationManager.PopulateAsync(existingSecret, existing, HttpContext.RequestAborted);
+            descriptor.ClientSecret = existingSecret.ClientSecret;
+        }
 
         await applicationManager.UpdateAsync(existing, descriptor, HttpContext.RequestAborted);
 
@@ -134,8 +149,8 @@ public class EditClientModel(
         return RedirectToPage("./SecretCreated");
     }
 
-    private static List<string> ParseLines(string raw) =>
-        raw.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    private static List<string> ParseLines(string? raw) =>
+        (raw ?? string.Empty).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
            .Where(s => !string.IsNullOrEmpty(s))
            .Distinct()
            .ToList();

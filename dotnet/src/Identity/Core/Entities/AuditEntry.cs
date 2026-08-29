@@ -36,6 +36,13 @@ public class AuditEntry
         public const string UserTokensInvalidated = "UserTokensInvalidated";
         public const string UserClaimAdded = "UserClaimAdded";
         public const string UserClaimRemoved = "UserClaimRemoved";
+        public const string RefreshTokenReuseDetected = "RefreshTokenReuseDetected";
+        public const string ScopeCreated = "ScopeCreated";
+        public const string ScopeUpdated = "ScopeUpdated";
+        public const string ScopeDeleted = "ScopeDeleted";
+        public const string EmailChanged = "EmailChanged";
+        public const string BackupCodesRegenerated = "BackupCodesRegenerated";
+        public const string AccountDeleted = "AccountDeleted";
     }
 
     public AuditEntry() { }

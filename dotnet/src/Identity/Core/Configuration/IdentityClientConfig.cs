@@ -7,6 +7,16 @@ public class IdentityClientConfig
     public string Type { get; set; } = "public";
     public string? ClientSecret { get; set; }
     public bool RequirePkce { get; set; } = true;
+
+    /// <summary>
+    /// True for clients owned by the same organization operating this IdP (e.g. the IdP's own
+    /// web/mobile apps). First-party clients skip the OAuth consent screen — per OIDC Core the
+    /// consent step exists to inform the end user which third party is requesting access, which
+    /// doesn't apply to the operator's own applications. Defaults to false (secure by default);
+    /// any newly registered or externally-owned client shows consent.
+    /// </summary>
+    public bool IsFirstParty { get; set; }
+
     public List<string> RedirectUris { get; set; } = [];
     public List<string> PostLogoutRedirectUris { get; set; } = [];
     public List<string> Scopes { get; set; } = [];

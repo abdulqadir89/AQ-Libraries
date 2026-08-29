@@ -54,6 +54,12 @@
                            class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600" />
                     <label for="requirePkce" class="text-sm text-slate-700 dark:text-slate-300">Require PKCE</label>
                 </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" asp-for="IsFirstParty" id="isFirstParty"
+                           class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600" />
+                    <label for="isFirstParty" class="text-sm text-slate-700 dark:text-slate-300">First-party (skip consent screen)</label>
+                </div>
             </fieldset>
 
             <!-- Scopes -->

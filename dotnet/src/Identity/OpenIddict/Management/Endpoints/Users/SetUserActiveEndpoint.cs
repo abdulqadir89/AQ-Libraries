@@ -34,7 +34,19 @@ public class SetUserActiveEndpoint(
             return;
         }
 
-        var previousState = user.IsActive;
+        if (!req.IsActive)
+        {
+            var holdsAdminClaim = await context.StoredClaims
+                .AnyAsync(c => c.UserId == req.Id && c.Type == AdminClaimGuard.ManageApiClaimType, ct);
+
+            if (holdsAdminClaim && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, req.Id, ct))
+            {
+                AddError("Cannot deactivate the last administrator.");
+                await Send.ErrorsAsync(409, ct);
+                return;
+            }
+        }
+
         user.IsActive = req.IsActive;
 
         var result = await userManager.UpdateAsync(user);

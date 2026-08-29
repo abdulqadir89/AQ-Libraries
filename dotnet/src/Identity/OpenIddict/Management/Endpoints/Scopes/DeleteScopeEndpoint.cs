@@ -1,3 +1,5 @@
+using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using OpenIddict.Abstractions;
 
@@ -8,7 +10,8 @@ public class DeleteScopeRequest
     public string Id { get; set; } = string.Empty;
 }
 
-public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoint<DeleteScopeRequest>
+public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentityDbContext context)
+    : Endpoint<DeleteScopeRequest>
 {
     public override void Configure()
     {
@@ -26,6 +29,9 @@ public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager) : Endpoin
         }
 
         await scopeManager.DeleteAsync(scope, ct);
+
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, userId: null, ip: null, ua: null));
+        await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);
     }

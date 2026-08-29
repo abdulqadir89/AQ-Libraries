@@ -1,5 +1,6 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
+using AQ.Identity.Core.Configuration.Validation;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Extensions.Claims;
 using AQ.Identity.OpenIddict.Extensions.Middleware;
@@ -13,8 +14,10 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +40,35 @@ public static class ServiceCollectionExtensions
         IReadOnlyList<IdentityClientConfig> clients)
         where TContext : DbContext, IIdentityDbContext
     {
+        // The UI project's Razor Pages bind several genuinely-optional fields (e.g.
+        // PostLogoutUrisRaw, ServiceAccountClaimsRaw) to non-nullable `string` properties
+        // under the host's <Nullable>enable</Nullable> setting. Without this, ASP.NET Core's
+        // MVC model binding applies an implicit [Required] to every non-nullable
+        // reference-typed bound property, and rejects an empty string as "missing" — even
+        // though string.Empty is a valid, non-null value — causing those forms to silently
+        // fail ModelState validation with no rendered error. This is the officially
+        // documented opt-out (see the MvcOptions.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes
+        // docs) rather than a workaround.
+        services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(o =>
+            o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AqIdentityOptions>, AqIdentityOptionsValidator>();
+        services.AddOptions<AqIdentityOptions>()
+            .Configure(o =>
+            {
+                o.Issuer = options.Issuer;
+                o.AppName = options.AppName;
+                o.Tokens = options.Tokens;
+                o.Password = options.Password;
+                o.Lockout = options.Lockout;
+                o.Keys = options.Keys;
+                o.Hsts = options.Hsts;
+                o.Email = options.Email;
+                o.Google = options.Google;
+                o.AdminUser = options.AdminUser;
+            })
+            .ValidateOnStart();
+
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders()
@@ -144,11 +176,23 @@ public static class ServiceCollectionExtensions
             });
 
         services.AddOpenIddict()
-            .AddServer(serverOptions => serverOptions.AddEventHandler(
-                OpenIddictServerHandlerDescriptor.CreateBuilder<OpenIddictServerEvents.ProcessSignInContext>()
-                    .UseScopedHandler<ClaimsEnrichmentHandler>()
-                    .SetOrder(10_000 - 1)
-                    .Build()));
+            .AddServer(serverOptions =>
+            {
+                serverOptions.AddEventHandler(
+                    OpenIddictServerHandlerDescriptor.CreateBuilder<OpenIddictServerEvents.ProcessSignInContext>()
+                        .UseScopedHandler<ClaimsEnrichmentHandler>()
+                        .SetOrder(10_000 - 1)
+                        .Build());
+
+                // Must run before the built-in ValidateTokenEntry handler so the redeemed
+                // refresh token's status can still be inspected before that handler rejects
+                // the grant (see RefreshTokenReuseHandler for the full rationale).
+                serverOptions.AddEventHandler(
+                    OpenIddictServerHandlerDescriptor.CreateBuilder<OpenIddictServerEvents.ProcessAuthenticationContext>()
+                        .UseScopedHandler<Handlers.RefreshTokenReuseHandler>()
+                        .SetOrder(OpenIddictServerHandlers.Protection.ValidateTokenEntry.Descriptor.Order - 1)
+                        .Build());
+            });
 
         // Ensure the handler's IIdentityDbContext dependency is resolvable as TContext
         services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<TContext>());
@@ -180,6 +224,13 @@ public static class ServiceCollectionExtensions
                     googleOptions.ClientSecret = options.Google.ClientSecret;
                 });
         }
+
+        services.AddHsts(hstsOptions =>
+        {
+            hstsOptions.MaxAge = TimeSpan.FromDays(options.Hsts.MaxAgeDays);
+            hstsOptions.IncludeSubDomains = options.Hsts.IncludeSubDomains;
+            hstsOptions.Preload = options.Hsts.Preload;
+        });
 
         services.AddHealthChecks()
             .AddCheck<IdentityDbHealthCheck<TContext>>("identity_db", tags: ["live"])
@@ -224,6 +275,14 @@ public static class ServiceCollectionExtensions
 
     public static IApplicationBuilder UseAqIdentity(this IApplicationBuilder app)
     {
+        var env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>();
+        if (!env.IsDevelopment())
+        {
+            // Standard ASP.NET Core template guidance: HSTS is skipped in Development since it
+            // forces HTTPS for the configured max-age, which breaks plain-HTTP local dev.
+            app.UseHsts();
+        }
+
         app.UseMiddleware<RequestIdMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<SetupGuardMiddleware>();
