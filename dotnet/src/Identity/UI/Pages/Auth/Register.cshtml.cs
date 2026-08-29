@@ -69,12 +69,7 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        var user = new ApplicationUser
-        {
-            UserName = Email,
-            Email = Email,
-            FullName = FullName
-        };
+        var user = ApplicationUser.Create(Email, FullName);
 
         var result = await _userManager.CreateAsync(user, Password);
 

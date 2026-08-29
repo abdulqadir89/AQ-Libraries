@@ -50,11 +50,44 @@ public class ClientsIndexModel(IOpenIddictApplicationManager applicationManager)
     public async Task<IActionResult> OnPostDeleteAsync(string clientId)
     {
         var existing = await applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted);
-        if (existing != null)
-            await applicationManager.DeleteAsync(existing, HttpContext.RequestAborted);
+        if (existing == null) return NotFound();
+
+        if (await WouldRemoveLastManageApiClientAsync(clientId, HttpContext.RequestAborted))
+        {
+            TempData["Error"] = $"Cannot delete '{clientId}' — it's the only client granted the manage_api scope. Deleting it would lock every admin out of this page.";
+            return RedirectToPage();
+        }
+
+        await applicationManager.DeleteAsync(existing, HttpContext.RequestAborted);
 
         TempData["Success"] = $"Client '{clientId}' has been deleted.";
         return RedirectToPage();
+    }
+
+    /// <summary>
+    /// Mirrors AdminClaimGuard's "last administrator" protection, but for the client side of
+    /// manage_api: if this is the only client with the manage_api scope granted, deleting it
+    /// would mean no client could ever mint a token carrying that scope again, stranding
+    /// every admin out of /manage even though their manage_api claim is still intact.
+    /// </summary>
+    private async Task<bool> WouldRemoveLastManageApiClientAsync(string clientIdToDelete, CancellationToken ct)
+    {
+        const string manageApiPermission = OpenIddictConstants.Permissions.Prefixes.Scope + "manage_api";
+
+        await foreach (var app in applicationManager.ListAsync(cancellationToken: ct))
+        {
+            var otherClientId = await applicationManager.GetClientIdAsync(app, ct);
+            if (string.Equals(otherClientId, clientIdToDelete, StringComparison.Ordinal)) continue;
+
+            var permissions = await applicationManager.GetPermissionsAsync(app, ct);
+            if (permissions.Contains(manageApiPermission)) return false;
+        }
+
+        var deletingClientPermissions = (await applicationManager.FindByClientIdAsync(clientIdToDelete, ct)) is { } app2
+            ? await applicationManager.GetPermissionsAsync(app2, ct)
+            : [];
+
+        return deletingClientPermissions.Contains(manageApiPermission);
     }
 }
 

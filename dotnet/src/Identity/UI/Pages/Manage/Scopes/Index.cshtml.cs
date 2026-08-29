@@ -9,8 +9,20 @@ using System.Text.Json;
 namespace AQ.Identity.UI.Pages.Manage.Scopes;
 
 [Authorize(Policy = "ManageApi")]
-public class ScopesIndexModel(IOpenIddictScopeManager scopeManager, IIdentityDbContext context) : PageModel
+public class ScopesIndexModel(
+    IOpenIddictScopeManager scopeManager,
+    IOpenIddictApplicationManager applicationManager,
+    IIdentityDbContext context) : PageModel
 {
+    /// <summary>
+    /// Scopes the OIDC flow and Identity UI itself depend on to function. Deleting one of
+    /// these would break login for every client, with no recovery short of re-seeding.
+    /// </summary>
+    private static readonly HashSet<string> ProtectedScopeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "openid", "profile", "email", "offline_access", "manage_api",
+    };
+
     public List<ScopeRow> Scopes { get; set; } = [];
 
     [BindProperty] public string NewName { get; set; } = string.Empty;
@@ -69,7 +81,34 @@ public class ScopesIndexModel(IOpenIddictScopeManager scopeManager, IIdentityDbC
         var scope = await scopeManager.FindByIdAsync(id, HttpContext.RequestAborted);
         if (scope is null) return NotFound();
 
-        var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted);
+        var name = await scopeManager.GetNameAsync(scope, HttpContext.RequestAborted) ?? string.Empty;
+
+        if (ProtectedScopeNames.Contains(name))
+        {
+            TempData["Error"] = $"'{name}' is a protected scope required for sign-in and cannot be deleted.";
+            await LoadScopesAsync();
+            return Page();
+        }
+
+        var scopePermission = OpenIddictConstants.Permissions.Prefixes.Scope + name;
+        var clientsUsingScope = new List<string>();
+        await foreach (var app in applicationManager.ListAsync(cancellationToken: HttpContext.RequestAborted))
+        {
+            var permissions = await applicationManager.GetPermissionsAsync(app, HttpContext.RequestAborted);
+            if (permissions.Contains(scopePermission))
+            {
+                var clientId = await applicationManager.GetClientIdAsync(app, HttpContext.RequestAborted);
+                if (!string.IsNullOrEmpty(clientId)) clientsUsingScope.Add(clientId);
+            }
+        }
+
+        if (clientsUsingScope.Count > 0)
+        {
+            TempData["Error"] = $"Cannot delete '{name}' — it's still granted to: {string.Join(", ", clientsUsingScope)}. Remove it from those clients first.";
+            await LoadScopesAsync();
+            return Page();
+        }
+
         await scopeManager.DeleteAsync(scope, HttpContext.RequestAborted);
 
         context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, userId: null, ip: null, ua: null));

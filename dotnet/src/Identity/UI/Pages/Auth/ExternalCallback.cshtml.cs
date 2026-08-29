@@ -79,13 +79,8 @@ public class ExternalCallbackModel : PageModel
         }
         else
         {
-            user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true,
-                FullName = name ?? string.Empty
-            };
+            user = ApplicationUser.Create(email, name ?? string.Empty);
+            user.EmailConfirmed = true;
 
             var createResult = await _userManager.CreateAsync(user);
             if (!createResult.Succeeded)
