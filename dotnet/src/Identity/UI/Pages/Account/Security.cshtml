@@ -66,6 +66,32 @@
         </form>
     </div>
 
+    <script>
+    (function () {
+        var newPassword = document.getElementById('newPassword');
+        var confirmPassword = document.getElementById('confirmPassword');
+        if (!newPassword || !confirmPassword) return;
+
+        newPassword.closest('form').addEventListener('submit', function (e) {
+            if (newPassword.value.length < 8) {
+                e.preventDefault();
+                newPassword.setCustomValidity('Password must be at least 8 characters.');
+                newPassword.reportValidity();
+                return;
+            }
+            newPassword.setCustomValidity('');
+
+            if (newPassword.value !== confirmPassword.value) {
+                e.preventDefault();
+                confirmPassword.setCustomValidity('Passwords do not match.');
+                confirmPassword.reportValidity();
+                return;
+            }
+            confirmPassword.setCustomValidity('');
+        });
+    })();
+    </script>
+
     <!-- MFA Section -->
     <div class="mb-8 pt-8 border-t border-slate-200 dark:border-slate-700">
         <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Two-Factor Authentication</h3>

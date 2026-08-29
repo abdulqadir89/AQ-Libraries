@@ -13,28 +13,55 @@ public class SessionsModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IOpenIddictTokenManager tokenManager,
+    IOpenIddictAuthorizationManager authorizationManager,
     IOpenIddictApplicationManager applicationManager) : PageModel
 {
     public List<SessionRow> Sessions { get; set; } = [];
 
+    // A "session" is one permanent OpenIddictAuthorization — created once at login by
+    // ClaimsEnrichmentHandler and reused across every refresh-token grant for that
+    // login. Listing by authorization (not by token) is what keeps this page from
+    // showing a fresh row every time the access token silently reissues on an
+    // hourly cycle; it reflects actual sign-ins/devices instead.
     public async Task<IActionResult> OnGetAsync()
     {
         var user = await userManager.GetUserAsync(User);
         if (user == null) return RedirectToPage("/Auth/Login");
 
-        var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-        await foreach (var token in tokens)
+        var authorizations = authorizationManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
+        await foreach (var authorization in authorizations)
         {
-            var status = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
+            var status = await authorizationManager.GetStatusAsync(authorization, HttpContext.RequestAborted);
             if (status != OpenIddictConstants.Statuses.Valid) continue;
 
-            var type = await tokenManager.GetTypeAsync(token, HttpContext.RequestAborted);
-            if (type != OpenIddictConstants.TokenTypeHints.AccessToken) continue;
+            var authorizationId = await authorizationManager.GetIdAsync(authorization, HttpContext.RequestAborted);
+            var creationDate = await authorizationManager.GetCreationDateAsync(authorization, HttpContext.RequestAborted);
+            var appId = await authorizationManager.GetApplicationIdAsync(authorization, HttpContext.RequestAborted);
 
-            var tokenId = await tokenManager.GetIdAsync(token, HttpContext.RequestAborted);
-            var creationDate = await tokenManager.GetCreationDateAsync(token, HttpContext.RequestAborted);
-            var expirationDate = await tokenManager.GetExpirationDateAsync(token, HttpContext.RequestAborted);
-            var appId = await tokenManager.GetApplicationIdAsync(token, HttpContext.RequestAborted);
+            // Latest expiry among this session's still-valid tokens — reflects how
+            // long the session keeps renewing itself via refresh, not any single
+            // token's short-lived expiry.
+            DateTimeOffset? expiresAt = null;
+            var hasValidToken = false;
+            var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
+            await foreach (var token in tokens)
+            {
+                var tokenAuthId = await tokenManager.GetAuthorizationIdAsync(token, HttpContext.RequestAborted);
+                if (tokenAuthId != authorizationId) continue;
+
+                var tokenStatus = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
+                if (tokenStatus != OpenIddictConstants.Statuses.Valid) continue;
+
+                hasValidToken = true;
+                var tokenExpiry = await tokenManager.GetExpirationDateAsync(token, HttpContext.RequestAborted);
+                if (tokenExpiry.HasValue && (expiresAt is null || tokenExpiry > expiresAt))
+                    expiresAt = tokenExpiry;
+            }
+
+            // No live token left in this authorization (all expired/redeemed with
+            // nothing rotated in yet) — nothing left to revoke, so skip it rather
+            // than showing a dead session.
+            if (!hasValidToken) continue;
 
             string? appName = null;
             if (!string.IsNullOrEmpty(appId))
@@ -46,10 +73,10 @@ public class SessionsModel(
 
             Sessions.Add(new SessionRow
             {
-                TokenId = tokenId ?? string.Empty,
+                AuthorizationId = authorizationId ?? string.Empty,
                 AppName = appName ?? "Unknown App",
                 CreatedAt = creationDate ?? DateTimeOffset.UtcNow,
-                ExpiresAt = expirationDate
+                ExpiresAt = expiresAt
             });
         }
 
@@ -57,17 +84,17 @@ public class SessionsModel(
         return Page();
     }
 
-    public async Task<IActionResult> OnPostRevokeAsync(string tokenId)
+    public async Task<IActionResult> OnPostRevokeAsync(string authorizationId)
     {
         var user = await userManager.GetUserAsync(User);
         if (user == null) return RedirectToPage("/Auth/Login");
 
-        var token = await tokenManager.FindByIdAsync(tokenId, HttpContext.RequestAborted);
-        if (token != null)
+        var authorization = await authorizationManager.FindByIdAsync(authorizationId, HttpContext.RequestAborted);
+        if (authorization != null)
         {
-            var subject = await tokenManager.GetSubjectAsync(token, HttpContext.RequestAborted);
+            var subject = await authorizationManager.GetSubjectAsync(authorization, HttpContext.RequestAborted);
             if (subject == user.Id.ToString())
-                await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
+                await RevokeAuthorizationAndTokensAsync(authorizationId, user.Id.ToString());
         }
 
         TempData["AccountSuccess"] = "Session has been revoked.";
@@ -82,7 +109,8 @@ public class SessionsModel(
         // Rotate security stamp so all existing tokens fail validation
         await userManager.UpdateSecurityStampAsync(user);
 
-        // Revoke all tokens for this user
+        await authorizationManager.RevokeBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
+
         var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
         await foreach (var token in tokens)
             await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
@@ -92,11 +120,29 @@ public class SessionsModel(
 
         return RedirectToPage("/Auth/Login");
     }
+
+    private async Task RevokeAuthorizationAndTokensAsync(string authorizationId, string subject)
+    {
+        var authorization = await authorizationManager.FindByIdAsync(authorizationId, HttpContext.RequestAborted);
+        if (authorization != null)
+            await authorizationManager.TryRevokeAsync(authorization, HttpContext.RequestAborted);
+
+        // Belt-and-braces: also revoke every token linked to this authorization
+        // directly, rather than relying solely on the authorization's revoked status
+        // being honored at validation time.
+        var tokens = tokenManager.FindBySubjectAsync(subject, HttpContext.RequestAborted);
+        await foreach (var token in tokens)
+        {
+            var tokenAuthId = await tokenManager.GetAuthorizationIdAsync(token, HttpContext.RequestAborted);
+            if (tokenAuthId == authorizationId)
+                await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
+        }
+    }
 }
 
 public class SessionRow
 {
-    public string TokenId { get; set; } = string.Empty;
+    public string AuthorizationId { get; set; } = string.Empty;
     public string AppName { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AQ.Identity.Core.Entities;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AQ.Identity.OpenIddict.KeyManagement;
 
@@ -12,4 +14,6 @@ public interface ISigningKeyManager
     Task<SigningKey> GenerateAndPersistKeyAsync(CancellationToken cancellationToken);
     Task AddAuditEntryAsync(AuditEntry auditEntry, CancellationToken cancellationToken);
     Task RetireExpiredKeysAsync(CancellationToken cancellationToken);
+    IReadOnlyList<SigningKey> GetValidationKeys();
+    SecurityKey ToSecurityKey(SigningKey key);
 }

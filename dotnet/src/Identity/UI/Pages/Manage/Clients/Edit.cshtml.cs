@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -120,7 +121,7 @@ public class EditClientModel(
         var descriptor = new OpenIddictApplicationDescriptor();
         await applicationManager.PopulateAsync(descriptor, existing, HttpContext.RequestAborted);
 
-        var newSecret = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        var newSecret = RandomNumberGenerator.GetHexString(64);
         descriptor.ClientSecret = newSecret;
 
         await applicationManager.UpdateAsync(existing, descriptor, HttpContext.RequestAborted);
@@ -164,17 +165,6 @@ public class EditClientModel(
         return [.. result.OrderBy(s => s.Name)];
     }
 
-    private static string? ValidateRedirectUris(List<string> uris)
-    {
-        foreach (var raw in uris)
-        {
-            if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri))
-                return $"'{raw}' is not a valid URI.";
-            if (uri.Scheme == Uri.UriSchemeHttps) continue;
-            if (uri.Scheme == Uri.UriSchemeHttp && uri.Host is "localhost" or "127.0.0.1" or "[::1]") continue;
-            if (uri.Scheme != Uri.UriSchemeHttp) continue;
-            return $"'{raw}': HTTP is only allowed for localhost.";
-        }
-        return null;
-    }
+    private static string? ValidateRedirectUris(List<string> uris) =>
+        ClientDescriptorBuilder.ValidateRedirectUris(uris);
 }

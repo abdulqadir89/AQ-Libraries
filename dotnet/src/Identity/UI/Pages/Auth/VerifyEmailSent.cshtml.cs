@@ -75,10 +75,23 @@ public class VerifyEmailSentModel : PageModel
             }
         }
 
+        // Always set the rate-limit cookie and render the same "check your email" page
+        // regardless of whether the account exists, matching ForgotPassword's behavior —
+        // otherwise the two different responses let an attacker enumerate registered emails.
+        Response.Cookies.Append(
+            RateLimitCookieName,
+            DateTime.UtcNow.Ticks.ToString(),
+            new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddSeconds(RateLimitSeconds + 1)
+            });
+
         var user = await _userManager.FindByEmailAsync(Email);
         if (user == null)
         {
-            return RedirectToPage("/Auth/Login");
+            return Page();
         }
 
         try
@@ -94,24 +107,12 @@ public class VerifyEmailSentModel : PageModel
                 _options.Value.AppName);
 
             await _emailService.SendAsync(emailMessage);
-
-            Response.Cookies.Append(
-                RateLimitCookieName,
-                DateTime.UtcNow.Ticks.ToString(),
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTimeOffset.UtcNow.AddSeconds(RateLimitSeconds + 1)
-                });
-
-            return Page();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to resend verification email for {Email}", Email);
-            ModelState.AddModelError(string.Empty, "An error occurred while sending the verification email. Please try again.");
-            return Page();
         }
+
+        return Page();
     }
 }

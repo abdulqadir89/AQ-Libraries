@@ -1,5 +1,7 @@
+using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.KeyManagement;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -9,17 +11,19 @@ namespace AQ.Identity.OpenIddict.KeyManagement;
 
 public sealed class KeyRotationWorker : BackgroundService
 {
-    private readonly ISigningKeyManager _keyManager;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<KeyRotationWorker> _logger;
+    private readonly KeyManagementOptions _options;
     private readonly TimeSpan _rotationInterval = TimeSpan.FromHours(24);
-    private readonly TimeSpan _expirationThreshold = TimeSpan.FromDays(30);
 
     public KeyRotationWorker(
-        ISigningKeyManager keyManager,
-        ILogger<KeyRotationWorker> logger)
+        IServiceScopeFactory scopeFactory,
+        ILogger<KeyRotationWorker> logger,
+        KeyManagementOptions options)
     {
-        _keyManager = keyManager;
+        _scopeFactory = scopeFactory;
         _logger = logger;
+        _options = options;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -28,7 +32,9 @@ public sealed class KeyRotationWorker : BackgroundService
         {
             try
             {
-                await RotateKeysIfNeededAsync(stoppingToken);
+                using var scope = _scopeFactory.CreateScope();
+                var keyManager = scope.ServiceProvider.GetRequiredService<ISigningKeyManager>();
+                await RotateKeysIfNeededAsync(keyManager, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -39,25 +45,38 @@ public sealed class KeyRotationWorker : BackgroundService
         }
     }
 
-    private async Task RotateKeysIfNeededAsync(CancellationToken cancellationToken)
+    private async Task RotateKeysIfNeededAsync(ISigningKeyManager keyManager, CancellationToken cancellationToken)
     {
-        var activeKey = await _keyManager.GetActiveKeyAsync(cancellationToken);
-
-        if (activeKey.ExpiresAt < DateTimeOffset.UtcNow.Add(_expirationThreshold))
+        SigningKey activeKey;
+        try
         {
-            var newerKeyExists = await _keyManager.NewerKeyExistsAsync(
+            activeKey = await keyManager.GetActiveKeyAsync(cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            // No key exists yet — normally SigningCredentialsConfigurator bootstraps one
+            // before the server starts accepting requests, but this worker's first tick
+            // can race ahead of that. Self-heal rather than treating it as an error.
+            _logger.LogInformation("No active signing key found — generating bootstrap key.");
+            await keyManager.GenerateAndPersistKeyAsync(cancellationToken);
+            return;
+        }
+
+        if (activeKey.ExpiresAt < DateTimeOffset.UtcNow.Add(_options.RetirementOverlap))
+        {
+            var newerKeyExists = await keyManager.NewerKeyExistsAsync(
                 activeKey.ExpiresAt,
                 cancellationToken);
 
             if (!newerKeyExists)
             {
-                var newKey = await _keyManager.GenerateAndPersistKeyAsync(cancellationToken);
+                var newKey = await keyManager.GenerateAndPersistKeyAsync(cancellationToken);
                 var auditEntry = new AuditEntry(
                     AuditEntry.Actions.KeyRotated,
                     userId: null,
                     ip: null,
                     ua: null);
-                await _keyManager.AddAuditEntryAsync(
+                await keyManager.AddAuditEntryAsync(
                     auditEntry,
                     cancellationToken);
 
@@ -65,6 +84,6 @@ public sealed class KeyRotationWorker : BackgroundService
             }
         }
 
-        await _keyManager.RetireExpiredKeysAsync(cancellationToken);
+        await keyManager.RetireExpiredKeysAsync(cancellationToken);
     }
 }

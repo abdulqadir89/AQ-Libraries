@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -23,6 +24,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Validation;
+using System.Threading.RateLimiting;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AQ.Identity.OpenIddict.Extensions;
@@ -74,16 +76,17 @@ public static class ServiceCollectionExtensions
                 serverOptions.AcceptAnonymousClients();
                 serverOptions.DisableAccessTokenEncryption();
 
-                if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                // "plain" PKCE provides no real protection over no PKCE at all — only
+                // advertise/accept S256.
+                serverOptions.Configure(o =>
                 {
-                    serverOptions.AddDevelopmentEncryptionCertificate();
-                    serverOptions.AddDevelopmentSigningCertificate();
-                }
-                else
-                {
-                    serverOptions.AddDevelopmentEncryptionCertificate();
-                    serverOptions.AddDevelopmentSigningCertificate();
-                }
+                    o.CodeChallengeMethods.Clear();
+                    o.CodeChallengeMethods.Add(CodeChallengeMethods.Sha256);
+                });
+
+                // Signing/encryption credentials are supplied by SigningCredentialsConfigurator,
+                // which sources them from the persisted, rotating keys in SigningKeyManager
+                // (see below) instead of ephemeral per-process dev certificates.
 
                 serverOptions.SetAuthorizationEndpointUris("/connect/authorize");
                 serverOptions.SetTokenEndpointUris("/connect/token");
@@ -161,9 +164,12 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
+        services.AddSingleton(options.Keys);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());
         services.AddScoped<ISetupStateService, SetupStateService>();
+        services.AddSingleton<Microsoft.Extensions.Options.IConfigureOptions<OpenIddictServerOptions>, KeyManagement.SigningCredentialsConfigurator>();
+        services.AddHostedService<KeyManagement.KeyRotationWorker>();
 
         if (options.Google != null)
         {
@@ -179,6 +185,40 @@ public static class ServiceCollectionExtensions
             .AddCheck<IdentityDbHealthCheck<TContext>>("identity_db", tags: ["live"])
             .AddCheck<IdentityMigrationHealthCheck<TContext>>("identity_migrations", tags: ["ready"]);
 
+        services.AddRateLimiter(limiterOptions =>
+        {
+            limiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // Global limiter so it also covers /connect/token, which OpenIddict handles
+            // via its own middleware passthrough rather than a mapped ASP.NET endpoint —
+            // per-endpoint RequireRateLimiting() policies can't reach it.
+            // Throttles credential-submitting paths (token exchange, login, MFA verify,
+            // password reset) per client IP; everything else passes through unthrottled.
+            limiterOptions.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var path = httpContext.Request.Path;
+                var isThrottledPath = httpContext.Request.Method == HttpMethods.Post &&
+                    (path.StartsWithSegments("/connect/token") ||
+                     path.StartsWithSegments("/auth/login") ||
+                     path.StartsWithSegments("/auth/register") ||
+                     path.StartsWithSegments("/auth/forgot-password") ||
+                     path.StartsWithSegments("/auth/mfa"));
+
+                if (!isThrottledPath)
+                {
+                    return RateLimitPartition.GetNoLimiter("unthrottled");
+                }
+
+                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                });
+            });
+        });
+
         return services;
     }
 
@@ -187,6 +227,7 @@ public static class ServiceCollectionExtensions
         app.UseMiddleware<RequestIdMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<SetupGuardMiddleware>();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
 

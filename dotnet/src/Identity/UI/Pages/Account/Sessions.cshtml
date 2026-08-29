@@ -8,8 +8,8 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Active Sessions</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">These are your currently active access tokens across all apps.</p>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Connected App Sessions</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Apps you've signed into using this account. This doesn't include your current sign-in here — use "Sign out" in the sidebar for that.</p>
         </div>
         @if (Model.Sessions.Count > 1)
         {
@@ -56,7 +56,7 @@
                         </div>
                     </div>
                     <form method="post">
-                        <input type="hidden" name="tokenId" value="@session.TokenId" />
+                        <input type="hidden" name="authorizationId" value="@session.AuthorizationId" />
                         <button type="submit" asp-page-handler="Revoke"
                                 class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">
                             Revoke

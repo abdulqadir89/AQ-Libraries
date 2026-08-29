@@ -88,7 +88,8 @@
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <button type="submit" asp-page-handler="InvalidateSessions"
                                             class="text-xs font-medium text-amber-600 hover:text-amber-800 dark:hover:text-amber-400 transition-colors"
-                                            onclick="return confirm('Invalidate all sessions for @Html.Raw(user.FullName.Replace("'", "\\'"))?')">
+                                            data-full-name="@user.FullName"
+                                            onclick="return confirm('Invalidate all sessions for ' + this.dataset.fullName + '?')">
                                         Invalidate Sessions
                                     </button>
                                 </form>

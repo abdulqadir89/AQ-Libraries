@@ -29,6 +29,16 @@ public class UpsertUserClaimsEndpoint(IIdentityDbContext context) : Endpoint<Ups
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var removesManageApi = incomingTypes.Contains(AdminClaimGuard.ManageApiClaimType, StringComparer.OrdinalIgnoreCase)
+            && !req.Claims.Any(c => string.Equals(c.Type, AdminClaimGuard.ManageApiClaimType, StringComparison.OrdinalIgnoreCase));
+
+        if (removesManageApi && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, req.UserId, ct))
+        {
+            AddError("Cannot remove the last administrator's manage_api claim.");
+            await Send.ErrorsAsync(409, ct);
+            return;
+        }
+
         var existing = await context.StoredClaims
             .Where(c => c.UserId == req.UserId && incomingTypes.Contains(c.Type))
             .ToListAsync(ct);

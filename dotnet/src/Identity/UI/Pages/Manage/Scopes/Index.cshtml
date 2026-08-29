@@ -139,18 +139,17 @@
      role="dialog"
      aria-modal="true"
      aria-labelledby="edit-modal-title"
-     style="display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center;">
+     class="edit-modal-overlay">
 
     <!-- Backdrop -->
     <div id="edit-backdrop"
-         style="position:absolute; inset:0; background:rgba(0,0,0,0.5);"
+         class="edit-modal-backdrop"
          onclick="closeEditModal()">
     </div>
 
     <!-- Modal panel -->
     <div id="edit-panel"
-         style="position:relative; width:100%; max-width:480px; margin:16px;"
-         class="bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col">
+         class="edit-modal-panel bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col">
 
         <!-- Panel header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
@@ -247,6 +246,9 @@
 
 <style>
     #edit-panel, #edit-backdrop { transition: opacity 180ms ease; }
+    .edit-modal-overlay { display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; }
+    .edit-modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
+    .edit-modal-panel { position: relative; width: 100%; max-width: 480px; margin: 16px; }
 </style>
 
 <script>

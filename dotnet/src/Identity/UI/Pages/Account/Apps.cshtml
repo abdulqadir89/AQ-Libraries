@@ -43,7 +43,8 @@
                     <form method="post">
                         <input type="hidden" name="appId" value="@app.AppId" />
                         <button type="submit" asp-page-handler="Revoke"
-                                onclick="return confirm('Revoke access for \'@Html.Raw(app.DisplayName.Replace("'", "\\'"))\'? The app will need to sign in again.')"
+                                data-app-name="@app.DisplayName"
+                                onclick="return confirm('Revoke access for \'' + this.dataset.appName + '\'? The app will need to sign in again.')"
                                 class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors border border-red-200 dark:border-red-800 px-2.5 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30">
                             Revoke
                         </button>

@@ -13,7 +13,8 @@ namespace AQ.Identity.UI.Pages.Account;
 public class AccountIndexModel(
     UserManager<ApplicationUser> userManager,
     IIdentityDbContext context,
-    IOpenIddictTokenManager tokenManager) : PageModel
+    IOpenIddictTokenManager tokenManager,
+    IOpenIddictAuthorizationManager authorizationManager) : PageModel
 {
     public ApplicationUser CurrentUser { get; set; } = default!;
     public bool TwoFactorEnabled { get; set; }
@@ -31,29 +32,44 @@ public class AccountIndexModel(
         TwoFactorEnabled = await userManager.GetTwoFactorEnabledAsync(user);
         LastLoginAt = user.LastLoginAt;
 
-        // Count active (non-revoked) tokens for this user
-        var tokenCount = 0;
+        // A "session" is one valid OpenIddictAuthorization with at least one live
+        // token — created once at login and reused across every refresh-token grant
+        // (see ClaimsEnrichmentHandler) — not one per token. Counting tokens here
+        // double/triple counted (an access token reissues hourly against the same
+        // login) and previously showed hundreds of "sessions" for a single signed-in
+        // browser. The live-token check (matching the Sessions page) additionally
+        // excludes ad-hoc authorizations OpenIddict's own pipeline creates and
+        // discards before ClaimsEnrichmentHandler replaces them — those stay "valid"
+        // but never have a token attached, and existed for logins that happened
+        // before that discard-cleanup was added.
+        var validTokenAuthorizationIds = new HashSet<string>();
         var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
         await foreach (var token in tokens)
         {
-            var status = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
-            if (status == OpenIddictConstants.Statuses.Valid)
-                tokenCount++;
-        }
-        ActiveSessionCount = tokenCount;
+            var tokenStatus = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
+            if (tokenStatus != OpenIddictConstants.Statuses.Valid) continue;
 
-        // Connected apps = distinct clients the user has valid tokens for
-        var connectedClients = new HashSet<string?>();
-        var allTokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-        await foreach (var token in allTokens)
-        {
-            var status = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
-            if (status == OpenIddictConstants.Statuses.Valid)
-            {
-                var appId = await tokenManager.GetApplicationIdAsync(token, HttpContext.RequestAborted);
-                if (appId != null) connectedClients.Add(appId);
-            }
+            var tokenAuthId = await tokenManager.GetAuthorizationIdAsync(token, HttpContext.RequestAborted);
+            if (!string.IsNullOrEmpty(tokenAuthId)) validTokenAuthorizationIds.Add(tokenAuthId);
         }
+
+        var sessionCount = 0;
+        var connectedClients = new HashSet<string?>();
+        var authorizations = authorizationManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
+        await foreach (var authorization in authorizations)
+        {
+            var status = await authorizationManager.GetStatusAsync(authorization, HttpContext.RequestAborted);
+            if (status != OpenIddictConstants.Statuses.Valid) continue;
+
+            var authorizationId = await authorizationManager.GetIdAsync(authorization, HttpContext.RequestAborted);
+            if (authorizationId is null || !validTokenAuthorizationIds.Contains(authorizationId)) continue;
+
+            sessionCount++;
+
+            var appId = await authorizationManager.GetApplicationIdAsync(authorization, HttpContext.RequestAborted);
+            if (appId != null) connectedClients.Add(appId);
+        }
+        ActiveSessionCount = sessionCount;
         ConnectedAppCount = connectedClients.Count;
 
         // Check if user has manage_api claim

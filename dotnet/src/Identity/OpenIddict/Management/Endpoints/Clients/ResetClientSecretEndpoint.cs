@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -43,7 +44,7 @@ public class ResetClientSecretEndpoint(
         var descriptor = new OpenIddictApplicationDescriptor();
         await applicationManager.PopulateAsync(descriptor, existing, ct);
 
-        var newSecret = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        var newSecret = RandomNumberGenerator.GetHexString(64);
         descriptor.ClientSecret = newSecret;
 
         await applicationManager.UpdateAsync(existing, descriptor, ct);

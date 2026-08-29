@@ -148,4 +148,40 @@ public class DefaultEmailTemplateService : IEmailTemplateService
 
         return new EmailMessage(toEmail, $"You've been invited to join {workspaceName} on {appName}", htmlBody, textBody);
     }
+
+    public EmailMessage BuildSecurityAlertEmail(string toEmail, string eventDescription, string appName)
+    {
+        var htmlBody = $@"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;"">
+    <table role=""presentation"" style=""width: 100%; border-collapse: collapse;"">
+        <tr>
+            <td style=""padding: 20px 0;"">
+                <table role=""presentation"" style=""width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"">
+                    <tr>
+                        <td style=""padding: 40px 30px;"">
+                            <h1 style=""color: #333333; font-size: 24px; margin: 0 0 20px 0;"">Security alert for your account</h1>
+                            <p style=""color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;"">
+                                {eventDescription} on your <strong>{appName}</strong> account.
+                            </p>
+                            <p style=""color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0;"">
+                                If this was you, no action is needed. If you don't recognize this change, reset your password immediately and review your account's security settings.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+        var textBody = $"Security alert for your {appName} account\n\n{eventDescription}.\n\nIf this was you, no action is needed. If you don't recognize this change, reset your password immediately and review your account's security settings.";
+
+        return new EmailMessage(toEmail, $"Security alert - {appName}", htmlBody, textBody);
+    }
 }

@@ -30,6 +30,14 @@ public class DeleteUserClaimTypeEndpoint(IIdentityDbContext context) : Endpoint<
             return;
         }
 
+        if (string.Equals(req.ClaimType, AdminClaimGuard.ManageApiClaimType, StringComparison.OrdinalIgnoreCase)
+            && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, req.UserId, ct))
+        {
+            AddError("Cannot remove the last administrator's manage_api claim.");
+            await Send.ErrorsAsync(409, ct);
+            return;
+        }
+
         context.StoredClaims.RemoveRange(claims);
         await context.SaveChangesAsync(ct);
 

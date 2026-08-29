@@ -31,6 +31,8 @@ public class ExternalCallbackModel : PageModel
         var externalPrincipal = result.Principal;
         var email = externalPrincipal.FindFirstValue(ClaimTypes.Email);
         var name = externalPrincipal.FindFirstValue(ClaimTypes.Name);
+        var emailVerified = externalPrincipal.FindFirstValue("email_verified");
+        var isEmailVerified = string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase);
 
         if (string.IsNullOrEmpty(email))
         {
@@ -46,6 +48,14 @@ public class ExternalCallbackModel : PageModel
 
             if (!hasExternalLogin)
             {
+                // Only auto-link to an existing password account if the external
+                // provider has itself verified the email — otherwise anyone who
+                // controls an unverified address could take over the local account.
+                if (!isEmailVerified)
+                {
+                    return RedirectToPage("/Auth/Login", new { error = "email_not_verified" });
+                }
+
                 var providerKey = externalPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (providerKey == null)
                 {

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -20,7 +21,6 @@ public class CreateClientModel(
     [BindProperty] public string DisplayName { get; set; } = string.Empty;
     [BindProperty] public string Type { get; set; } = "public";
     [BindProperty] public string GrantType { get; set; } = "authorization_code";
-    [BindProperty] public string? ClientSecret { get; set; }
     [BindProperty] public bool RequirePkce { get; set; }
     [BindProperty] public List<string> SelectedScopes { get; set; } = [];
     [BindProperty] public string RedirectUrisRaw { get; set; } = string.Empty;
@@ -38,9 +38,6 @@ public class CreateClientModel(
     {
         AvailableScopes = await LoadScopesAsync();
 
-        if (Type == "confidential" && string.IsNullOrWhiteSpace(ClientSecret))
-            ModelState.AddModelError(nameof(ClientSecret), "Client secret is required for confidential clients.");
-
         if (!ModelState.IsValid)
             return Page();
 
@@ -51,7 +48,11 @@ public class CreateClientModel(
             return Page();
         }
 
-        var config = BuildConfig();
+        // Secrets for confidential clients are always generated server-side, never
+        // accepted from the admin's form — prevents setting a weak/reused secret.
+        var generatedSecret = Type == "confidential" ? RandomNumberGenerator.GetHexString(64) : null;
+
+        var config = BuildConfig(generatedSecret);
         var validationError = ValidateRedirectUris(config.RedirectUris);
         if (validationError != null)
         {
@@ -65,10 +66,10 @@ public class CreateClientModel(
         context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientCreated, null, null, null));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-        if (Type == "confidential" && !string.IsNullOrEmpty(ClientSecret))
+        if (generatedSecret != null)
         {
             TempData["NewClientId"] = ClientId;
-            TempData["NewSecret"] = ClientSecret;
+            TempData["NewSecret"] = generatedSecret;
             return RedirectToPage("./SecretCreated");
         }
 
@@ -76,7 +77,7 @@ public class CreateClientModel(
         return RedirectToPage("./Index");
     }
 
-    private IdentityClientConfig BuildConfig()
+    private IdentityClientConfig BuildConfig(string? clientSecret)
     {
         var redirectUris = ParseLines(RedirectUrisRaw);
         var postLogoutUris = ParseLines(PostLogoutUrisRaw);
@@ -87,7 +88,7 @@ public class CreateClientModel(
             ClientId = ClientId,
             DisplayName = DisplayName,
             Type = Type,
-            ClientSecret = Type == "confidential" ? ClientSecret : null,
+            ClientSecret = clientSecret,
             GrantType = GrantType,
             RequirePkce = RequirePkce,
             Scopes = SelectedScopes,
@@ -128,20 +129,8 @@ public class CreateClientModel(
         return [.. result.OrderBy(s => s.Name)];
     }
 
-    private static string? ValidateRedirectUris(List<string> uris)
-    {
-        foreach (var raw in uris)
-        {
-            if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri))
-                return $"'{raw}' is not a valid URI.";
-            if (uri.Scheme == Uri.UriSchemeHttps) continue;
-            if (uri.Scheme == Uri.UriSchemeHttp && uri.Host is "localhost" or "127.0.0.1" or "[::1]") continue;
-            // Allow custom schemes (mobile apps)
-            if (uri.Scheme != Uri.UriSchemeHttp) continue;
-            return $"'{raw}': HTTP is only allowed for localhost.";
-        }
-        return null;
-    }
+    private static string? ValidateRedirectUris(List<string> uris) =>
+        ClientDescriptorBuilder.ValidateRedirectUris(uris);
 }
 
 public record ScopeOption(string Name, string DisplayName);

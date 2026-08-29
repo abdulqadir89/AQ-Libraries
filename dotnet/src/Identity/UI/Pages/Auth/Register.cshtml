@@ -86,6 +86,38 @@
     <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Create account" } })" />
 </form>
 
+<script>
+document.querySelector('form[action="/auth/register"]').addEventListener('submit', function (e) {
+    var password = document.getElementById('password');
+    var confirmPassword = document.getElementById('confirmPassword');
+
+    function reject(field, message) {
+        e.preventDefault();
+        field.setCustomValidity(message);
+        field.reportValidity();
+        // _SubmitButton's own submit listener (registered on document, capture phase)
+        // disables the button before this handler runs — undo that since we're
+        // blocking the submission rather than letting it proceed.
+        var btn = document.getElementById('submitBtn');
+        var spinner = document.getElementById('spinner');
+        if (btn) btn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+    }
+
+    if (password.value.length < 8) {
+        reject(password, 'Password must be at least 8 characters.');
+        return;
+    }
+    password.setCustomValidity('');
+
+    if (password.value !== confirmPassword.value) {
+        reject(confirmPassword, 'Passwords do not match.');
+        return;
+    }
+    confirmPassword.setCustomValidity('');
+});
+</script>
+
 <p class="text-sm text-center text-slate-500 dark:text-slate-400 mt-6">
     Already have an account?
     <a href="/auth/login@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">Sign in</a>

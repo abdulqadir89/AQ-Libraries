@@ -1,4 +1,5 @@
 @page "/auth/lockout"
+@model LockoutModel
 @{
     ViewData["Title"] = "Account locked";
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
@@ -12,8 +13,44 @@
         </svg>
     </div>
     <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Account locked</h2>
-    <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
-        Your account is temporarily locked after too many failed sign-in attempts. Try again in a few minutes.
-    </p>
+    @if (Model.LockoutEnd.HasValue)
+    {
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+            Your account is temporarily locked after too many failed sign-in attempts.
+        </p>
+        <p class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-6" id="lockout-countdown"
+           data-until="@Model.LockoutEnd.Value.ToUnixTimeMilliseconds()">
+            Try again in a few minutes.
+        </p>
+    }
+    else
+    {
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
+            Your account is temporarily locked after too many failed sign-in attempts. Try again in a few minutes.
+        </p>
+    }
     <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Back to sign in</a>
 </div>
+
+@if (Model.LockoutEnd.HasValue)
+{
+    <script>
+    (function () {
+        var el = document.getElementById('lockout-countdown');
+        var until = parseInt(el.dataset.until, 10);
+
+        function render() {
+            var remainingMs = until - Date.now();
+            if (remainingMs <= 0) {
+                el.textContent = 'You can try signing in again now.';
+                return;
+            }
+            var minutes = Math.floor(remainingMs / 60000);
+            var seconds = Math.floor((remainingMs % 60000) / 1000);
+            el.textContent = 'Try again in ' + minutes + 'm ' + seconds + 's.';
+            setTimeout(render, 1000);
+        }
+        render();
+    })();
+    </script>
+}

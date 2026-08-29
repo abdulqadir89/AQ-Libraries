@@ -28,16 +28,26 @@ public class LoginModel : PageModel
 
     public bool ShowGoogleButton { get; set; }
 
+    public string? ExternalError { get; set; }
+
     public LoginModel(SignInManager<ApplicationUser> signInManager, IOptions<AqIdentityOptions> options)
     {
         _signInManager = signInManager;
         _options = options;
     }
 
-    public void OnGet(string? returnUrl)
+    public void OnGet(string? returnUrl, string? error)
     {
         ReturnUrl = returnUrl;
         ShowGoogleButton = _options.Value.Google != null;
+        ExternalError = error switch
+        {
+            "email_not_verified" => "That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead.",
+            "no_email" => "Your Google account doesn't have an email address we can use.",
+            "external_auth_failed" => "Google sign-in failed. Please try again.",
+            "user_creation_failed" or "invalid_external_id" => "Something went wrong signing in with Google. Please try again.",
+            _ => null,
+        };
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -52,12 +62,14 @@ public class LoginModel : PageModel
 
         if (result.IsLockedOut)
         {
-            return RedirectToPage("/Auth/Lockout");
+            var user = await _signInManager.UserManager.FindByEmailAsync(Email);
+            var lockoutEnd = user != null ? await _signInManager.UserManager.GetLockoutEndDateAsync(user) : null;
+            return RedirectToPage("/Auth/Lockout", new { until = lockoutEnd?.UtcTicks });
         }
 
         if (result.RequiresTwoFactor)
         {
-            return RedirectToPage("/Auth/Mfa/Challenge", new { returnUrl = ReturnUrl });
+            return RedirectToPage("/Mfa/Challenge", new { returnUrl = ReturnUrl });
         }
 
         if (result.Succeeded)

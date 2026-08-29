@@ -67,12 +67,8 @@
                 <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Security</legend>
 
                 <div id="secretField" class="space-y-1 hidden">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Client Secret <span class="text-red-500">*</span></label>
-                    <input type="text" asp-for="ClientSecret"
-                           class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                           placeholder="enter-a-strong-secret" />
-                    <p class="text-xs text-slate-400">The secret will be shown once after creation and stored hashed.</p>
-                    <span asp-validation-for="ClientSecret" class="text-xs text-red-500"></span>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Client Secret</label>
+                    <p class="text-xs text-slate-400">A strong secret will be generated automatically and shown once after creation.</p>
                 </div>
 
                 <div id="pkceField" class="flex items-center gap-2">

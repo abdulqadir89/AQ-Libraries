@@ -130,4 +130,94 @@ public class SigningKeyManagerTests : IDisposable
         result.Should().HaveCount(1);
         result.First().KeyId.Should().Be("key1");
     }
+
+    [Fact]
+    public void GetValidationKeys_WithRecentlyExpiredKeyWithinOverlap_StillIncludesKey()
+    {
+        // RotationPeriod=30d in _options; overlap defaults to KeyManagementOptions default (30d).
+        // A key that expired 1 hour ago is still within any reasonable overlap window.
+        SeedKey("recently-expired", DateTimeOffset.UtcNow.AddHours(-1));
+
+        var result = _manager.GetValidationKeys();
+
+        result.Should().ContainSingle(k => k.KeyId == "recently-expired");
+    }
+
+    [Fact]
+    public void GetValidationKeys_WithKeyExpiredBeyondOverlap_ExcludesKey()
+    {
+        var optionsWithShortOverlap = new KeyManagementOptions
+        {
+            RotationPeriod = TimeSpan.FromDays(30),
+            RetirementOverlap = TimeSpan.FromMinutes(5),
+        };
+        var manager = new SigningKeyManager(_context, _dataProtectionProvider, _logger, optionsWithShortOverlap);
+        SeedKey("long-expired", DateTimeOffset.UtcNow.AddHours(-1));
+
+        var result = manager.GetValidationKeys();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RetireExpiredKeysAsync_WithKeyExpiredBeyondOverlap_RetiresIt()
+    {
+        var optionsWithShortOverlap = new KeyManagementOptions
+        {
+            RotationPeriod = TimeSpan.FromDays(30),
+            RetirementOverlap = TimeSpan.FromMinutes(5),
+        };
+        var manager = new SigningKeyManager(_context, _dataProtectionProvider, _logger, optionsWithShortOverlap);
+        SeedKey("long-expired", DateTimeOffset.UtcNow.AddHours(-1));
+
+        await manager.RetireExpiredKeysAsync(CancellationToken.None);
+
+        var key = _context.SigningKeys.Single(k => k.KeyId == "long-expired");
+        key.RetiredAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RetireExpiredKeysAsync_WithKeyWithinOverlap_DoesNotRetireIt()
+    {
+        SeedKey("recently-expired", DateTimeOffset.UtcNow.AddHours(-1));
+
+        await _manager.RetireExpiredKeysAsync(CancellationToken.None);
+
+        var key = _context.SigningKeys.Single(k => k.KeyId == "recently-expired");
+        key.RetiredAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ToSecurityKey_RoundTripsWithRealDataProtectionProvider()
+    {
+        // Uses a real IDataProtectionProvider (not the mocked no-op one from the fixture)
+        // to verify the same provider used to encrypt can decrypt — this is the exact
+        // bug that existed when ToSecurityKey() constructed its own EphemeralDataProtectionProvider
+        // instead of using the instance-injected one.
+        var realProvider = Microsoft.AspNetCore.DataProtection.DataProtectionProvider.Create("test-app");
+        var manager = new SigningKeyManager(_context, realProvider, _logger, _options);
+
+        var key = await manager.GenerateAndPersistKeyAsync(CancellationToken.None);
+
+        var securityKey = manager.ToSecurityKey(key);
+
+        securityKey.Should().NotBeNull();
+        securityKey.KeyId.Should().Be(key.KeyId);
+    }
+
+    [Fact]
+    public async Task ToSecurityKey_WithDifferentProviderInstance_ThrowsCryptographicException()
+    {
+        // Regression guard: encrypting with one provider and decrypting with an unrelated
+        // ephemeral one (the old bug) must fail loudly, not silently succeed with garbage.
+        var encryptingProvider = Microsoft.AspNetCore.DataProtection.DataProtectionProvider.Create("app-a");
+        var manager = new SigningKeyManager(_context, encryptingProvider, _logger, _options);
+        var key = await manager.GenerateAndPersistKeyAsync(CancellationToken.None);
+
+        var unrelatedProvider = new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
+
+        var act = () => AQ.Identity.OpenIddict.KeyManagement.SigningKeyExtensions.ToSecurityKey(key, unrelatedProvider);
+
+        act.Should().Throw<System.Security.Cryptography.CryptographicException>();
+    }
 }

@@ -51,7 +51,7 @@ public class SigningKeyManager : ISigningKeyManager
 
     public async Task<SigningKey> GenerateAndPersistKeyAsync(CancellationToken cancellationToken)
     {
-        using (var rsa = new RSACryptoServiceProvider(2048))
+        using (var rsa = RSA.Create(2048))
         {
             var keyId = Guid.NewGuid().ToString("N");
             var keyXml = rsa.ToXmlString(includePrivateParameters: true);
@@ -78,14 +78,15 @@ public class SigningKeyManager : ISigningKeyManager
 
     public async Task RetireExpiredKeysAsync(CancellationToken cancellationToken)
     {
+        var now = DateTimeOffset.UtcNow;
         var expiredKeys = _context.SigningKeys
             .AsEnumerable()
-            .Where(k => k.IsExpired && !k.IsRetired)
+            .Where(k => !k.IsRetired && now > k.ExpiresAt.Add(_options.RetirementOverlap))
             .ToList();
 
         foreach (var key in expiredKeys)
         {
-            key.RetiredAt = DateTimeOffset.UtcNow;
+            key.RetiredAt = now;
         }
 
         if (expiredKeys.Any())
@@ -102,9 +103,12 @@ public class SigningKeyManager : ISigningKeyManager
 
     public IReadOnlyList<SigningKey> GetValidationKeys()
     {
+        // Includes keys within their retirement overlap window so recently-rotated
+        // keys can still validate tokens issued before the rotation.
+        var now = DateTimeOffset.UtcNow;
         return _context.SigningKeys
             .AsEnumerable()
-            .Where(k => !k.IsRetired && !k.IsExpired)
+            .Where(k => !k.IsRetired && now <= k.ExpiresAt.Add(_options.RetirementOverlap))
             .OrderByDescending(k => k.CreatedAt)
             .ToList();
     }
@@ -114,38 +118,32 @@ public class SigningKeyManager : ISigningKeyManager
         GenerateAndPersistKeyAsync(CancellationToken.None).GetAwaiter().GetResult();
     }
 
-    private void GenerateNewSigningKey()
-    {
-        GenerateAndPersistKeyAsync(CancellationToken.None).GetAwaiter().GetResult();
-    }
+    public SecurityKey ToSecurityKey(SigningKey key) => SigningKeyExtensions.ToSecurityKey(key, _dataProtectionProvider);
 }
 
 public static class SigningKeyExtensions
 {
-    public static SecurityKey ToSecurityKey(this SigningKey key)
+    public static SecurityKey ToSecurityKey(this SigningKey key, IDataProtectionProvider dataProtectionProvider)
     {
-        var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var protector = dataProtectionProvider.CreateProtector("AQ.Identity.SigningKey");
         var decryptedXml = protector.Unprotect(key.EncryptedKeyXml);
 
-        using (var rsa = new RSACryptoServiceProvider())
+        using var rsa = RSA.Create();
+        rsa.FromXmlString(decryptedXml);
+        var rsaParams = rsa.ExportParameters(true);
+        return new RsaSecurityKey(new RSAParameters
         {
-            rsa.FromXmlString(decryptedXml);
-            var rsaParams = rsa.ExportParameters(true);
-            return new RsaSecurityKey(new RSAParameters
-            {
-                D = rsaParams.D,
-                DP = rsaParams.DP,
-                DQ = rsaParams.DQ,
-                Exponent = rsaParams.Exponent,
-                InverseQ = rsaParams.InverseQ,
-                Modulus = rsaParams.Modulus,
-                P = rsaParams.P,
-                Q = rsaParams.Q
-            })
-            {
-                KeyId = key.KeyId
-            };
-        }
+            D = rsaParams.D,
+            DP = rsaParams.DP,
+            DQ = rsaParams.DQ,
+            Exponent = rsaParams.Exponent,
+            InverseQ = rsaParams.InverseQ,
+            Modulus = rsaParams.Modulus,
+            P = rsaParams.P,
+            Q = rsaParams.Q
+        })
+        {
+            KeyId = key.KeyId
+        };
     }
 }

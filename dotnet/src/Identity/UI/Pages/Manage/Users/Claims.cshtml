@@ -62,7 +62,8 @@
                                     <input type="hidden" name="claimId" value="@claim.Id" />
                                     <button type="submit" asp-page-handler="DeleteClaim"
                                             class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                                            onclick="return confirm('Remove claim \'@Html.Raw(claim.Type.Replace("'", "\\'"))\'?')">
+                                            data-claim-type="@claim.Type"
+                                            onclick="return confirm('Remove claim \'' + this.dataset.claimType + '\'?')">
                                         Remove
                                     </button>
                                 </form>

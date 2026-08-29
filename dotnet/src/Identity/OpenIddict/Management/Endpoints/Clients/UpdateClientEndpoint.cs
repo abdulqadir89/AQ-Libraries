@@ -1,3 +1,4 @@
+using System.Linq;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -21,13 +22,11 @@ public class UpdateClientEndpoint(
     {
         var clientId = Route<string>("ClientId")!;
 
-        // Validate redirect URIs
-        foreach (var redirectUri in req.RedirectUris)
+        var redirectUriError = ClientDescriptorBuilder.ValidateRedirectUris(
+            req.RedirectUris.Concat(req.PostLogoutRedirectUris));
+        if (redirectUriError != null)
         {
-            if (!IsValidRedirectUri(redirectUri))
-            {
-                ThrowError($"Invalid redirect URI: {redirectUri}. HTTPS required, or HTTP for localhost/127.0.0.1");
-            }
+            ThrowError(redirectUriError);
         }
 
         // Find existing client
@@ -56,14 +55,5 @@ public class UpdateClientEndpoint(
         await context.SaveChangesAsync(ct);
 
         await Send.OkAsync(ct);
-    }
-
-    private static bool IsValidRedirectUri(string raw)
-    {
-        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri)) return false;
-        if (uri.Scheme == Uri.UriSchemeHttps) return true;
-        if (uri.Scheme == Uri.UriSchemeHttp)
-            return uri.Host is "localhost" or "127.0.0.1" or "[::1]";
-        return false;
     }
 }
