@@ -50,14 +50,16 @@
                             <option value="public">Public</option>
                             <option value="confidential">Confidential</option>
                         </select>
+                        <p class="text-xs text-slate-400">Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service.</p>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Grant Type <span class="text-red-500">*</span></label>
                         <select asp-for="GrantType" id="grantType"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="authorization_code">Authorization Code</option>
-                            <option value="client_credentials">Client Credentials</option>
+                            <option value="client_credentials" id="clientCredentialsOption">Client Credentials</option>
                         </select>
+                        <p id="grantTypeHint" class="text-xs text-slate-400">Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only.</p>
                     </div>
                 </div>
             </fieldset>
@@ -113,7 +115,7 @@
 
             <!-- Redirect URIs (hidden for client_credentials) -->
             <fieldset id="redirectSection" class="space-y-4">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Redirect URIs</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Redirects</legend>
 
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Redirect URIs</label>
@@ -163,10 +165,31 @@
 (function () {
     var typeSelect = document.getElementById('clientType');
     var grantSelect = document.getElementById('grantType');
+    var clientCredsOption = document.getElementById('clientCredentialsOption');
+    var publicOption = typeSelect.querySelector('option[value="public"]');
     var secretField = document.getElementById('secretField');
     var pkceField = document.getElementById('pkceField');
     var redirectSection = document.getElementById('redirectSection');
     var serviceAccountSection = document.getElementById('serviceAccountSection');
+
+    // client_credentials authenticates with a client secret, so it's confidential-only —
+    // a public client has nowhere to safely hold one. Keep the two selects mutually
+    // consistent instead of letting the admin pick an invalid combination.
+    function onTypeChange() {
+        if (typeSelect.value === 'public' && grantSelect.value === 'client_credentials') {
+            grantSelect.value = 'authorization_code';
+        }
+        clientCredsOption.disabled = typeSelect.value === 'public';
+    }
+
+    function onGrantChange() {
+        if (grantSelect.value === 'client_credentials') {
+            typeSelect.value = 'confidential';
+            publicOption.disabled = true;
+        } else {
+            publicOption.disabled = false;
+        }
+    }
 
     function update() {
         var isConfidential = typeSelect.value === 'confidential';
@@ -178,8 +201,10 @@
         serviceAccountSection.classList.toggle('hidden', !isClientCreds);
     }
 
-    typeSelect.addEventListener('change', update);
-    grantSelect.addEventListener('change', update);
+    typeSelect.addEventListener('change', function () { onTypeChange(); update(); });
+    grantSelect.addEventListener('change', function () { onGrantChange(); update(); });
+    onTypeChange();
+    onGrantChange();
     update();
 })();
 </script>

@@ -49,6 +49,14 @@ public class CreateClientModel(
             return Page();
         }
 
+        // client_credentials authenticates with a client secret, so it's confidential-only —
+        // a public client has nowhere to safely hold one. Standard OAuth2 practice.
+        if (Type == "public" && GrantType == "client_credentials")
+        {
+            ModelState.AddModelError(nameof(GrantType), "Client Credentials requires a confidential client — a public client cannot hold a secret.");
+            return Page();
+        }
+
         // Secrets for confidential clients are always generated server-side, never
         // accepted from the admin's form — prevents setting a weak/reused secret.
         var generatedSecret = Type == "confidential" ? RandomNumberGenerator.GetHexString(64) : null;
