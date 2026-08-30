@@ -4,7 +4,7 @@
 @inject IOptions<AqIdentityOptions> options
 @{
     var themeCookie = Context.Request.Cookies[ThemeModel.CookieName]?.Split(':') ?? [];
-    var currentTheme = themeCookie.Length > 0 ? themeCookie[0] : "clay";
+    var currentTheme = themeCookie.Length > 0 ? themeCookie[0] : options.Value.Branding.DefaultTheme;
     var currentMode = themeCookie.Length > 1 ? themeCookie[1] : "light";
     ViewData["CurrentTheme"] = currentTheme;
     ViewData["CurrentMode"] = currentMode;
@@ -43,9 +43,16 @@
 
         <!-- Logo / App name -->
         <div class="text-center mb-8">
-            <span class="inline-block text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                @options.Value.AppName
-            </span>
+            @if (!string.IsNullOrEmpty(options.Value.Branding.LogoUrl))
+            {
+                <img src="@options.Value.Branding.LogoUrl" alt="@options.Value.AppName" class="inline-block h-10" />
+            }
+            else
+            {
+                <span class="inline-block text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                    @options.Value.AppName
+                </span>
+            }
         </div>
 
         <!-- Card -->

@@ -18,7 +18,14 @@
     <!-- Sidebar -->
     <aside class="w-56 shrink-0 min-h-screen bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col">
         <div class="px-5 py-5 border-b border-slate-100 dark:border-slate-800">
-            <span class="text-base font-black tracking-tight text-slate-900 dark:text-white">@options.Value.AppName</span>
+            @if (!string.IsNullOrEmpty(options.Value.Branding.LogoUrl))
+            {
+                <img src="@options.Value.Branding.LogoUrl" alt="@options.Value.AppName" class="h-6" />
+            }
+            else
+            {
+                <span class="text-base font-black tracking-tight text-slate-900 dark:text-white">@options.Value.AppName</span>
+            }
             <p class="text-xs text-slate-400 mt-0.5">Identity Admin</p>
         </div>
 

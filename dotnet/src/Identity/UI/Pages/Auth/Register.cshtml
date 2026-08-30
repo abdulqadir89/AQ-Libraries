@@ -1,12 +1,15 @@
 @page "/auth/register"
+@using AQ.Identity.Core.Configuration
+@using Microsoft.Extensions.Options
 @model RegisterModel
+@inject IOptions<AqIdentityOptions> options
 @{
     ViewData["Title"] = "Create account";
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">Create account</h2>
-<p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-8">Join ELS to access your courses and workspace</p>
+<p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-8">Join @options.Value.AppName to access your courses and workspace</p>
 
 <form method="post" action="/auth/register" asp-antiforgery="true" class="space-y-5">
     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />

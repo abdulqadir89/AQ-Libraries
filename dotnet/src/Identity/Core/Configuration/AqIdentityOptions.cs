@@ -6,6 +6,7 @@ public class AqIdentityOptions
 {
     public string Issuer { get; set; } = default!;
     public string AppName { get; set; } = "AQ Identity";
+    public BrandingOptions Branding { get; set; } = new();
     public TokenLifetimeOptions Tokens { get; set; } = new();
     public PasswordPolicyOptions Password { get; set; } = new();
     public LockoutPolicyOptions Lockout { get; set; } = new();

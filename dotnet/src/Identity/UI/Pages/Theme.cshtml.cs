@@ -1,10 +1,12 @@
+using AQ.Identity.Core.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace AQ.Identity.UI.Pages;
 
-public class ThemeModel : PageModel
+public class ThemeModel(IOptions<AqIdentityOptions> options) : PageModel
 {
     public const string CookieName = "aq-theme";
     private static readonly string[] ValidThemes = ["clay", "blue", "slate", "zinc", "bloom", "spark"];
@@ -12,7 +14,10 @@ public class ThemeModel : PageModel
 
     public IActionResult OnPost(string? theme, string? mode, string? returnUrl)
     {
-        var resolvedTheme = ValidThemes.Contains(theme) ? theme! : "clay";
+        var defaultTheme = ValidThemes.Contains(options.Value.Branding.DefaultTheme)
+            ? options.Value.Branding.DefaultTheme
+            : "clay";
+        var resolvedTheme = ValidThemes.Contains(theme) ? theme! : defaultTheme;
         var resolvedMode = ValidModes.Contains(mode) ? mode! : "light";
 
         Response.Cookies.Append(CookieName, $"{resolvedTheme}:{resolvedMode}", new CookieOptions
