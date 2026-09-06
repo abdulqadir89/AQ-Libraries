@@ -32,6 +32,8 @@ export interface ColumnFilterRef {
   isOpen: () => boolean;
 }
 
+const ENUM_SEARCH_THRESHOLD = 8;
+
 const STRING_OPERATORS = [
   { value: 'contains', label: 'Contains' },
   { value: 'eq', label: 'Equals' },
@@ -151,6 +153,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     const [rangeError, setRangeError] = useState('');
     // For enum filters with multiple selection
     const [selectedEnumValues, setSelectedEnumValues] = useState<string[]>([]);
+    const [enumSearch, setEnumSearch] = useState('');
     // For lookup filters with multiple selection (CRUD-backed entity, async Select)
     const [selectedLookupValues, setSelectedLookupValues] = useState<string[]>([]);
 
@@ -187,6 +190,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setValue('');
         setSecondValue('');
         setSelectedEnumValues([]);
+        setEnumSearch('');
         setSelectedLookupValues([]);
         setHasActiveFilter(false);
         setRangeError('');
@@ -197,6 +201,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           setValue('');
           setSecondValue('');
           setSelectedEnumValues([]);
+          setEnumSearch('');
           setSelectedLookupValues([]);
           setHasActiveFilter(false);
           setRangeError('');
@@ -417,7 +422,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       };
 
       switch (column.type) {
-        case 'enum':
+        case 'enum': {
           if (!column.enumOptions || column.enumOptions.length === 0) {
             return (
               <Text size="sm" c="dimmed">
@@ -426,25 +431,48 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             );
           }
 
+          const filteredEnumOptions = enumSearch
+            ? column.enumOptions.filter((option) =>
+                option.label.toLowerCase().includes(enumSearch.toLowerCase())
+              )
+            : column.enumOptions;
+
           return (
-            <Stack gap="xs" mah={200} style={{ overflowY: 'auto' }}>
-              {column.enumOptions.map((option) => (
-                <Checkbox
-                  key={option.value}
-                  label={option.label}
-                  checked={selectedEnumValues.includes(String(option.value))}
-                  onChange={(event) => {
-                    const valueStr = String(option.value);
-                    if (event.currentTarget.checked) {
-                      setSelectedEnumValues(prev => [...prev, valueStr]);
-                    } else {
-                      setSelectedEnumValues(prev => prev.filter(v => v !== valueStr));
-                    }
-                  }}
+            <Stack gap="xs">
+              {column.enumOptions.length > ENUM_SEARCH_THRESHOLD && (
+                <TextInput
+                  placeholder="Search..."
+                  value={enumSearch}
+                  onChange={(event) => setEnumSearch(event.currentTarget.value)}
+                  size="xs"
                 />
-              ))}
+              )}
+              <Stack gap="xs" mah={200} style={{ overflowY: 'auto' }}>
+                {filteredEnumOptions.length === 0 ? (
+                  <Text size="xs" c="dimmed">
+                    No matches
+                  </Text>
+                ) : (
+                  filteredEnumOptions.map((option) => (
+                    <Checkbox
+                      key={option.value}
+                      label={option.label}
+                      checked={selectedEnumValues.includes(String(option.value))}
+                      onChange={(event) => {
+                        const valueStr = String(option.value);
+                        if (event.currentTarget.checked) {
+                          setSelectedEnumValues(prev => [...prev, valueStr]);
+                        } else {
+                          setSelectedEnumValues(prev => prev.filter(v => v !== valueStr));
+                        }
+                      }}
+                    />
+                  ))
+                )}
+              </Stack>
             </Stack>
           );
+        }
 
         case 'lookup': {
           if (!column.lookupConfig) {
