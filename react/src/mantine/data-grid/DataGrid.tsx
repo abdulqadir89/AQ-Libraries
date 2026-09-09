@@ -95,7 +95,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   withBorder = true,
   withColumnBorders = false,
   selectable = false,
-  selectedRows = [],
+  selectedRows,
   onSelectionChange,
   rowKey = 'id',
   onFilterChange,
@@ -113,12 +113,14 @@ export function DataGrid<T extends Record<string, unknown>>({
   // Column filter refs for reset functionality
   const columnFilterRefs = useRef<Record<string, ColumnFilterRef | null>>({});
 
-  // Sync selectedRows prop with internal state
+  // Sync selectedRows prop with internal state — only when the consumer actually controls
+  // selection (passes selectedRows). In uncontrolled usage, selection is owned entirely by
+  // internal state; syncing against an undefined/default prop would stomp every selection.
   useEffect(() => {
+    if (selectedRows === undefined) return;
     setState(prev => {
-      const newSelection = selectedRows || [];
-      if (JSON.stringify(prev.selectedRows) !== JSON.stringify(newSelection)) {
-        return { ...prev, selectedRows: newSelection };
+      if (JSON.stringify(prev.selectedRows) !== JSON.stringify(selectedRows)) {
+        return { ...prev, selectedRows };
       }
       return prev;
     });
