@@ -230,12 +230,39 @@ public abstract class StateMachineDefinition : Entity
     {
         var diagram = new System.Text.StringBuilder();
         diagram.AppendLine("stateDiagram-v2");
+        diagram.AppendLine("    direction TB");
 
         // Start arrows ([*] --> EntryState) are drawn by the main transition loop below, for any
         // transition with FromStateId == null — no separate pass needed.
 
+        // Emit edges in BFS order from the entry state(s) so Mermaid's dagre layout ranks states
+        // by forward progress through the workflow (top to bottom) rather than by declaration
+        // order — otherwise back-edges (Return/Cancel) confuse its cycle-breaking heuristic and
+        // [*] ends up floating in the middle of the diagram instead of at the top/bottom.
+        var rank = new Dictionary<Guid, int>();
+        var queue = new Queue<Guid>();
+        foreach (var entryState in EntryStates)
+        {
+            if (rank.TryAdd(entryState.Id, 0))
+                queue.Enqueue(entryState.Id);
+        }
+        while (queue.Count > 0)
+        {
+            var stateId = queue.Dequeue();
+            var nextRank = rank[stateId] + 1;
+            foreach (var toStateId in _transitions.Where(t => t.FromStateId == stateId && t.ToStateId.HasValue).Select(t => t.ToStateId!.Value))
+            {
+                if (rank.TryAdd(toStateId, nextRank))
+                    queue.Enqueue(toStateId);
+            }
+        }
+
+        var orderedTransitions = _transitions
+            .OrderBy(t => t.FromStateId.HasValue && rank.TryGetValue(t.FromStateId.Value, out var r) ? r : -1)
+            .ThenBy(t => t.ToStateId.HasValue && rank.TryGetValue(t.ToStateId.Value, out var r2) ? r2 : int.MaxValue);
+
         // Add all transitions with their triggers
-        foreach (var transition in _transitions)
+        foreach (var transition in orderedTransitions)
         {
             // Skip IsRecordsOnly triggers — they don't change state and are listed separately
             var trigger = _triggers.FirstOrDefault(t => t.Id == transition.TriggerId);
