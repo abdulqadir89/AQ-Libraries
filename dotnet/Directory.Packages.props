@@ -13,26 +13,26 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
   </ItemGroup>
   <!-- Identity packages -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
-    <PackageVersion Include="OpenIddict.AspNetCore" Version="7.6.0" />
-    <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.6.0" />
-    <PackageVersion Include="OpenIddict.Abstractions" Version="7.6.0" />
-    <PackageVersion Include="OpenIddict.Server" Version="7.6.0" />
-    <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.6.0" />
-    <PackageVersion Include="OpenIddict.Validation" Version="7.6.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
+    <PackageVersion Include="OpenIddict.AspNetCore" Version="7.7.0" />
+    <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.0" />
+    <PackageVersion Include="OpenIddict.Abstractions" Version="7.7.0" />
+    <PackageVersion Include="OpenIddict.Server" Version="7.7.0" />
+    <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.7.0" />
+    <PackageVersion Include="OpenIddict.Validation" Version="7.7.0" />
     <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="QRCoder" Version="1.8.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.12" />
   </ItemGroup>
   <!-- Common packages (version independent) -->
   <ItemGroup>
@@ -44,7 +44,7 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
