@@ -1,5 +1,6 @@
 // Mantine component barrel export
 export * from './data-grid';
+export * from './master-detail';
 export * from './autocomplete';
 export * from './theme';
 export * from './datetime';
