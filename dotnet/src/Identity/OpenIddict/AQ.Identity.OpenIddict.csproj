@@ -17,6 +17,7 @@
     <PackageReference Include="OpenIddict.Server" />
     <PackageReference Include="OpenIddict.Server.AspNetCore" />
     <PackageReference Include="OpenIddict.Validation" />
+    <PackageReference Include="OpenIddict.Quartz" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
     <PackageReference Include="FastEndpoints" />
     <PackageReference Include="Serilog.AspNetCore" />

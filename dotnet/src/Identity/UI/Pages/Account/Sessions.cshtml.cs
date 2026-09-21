@@ -52,8 +52,13 @@ public class SessionsModel(
                 var tokenStatus = await tokenManager.GetStatusAsync(token, HttpContext.RequestAborted);
                 if (tokenStatus != OpenIddictConstants.Statuses.Valid) continue;
 
-                hasValidToken = true;
+                // OpenIddict doesn't flip Status away from Valid when ExpirationDate
+                // passes (that's enforced at validation time, not stored) — so an
+                // expired-but-not-yet-pruned token still reads as Valid here.
                 var tokenExpiry = await tokenManager.GetExpirationDateAsync(token, HttpContext.RequestAborted);
+                if (tokenExpiry.HasValue && tokenExpiry <= DateTimeOffset.UtcNow) continue;
+
+                hasValidToken = true;
                 if (tokenExpiry.HasValue && (expiresAt is null || tokenExpiry > expiresAt))
                     expiresAt = tokenExpiry;
             }

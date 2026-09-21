@@ -27,6 +27,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Validation;
+using Quartz;
 using System.Threading.RateLimiting;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -87,12 +88,27 @@ public static class ServiceCollectionExtensions
             identityOptions.Lockout.DefaultLockoutTimeSpan = options.Lockout.LockoutDuration;
         });
 
+        // Quartz.NET runs OpenIddict's built-in pruning job, which sweeps expired/
+        // redeemed/revoked tokens and authorizations on a schedule. Without this,
+        // rows never get cleaned up — OpenIddict marks a token's Status as Revoked/
+        // Redeemed on use, but never deletes the row, and Status is never flipped
+        // just because ExpirationDate has passed (that's enforced at validation
+        // time, not persisted).
+        services.AddQuartz(quartzOptions =>
+        {
+            quartzOptions.UseSimpleTypeLoader();
+            quartzOptions.UseInMemoryStore();
+        });
+        services.AddQuartzHostedService(quartzOptions => quartzOptions.WaitForJobsToComplete = true);
+
         services.AddOpenIddict()
             .AddCore(coreOptions =>
             {
                 coreOptions
                     .UseEntityFrameworkCore()
                     .UseDbContext<TContext>();
+
+                coreOptions.UseQuartz();
             })
             .AddServer(serverOptions =>
             {
