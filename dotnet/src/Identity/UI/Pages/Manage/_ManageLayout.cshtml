@@ -1,8 +1,13 @@
+@using System.Globalization
 @using AQ.Identity.Core.Configuration
 @using Microsoft.Extensions.Options
 @inject IOptions<AqIdentityOptions> options
+@{
+    var currentCultureName = CultureInfo.CurrentUICulture.Name;
+    var cultureReturnUrl = Context.Request.Path + Context.Request.QueryString;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@currentCultureName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -75,10 +80,21 @@
     <main class="flex-1 min-h-screen flex flex-col">
         <header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-4 flex items-center justify-between">
             <h1 class="text-lg font-semibold text-slate-900 dark:text-white">@ViewData["Title"]</h1>
-            @if (ViewData["Actions"] != null)
-            {
-                @Html.Raw(ViewData["Actions"]!.ToString())
-            }
+            <div class="flex items-center gap-2">
+                <form method="post" asp-page="/Culture/Set" asp-antiforgery="true">
+                    <input type="hidden" name="returnUrl" value="@cultureReturnUrl" />
+                    <select name="culture" class="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5" onchange="this.form.submit()" aria-label="@L["Language"]">
+                        <option value="en" selected="@(currentCultureName == "en")">English</option>
+                        <option value="zh-CN" selected="@(currentCultureName == "zh-CN")">简体中文</option>
+                        <option value="zh-TW" selected="@(currentCultureName == "zh-TW")">繁體中文（台灣）</option>
+                        <option value="zh-HK" selected="@(currentCultureName == "zh-HK")">繁體中文（香港）</option>
+                    </select>
+                </form>
+                @if (ViewData["Actions"] != null)
+                {
+                    @Html.Raw(ViewData["Actions"]!.ToString())
+                }
+            </div>
         </header>
 
         <div class="flex-1 p-8">

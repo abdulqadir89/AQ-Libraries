@@ -1,3 +1,4 @@
+@using System.Globalization
 @using AQ.Identity.Core.Abstractions
 @using AQ.Identity.Core.Configuration
 @using AQ.Identity.Core.Entities
@@ -14,9 +15,11 @@
     var currentMode = themeCookie.Length > 1 ? themeCookie[1] : "light";
     ViewData["CurrentTheme"] = currentTheme;
     ViewData["CurrentMode"] = currentMode;
+    var currentCultureName = CultureInfo.CurrentUICulture.Name;
+    var cultureReturnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@currentTheme" data-mode="@currentMode">
+<html lang="@currentCultureName" data-theme="@currentTheme" data-mode="@currentMode">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -50,11 +53,22 @@
     <aside class="w-56 shrink-0 min-h-screen bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col">
 
         <!-- App brand -->
-        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <a href="/" class="text-base font-black tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                @options.Value.AppName
-            </a>
-            <partial name="_ThemePicker" />
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+                <a href="/" class="text-base font-black tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    @options.Value.AppName
+                </a>
+                <partial name="_ThemePicker" />
+            </div>
+            <form method="post" asp-page="/Culture/Set" asp-antiforgery="true">
+                <input type="hidden" name="returnUrl" value="@cultureReturnUrl" />
+                <select name="culture" class="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5" onchange="this.form.submit()" aria-label="@L["Language"]">
+                    <option value="en" selected="@(currentCultureName == "en")">English</option>
+                    <option value="zh-CN" selected="@(currentCultureName == "zh-CN")">简体中文</option>
+                    <option value="zh-TW" selected="@(currentCultureName == "zh-TW")">繁體中文（台灣）</option>
+                    <option value="zh-HK" selected="@(currentCultureName == "zh-HK")">繁體中文（香港）</option>
+                </select>
+            </form>
         </div>
 
         <!-- User identity -->

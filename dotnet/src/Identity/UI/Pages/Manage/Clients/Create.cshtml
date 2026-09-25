@@ -1,14 +1,14 @@
 @page "/manage/clients/create"
 @model AQ.Identity.UI.Pages.Manage.Clients.CreateClientModel
 @{
-    ViewData["Title"] = "Add Client";
+    ViewData["Title"] = L["Add Client"].Value;
     Layout = "~/Pages/Manage/_ManageLayout.cshtml";
 }
 
 <div class="max-w-2xl">
     <a href="/manage/clients" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 mb-6 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to Clients
+        @L["Back to Clients"]
     </a>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6">
@@ -23,75 +23,75 @@
 
             <!-- Basic Info -->
             <fieldset class="space-y-4">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Basic Information</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">@L["Basic Information"]</legend>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Client ID <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Client ID"] <span class="text-red-500">*</span></label>
                         <input type="text" asp-for="ClientId"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition font-mono"
                                placeholder="my-app" required />
                         <span asp-validation-for="ClientId" class="text-xs text-red-500"></span>
                     </div>
                     <div class="space-y-1">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Display Name <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Display Name"] <span class="text-red-500">*</span></label>
                         <input type="text" asp-for="DisplayName"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               placeholder="My Application" required />
+                               placeholder="@L["My Application"]" required />
                         <span asp-validation-for="DisplayName" class="text-xs text-red-500"></span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Client Type <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Client Type"] <span class="text-red-500">*</span></label>
                         <select asp-for="Type" id="clientType"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                            <option value="public">Public</option>
-                            <option value="confidential">Confidential</option>
+                            <option value="public">@L["Public"]</option>
+                            <option value="confidential">@L["Confidential"]</option>
                         </select>
-                        <p class="text-xs text-slate-400">Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service.</p>
+                        <p class="text-xs text-slate-400">@L["Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service."]</p>
                     </div>
                     <div class="space-y-1">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Grant Type <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Grant Type"] <span class="text-red-500">*</span></label>
                         <select asp-for="GrantType" id="grantType"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                            <option value="authorization_code">Authorization Code</option>
-                            <option value="client_credentials" id="clientCredentialsOption">Client Credentials</option>
+                            <option value="authorization_code">@L["Authorization Code"]</option>
+                            <option value="client_credentials" id="clientCredentialsOption">@L["Client Credentials"]</option>
                         </select>
-                        <p id="grantTypeHint" class="text-xs text-slate-400">Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only.</p>
+                        <p id="grantTypeHint" class="text-xs text-slate-400">@L["Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only."]</p>
                     </div>
                 </div>
             </fieldset>
 
             <!-- Secret + PKCE (conditional) -->
             <fieldset id="secretSection" class="space-y-4">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Security</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">@L["Security"]</legend>
 
                 <div id="secretField" class="space-y-1 hidden">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Client Secret</label>
-                    <p class="text-xs text-slate-400">A strong secret will be generated automatically and shown once after creation.</p>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Client Secret"]</label>
+                    <p class="text-xs text-slate-400">@L["A strong secret will be generated automatically and shown once after creation."]</p>
                 </div>
 
                 <div id="pkceField" class="flex items-center gap-2">
                     <input type="checkbox" asp-for="RequirePkce" id="requirePkce"
                            class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600" />
-                    <label for="requirePkce" class="text-sm text-slate-700 dark:text-slate-300">Require PKCE (Proof Key for Code Exchange)</label>
+                    <label for="requirePkce" class="text-sm text-slate-700 dark:text-slate-300">@L["Require PKCE (Proof Key for Code Exchange)"]</label>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <input type="checkbox" asp-for="IsFirstParty" id="isFirstParty"
                            class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600" />
-                    <label for="isFirstParty" class="text-sm text-slate-700 dark:text-slate-300">First-party (skip consent screen)</label>
+                    <label for="isFirstParty" class="text-sm text-slate-700 dark:text-slate-300">@L["First-party (skip consent screen)"]</label>
                 </div>
             </fieldset>
 
             <!-- Scopes -->
             <fieldset class="space-y-3">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Scopes</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">@L["Scopes"]</legend>
                 @if (Model.AvailableScopes.Count == 0)
                 {
-                    <p class="text-xs text-slate-400">No scopes available.</p>
+                    <p class="text-xs text-slate-400">@L["No scopes available."]</p>
                 }
                 else
                 {
@@ -115,34 +115,34 @@
 
             <!-- Redirect URIs (hidden for client_credentials) -->
             <fieldset id="redirectSection" class="space-y-4">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Redirects</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">@L["Redirects"]</legend>
 
                 <div class="space-y-1">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Redirect URIs</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Redirect URIs"]</label>
                     <textarea asp-for="RedirectUrisRaw" rows="3"
                               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-y"
                               placeholder="https://app.example.com/callback&#10;http://localhost:3000/callback"></textarea>
-                    <p class="text-xs text-slate-400">One URI per line. HTTPS required; HTTP allowed for localhost.</p>
+                    <p class="text-xs text-slate-400">@L["One URI per line. HTTPS required; HTTP allowed for localhost."]</p>
                     <span asp-validation-for="RedirectUrisRaw" class="text-xs text-red-500"></span>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Post-Logout Redirect URIs</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Post-Logout Redirect URIs"]</label>
                     <textarea asp-for="PostLogoutUrisRaw" rows="2"
                               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-y"
                               placeholder="https://app.example.com&#10;http://localhost:3000"></textarea>
-                    <p class="text-xs text-slate-400">One URI per line.</p>
+                    <p class="text-xs text-slate-400">@L["One URI per line."]</p>
                 </div>
             </fieldset>
 
             <!-- Service Account Claims (only for client_credentials) -->
             <fieldset id="serviceAccountSection" class="space-y-3 hidden">
-                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">Service Account Claims</legend>
+                <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 pb-2 border-b border-slate-100 dark:border-slate-800 w-full">@L["Service Account Claims"]</legend>
                 <div class="space-y-1">
                     <textarea asp-for="ServiceAccountClaimsRaw" rows="3"
                               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-y"
                               placeholder="user_id=00000000-0000-0000-0000-000000000001&#10;role=service"></textarea>
-                    <p class="text-xs text-slate-400">One claim per line in <code>key=value</code> format. These claims are embedded in every token issued to this client.</p>
+                    <p class="text-xs text-slate-400">@L["One claim per line in key=value format. These claims are embedded in every token issued to this client."]</p>
                 </div>
             </fieldset>
 
@@ -150,11 +150,11 @@
             <div class="flex items-center gap-3 pt-2">
                 <button type="submit"
                         class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
-                    Create Client
+                    @L["Create Client"]
                 </button>
                 <a href="/manage/clients"
                    class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                    Cancel
+                    @L["Cancel"]
                 </a>
             </div>
         </form>

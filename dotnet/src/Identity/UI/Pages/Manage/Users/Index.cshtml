@@ -1,7 +1,7 @@
 @page "/manage/users"
 @model AQ.Identity.UI.Pages.Manage.Users.UsersIndexModel
 @{
-    ViewData["Title"] = "Users";
+    ViewData["Title"] = L["Users"].Value;
     Layout = "~/Pages/Manage/_ManageLayout.cshtml";
 }
 
@@ -10,14 +10,14 @@
     <div class="flex gap-3">
         <input type="text" name="Search" value="@Model.Search"
                class="w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-               placeholder="Search by name or email…" />
+               placeholder="@L["Search by name or email…"]" />
         <button type="submit"
                 class="text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-            Search
+            @L["Search"]
         </button>
         @if (!string.IsNullOrEmpty(Model.Search))
         {
-            <a href="/manage/users" class="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 py-2 transition-colors">Clear</a>
+            <a href="/manage/users" class="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 py-2 transition-colors">@L["Clear"]</a>
         }
     </div>
 </form>
@@ -26,21 +26,21 @@
     @if (Model.Users.Count == 0)
     {
         <div class="text-center py-16">
-            <p class="text-sm text-slate-400">@(string.IsNullOrEmpty(Model.Search) ? "No users found." : $"No users matching '{Model.Search}'.")</p>
+            <p class="text-sm text-slate-400">@(string.IsNullOrEmpty(Model.Search) ? L["No users found."] : L["No users matching '{0}'.", Model.Search])</p>
         </div>
     }
     else
     {
         <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-            <p class="text-xs text-slate-400">@Model.Users.Count user@(Model.Users.Count == 1 ? "" : "s")</p>
+            <p class="text-xs text-slate-400">@L["{0} users", Model.Users.Count]</p>
         </div>
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-slate-100 dark:border-slate-800">
-                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">User</th>
-                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Login</th>
-                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Created</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">@L["User"]</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">@L["Status"]</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">@L["Last Login"]</th>
+                    <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">@L["Created"]</th>
                     <th class="px-5 py-3"></th>
                 </tr>
             </thead>
@@ -57,19 +57,19 @@
                             {
                                 <span class="inline-flex items-center gap-1 text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 px-2 py-0.5 rounded-full">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 dark:bg-green-400"></span>
-                                    Active
+                                    @L["Active"]
                                 </span>
                             }
                             else
                             {
                                 <span class="inline-flex items-center gap-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">
                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                    Inactive
+                                    @L["Inactive"]
                                 </span>
                             }
                         </td>
                         <td class="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
-                            @(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("MMM d, yyyy") : "Never")
+                            @(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("MMM d, yyyy") : L["Never"].Value)
                         </td>
                         <td class="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
                             @user.CreatedAt.ToString("MMM d, yyyy")
@@ -80,7 +80,7 @@
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <button type="submit" asp-page-handler="ToggleActive"
                                             class="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
-                                        @(user.IsActive ? "Deactivate" : "Activate")
+                                        @(user.IsActive ? L["Deactivate"] : L["Activate"])
                                     </button>
                                 </form>
                                 <span class="text-slate-200 dark:text-slate-700">|</span>
@@ -88,15 +88,16 @@
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <button type="submit" asp-page-handler="InvalidateSessions"
                                             class="text-xs font-medium text-amber-600 hover:text-amber-800 dark:hover:text-amber-400 transition-colors"
+                                            data-confirm-prefix="@L["Invalidate all sessions for"]"
                                             data-full-name="@user.FullName"
-                                            onclick="return confirm('Invalidate all sessions for ' + this.dataset.fullName + '?')">
-                                        Invalidate Sessions
+                                            onclick="return confirm(this.dataset.confirmPrefix + ' ' + this.dataset.fullName + '?')">
+                                        @L["Invalidate Sessions"]
                                     </button>
                                 </form>
                                 <span class="text-slate-200 dark:text-slate-700">|</span>
                                 <a href="/manage/users/@user.Id/claims"
                                    class="text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:hover:text-indigo-400 transition-colors">
-                                    Claims
+                                    @L["Claims"]
                                 </a>
                             </div>
                         </td>

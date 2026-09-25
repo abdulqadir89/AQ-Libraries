@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
   <data name="Sign in" xml:space="preserve">
     <value>Sign in</value>
   </data>
@@ -28,8 +36,8 @@
   <data name="Continue with Google" xml:space="preserve">
     <value>Continue with Google</value>
   </data>
-  <data name="Don&apos;t have an account?" xml:space="preserve">
-    <value>Don&apos;t have an account?</value>
+  <data name="Don't have an account?" xml:space="preserve">
+    <value>Don't have an account?</value>
   </data>
   <data name="Sign up" xml:space="preserve">
     <value>Sign up</value>
@@ -106,8 +114,8 @@
   <data name="Forgot password" xml:space="preserve">
     <value>Forgot password</value>
   </data>
-  <data name="Enter your email address and we&apos;ll send you a link to reset your password." xml:space="preserve">
-    <value>Enter your email address and we&apos;ll send you a link to reset your password.</value>
+  <data name="Enter your email address and we'll send you a link to reset your password." xml:space="preserve">
+    <value>Enter your email address and we'll send you a link to reset your password.</value>
   </data>
   <data name="Send reset link" xml:space="preserve">
     <value>Send reset link</value>
@@ -118,8 +126,8 @@
   <data name="Check your email" xml:space="preserve">
     <value>Check your email</value>
   </data>
-  <data name="If that email address is registered, you&apos;ll receive a reset link shortly. Check your inbox and spam folder." xml:space="preserve">
-    <value>If that email address is registered, you&apos;ll receive a reset link shortly. Check your inbox and spam folder.</value>
+  <data name="If that email address is registered, you'll receive a reset link shortly. Check your inbox and spam folder." xml:space="preserve">
+    <value>If that email address is registered, you'll receive a reset link shortly. Check your inbox and spam folder.</value>
   </data>
   <data name="Back to sign in" xml:space="preserve">
     <value>Back to sign in</value>
@@ -283,8 +291,8 @@
   <data name="Download" xml:space="preserve">
     <value>Download</value>
   </data>
-  <data name="I&apos;ve saved my codes" xml:space="preserve">
-    <value>I&apos;ve saved my codes</value>
+  <data name="I've saved my codes" xml:space="preserve">
+    <value>I've saved my codes</value>
   </data>
   <data name="Backup codes are only shown once. Go to Security settings to regenerate them." xml:space="preserve">
     <value>Backup codes are only shown once. Go to Security settings to regenerate them.</value>
@@ -355,6 +363,9 @@
   <data name="Enable 2FA" xml:space="preserve">
     <value>Enable 2FA</value>
   </data>
+  <data name="Disable 2FA" xml:space="preserve">
+    <value>Disable 2FA</value>
+  </data>
   <data name="Identity Administration" xml:space="preserve">
     <value>Identity Administration</value>
   </data>
@@ -379,8 +390,8 @@
   <data name="Change email address" xml:space="preserve">
     <value>Change email address</value>
   </data>
-  <data name="We&apos;ll send a confirmation link to the new address. Your email won&apos;t change until you click it." xml:space="preserve">
-    <value>We&apos;ll send a confirmation link to the new address. Your email won&apos;t change until you click it.</value>
+  <data name="We'll send a confirmation link to the new address. Your email won't change until you click it." xml:space="preserve">
+    <value>We'll send a confirmation link to the new address. Your email won't change until you click it.</value>
   </data>
   <data name="New email address" xml:space="preserve">
     <value>New email address</value>
@@ -391,8 +402,8 @@
   <data name="Enter a valid email address." xml:space="preserve">
     <value>Enter a valid email address.</value>
   </data>
-  <data name="That&apos;s already your current email address." xml:space="preserve">
-    <value>That&apos;s already your current email address.</value>
+  <data name="That's already your current email address." xml:space="preserve">
+    <value>That's already your current email address.</value>
   </data>
   <data name="That email address is already in use." xml:space="preserve">
     <value>That email address is already in use.</value>
@@ -400,8 +411,8 @@
   <data name="Something went wrong sending the confirmation email. Please try again." xml:space="preserve">
     <value>Something went wrong sending the confirmation email. Please try again.</value>
   </data>
-  <data name="We&apos;ve sent a confirmation link to {0}. Your email won&apos;t change until you confirm it." xml:space="preserve">
-    <value>We&apos;ve sent a confirmation link to {0}. Your email won&apos;t change until you confirm it.</value>
+  <data name="We've sent a confirmation link to {0}. Your email won't change until you confirm it." xml:space="preserve">
+    <value>We've sent a confirmation link to {0}. Your email won't change until you confirm it.</value>
   </data>
   <data name="Security" xml:space="preserve">
     <value>Security</value>
@@ -448,8 +459,8 @@
   <data name="Delete account" xml:space="preserve">
     <value>Delete account</value>
   </data>
-  <data name="Your account&apos;s email address was changed to {0}" xml:space="preserve">
-    <value>Your account&apos;s email address was changed to {0}</value>
+  <data name="Your account's email address was changed to {0}" xml:space="preserve">
+    <value>Your account's email address was changed to {0}</value>
   </data>
   <data name="Two-factor authentication was disabled" xml:space="preserve">
     <value>Two-factor authentication was disabled</value>
@@ -484,8 +495,8 @@
   <data name="Invalid two-factor code." xml:space="preserve">
     <value>Invalid two-factor code.</value>
   </data>
-  <data name="You&apos;re the last administrator — transfer admin access to another account before deleting yours." xml:space="preserve">
-    <value>You&apos;re the last administrator — transfer admin access to another account before deleting yours.</value>
+  <data name="You're the last administrator — transfer admin access to another account before deleting yours." xml:space="preserve">
+    <value>You're the last administrator — transfer admin access to another account before deleting yours.</value>
   </data>
   <data name="Something went wrong deleting your account. Please try again or contact support." xml:space="preserve">
     <value>Something went wrong deleting your account. Please try again or contact support.</value>
@@ -493,8 +504,8 @@
   <data name="Access denied" xml:space="preserve">
     <value>Access denied</value>
   </data>
-  <data name="Your account doesn&apos;t have permission to view that page." xml:space="preserve">
-    <value>Your account doesn&apos;t have permission to view that page.</value>
+  <data name="Your account doesn't have permission to view that page." xml:space="preserve">
+    <value>Your account doesn't have permission to view that page.</value>
   </data>
   <data name="Back to my account" xml:space="preserve">
     <value>Back to my account</value>
@@ -502,8 +513,8 @@
   <data name="Connected App Sessions" xml:space="preserve">
     <value>Connected App Sessions</value>
   </data>
-  <data name="Apps you&apos;ve signed into using this account. This doesn&apos;t include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that." xml:space="preserve">
-    <value>Apps you&apos;ve signed into using this account. This doesn&apos;t include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that.</value>
+  <data name="Apps you've signed into using this account. This doesn't include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that." xml:space="preserve">
+    <value>Apps you've signed into using this account. This doesn't include your current sign-in here — use "Sign out" in the sidebar for that.</value>
   </data>
   <data name="Revoke all" xml:space="preserve">
     <value>Revoke all</value>
@@ -532,8 +543,8 @@
   <data name="Last used {0}" xml:space="preserve">
     <value>Last used {0}</value>
   </data>
-  <data name="Revoke access for &apos;{0}&apos;? The app will need to sign in again." xml:space="preserve">
-    <value>Revoke access for &apos;{0}&apos;? The app will need to sign in again.</value>
+  <data name="Revoke access for '{0}'? The app will need to sign in again." xml:space="preserve">
+    <value>Revoke access for '{0}'? The app will need to sign in again.</value>
   </data>
   <data name="Where to next?" xml:space="preserve">
     <value>Where to next?</value>
@@ -541,11 +552,11 @@
   <data name="Select an application to continue" xml:space="preserve">
     <value>Select an application to continue</value>
   </data>
-  <data name="That Google account&apos;s email isn&apos;t verified. Please verify it with Google, or sign in with your password instead." xml:space="preserve">
-    <value>That Google account&apos;s email isn&apos;t verified. Please verify it with Google, or sign in with your password instead.</value>
+  <data name="That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead." xml:space="preserve">
+    <value>That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead.</value>
   </data>
-  <data name="Your Google account doesn&apos;t have an email address we can use." xml:space="preserve">
-    <value>Your Google account doesn&apos;t have an email address we can use.</value>
+  <data name="Your Google account doesn't have an email address we can use." xml:space="preserve">
+    <value>Your Google account doesn't have an email address we can use.</value>
   </data>
   <data name="Google sign-in failed. Please try again." xml:space="preserve">
     <value>Google sign-in failed. Please try again.</value>
@@ -595,23 +606,23 @@
   <data name="A user with this login already exists." xml:space="preserve">
     <value>A user with this login already exists.</value>
   </data>
-  <data name="Username &apos;{0}&apos; is invalid, can only contain letters or digits." xml:space="preserve">
-    <value>Username &apos;{0}&apos; is invalid, can only contain letters or digits.</value>
+  <data name="Username '{0}' is invalid, can only contain letters or digits." xml:space="preserve">
+    <value>Username '{0}' is invalid, can only contain letters or digits.</value>
   </data>
-  <data name="Email &apos;{0}&apos; is invalid." xml:space="preserve">
-    <value>Email &apos;{0}&apos; is invalid.</value>
+  <data name="Email '{0}' is invalid." xml:space="preserve">
+    <value>Email '{0}' is invalid.</value>
   </data>
-  <data name="Username &apos;{0}&apos; is already taken." xml:space="preserve">
-    <value>Username &apos;{0}&apos; is already taken.</value>
+  <data name="Username '{0}' is already taken." xml:space="preserve">
+    <value>Username '{0}' is already taken.</value>
   </data>
-  <data name="Email &apos;{0}&apos; is already taken." xml:space="preserve">
-    <value>Email &apos;{0}&apos; is already taken.</value>
+  <data name="Email '{0}' is already taken." xml:space="preserve">
+    <value>Email '{0}' is already taken.</value>
   </data>
-  <data name="Role name &apos;{0}&apos; is invalid." xml:space="preserve">
-    <value>Role name &apos;{0}&apos; is invalid.</value>
+  <data name="Role name '{0}' is invalid." xml:space="preserve">
+    <value>Role name '{0}' is invalid.</value>
   </data>
-  <data name="Role name &apos;{0}&apos; is already taken." xml:space="preserve">
-    <value>Role name &apos;{0}&apos; is already taken.</value>
+  <data name="Role name '{0}' is already taken." xml:space="preserve">
+    <value>Role name '{0}' is already taken.</value>
   </data>
   <data name="User already has a password set." xml:space="preserve">
     <value>User already has a password set.</value>
@@ -619,11 +630,11 @@
   <data name="Lockout is not enabled for this user." xml:space="preserve">
     <value>Lockout is not enabled for this user.</value>
   </data>
-  <data name="User already in role &apos;{0}&apos;." xml:space="preserve">
-    <value>User already in role &apos;{0}&apos;.</value>
+  <data name="User already in role '{0}'." xml:space="preserve">
+    <value>User already in role '{0}'.</value>
   </data>
-  <data name="User is not in role &apos;{0}&apos;." xml:space="preserve">
-    <value>User is not in role &apos;{0}&apos;.</value>
+  <data name="User is not in role '{0}'." xml:space="preserve">
+    <value>User is not in role '{0}'.</value>
   </data>
   <data name="Passwords must be at least {0} characters." xml:space="preserve">
     <value>Passwords must be at least {0} characters.</value>
@@ -631,14 +642,14 @@
   <data name="Passwords must have at least one non alphanumeric character." xml:space="preserve">
     <value>Passwords must have at least one non alphanumeric character.</value>
   </data>
-  <data name="Passwords must have at least one digit (&apos;0&apos;-&apos;9&apos;)." xml:space="preserve">
-    <value>Passwords must have at least one digit (&apos;0&apos;-&apos;9&apos;).</value>
+  <data name="Passwords must have at least one digit ('0'-'9')." xml:space="preserve">
+    <value>Passwords must have at least one digit ('0'-'9').</value>
   </data>
-  <data name="Passwords must have at least one lowercase (&apos;a&apos;-&apos;z&apos;)." xml:space="preserve">
-    <value>Passwords must have at least one lowercase (&apos;a&apos;-&apos;z&apos;).</value>
+  <data name="Passwords must have at least one lowercase ('a'-'z')." xml:space="preserve">
+    <value>Passwords must have at least one lowercase ('a'-'z').</value>
   </data>
-  <data name="Passwords must have at least one uppercase (&apos;A&apos;-&apos;Z&apos;)." xml:space="preserve">
-    <value>Passwords must have at least one uppercase (&apos;A&apos;-&apos;Z&apos;).</value>
+  <data name="Passwords must have at least one uppercase ('A'-'Z')." xml:space="preserve">
+    <value>Passwords must have at least one uppercase ('A'-'Z').</value>
   </data>
   <data name="Passwords must use at least {0} different characters." xml:space="preserve">
     <value>Passwords must use at least {0} different characters.</value>
@@ -690,5 +701,308 @@
   </data>
   <data name="Backup code label" xml:space="preserve">
     <value>Backup code label</value>
+  </data>
+  <data name="{0} clients registered" xml:space="preserve">
+    <value>{0} clients registered</value>
+  </data>
+  <data name="Add Client" xml:space="preserve">
+    <value>Add Client</value>
+  </data>
+  <data name="No clients registered yet." xml:space="preserve">
+    <value>No clients registered yet.</value>
+  </data>
+  <data name="Add your first client" xml:space="preserve">
+    <value>Add your first client</value>
+  </data>
+  <data name="Client ID" xml:space="preserve">
+    <value>Client ID</value>
+  </data>
+  <data name="Display Name" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Grant" xml:space="preserve">
+    <value>Grant</value>
+  </data>
+  <data name="Confidential" xml:space="preserve">
+    <value>Confidential</value>
+  </data>
+  <data name="Public" xml:space="preserve">
+    <value>Public</value>
+  </data>
+  <data name="Client Credentials" xml:space="preserve">
+    <value>Client Credentials</value>
+  </data>
+  <data name="Auth Code" xml:space="preserve">
+    <value>Auth Code</value>
+  </data>
+  <data name="+{0} more" xml:space="preserve">
+    <value>+{0} more</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Delete Client" xml:space="preserve">
+    <value>Delete Client</value>
+  </data>
+  <data name="Are you sure you want to delete:" xml:space="preserve">
+    <value>Are you sure you want to delete:</value>
+  </data>
+  <data name="This will immediately revoke all tokens issued to this client. This action cannot be undone." xml:space="preserve">
+    <value>This will immediately revoke all tokens issued to this client. This action cannot be undone.</value>
+  </data>
+  <data name="Back to Clients" xml:space="preserve">
+    <value>Back to Clients</value>
+  </data>
+  <data name="Basic Information" xml:space="preserve">
+    <value>Basic Information</value>
+  </data>
+  <data name="My Application" xml:space="preserve">
+    <value>My Application</value>
+  </data>
+  <data name="Client Type" xml:space="preserve">
+    <value>Client Type</value>
+  </data>
+  <data name="Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service." xml:space="preserve">
+    <value>Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service.</value>
+  </data>
+  <data name="Grant Type" xml:space="preserve">
+    <value>Grant Type</value>
+  </data>
+  <data name="Authorization Code" xml:space="preserve">
+    <value>Authorization Code</value>
+  </data>
+  <data name="Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only." xml:space="preserve">
+    <value>Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only.</value>
+  </data>
+  <data name="Client Secret" xml:space="preserve">
+    <value>Client Secret</value>
+  </data>
+  <data name="A strong secret will be generated automatically and shown once after creation." xml:space="preserve">
+    <value>A strong secret will be generated automatically and shown once after creation.</value>
+  </data>
+  <data name="Require PKCE (Proof Key for Code Exchange)" xml:space="preserve">
+    <value>Require PKCE (Proof Key for Code Exchange)</value>
+  </data>
+  <data name="First-party (skip consent screen)" xml:space="preserve">
+    <value>First-party (skip consent screen)</value>
+  </data>
+  <data name="No scopes available." xml:space="preserve">
+    <value>No scopes available.</value>
+  </data>
+  <data name="Redirects" xml:space="preserve">
+    <value>Redirects</value>
+  </data>
+  <data name="Redirect URIs" xml:space="preserve">
+    <value>Redirect URIs</value>
+  </data>
+  <data name="One URI per line. HTTPS required; HTTP allowed for localhost." xml:space="preserve">
+    <value>One URI per line. HTTPS required; HTTP allowed for localhost.</value>
+  </data>
+  <data name="Post-Logout Redirect URIs" xml:space="preserve">
+    <value>Post-Logout Redirect URIs</value>
+  </data>
+  <data name="One URI per line." xml:space="preserve">
+    <value>One URI per line.</value>
+  </data>
+  <data name="Service Account Claims" xml:space="preserve">
+    <value>Service Account Claims</value>
+  </data>
+  <data name="One claim per line in key=value format. These claims are embedded in every token issued to this client." xml:space="preserve">
+    <value>One claim per line in key=value format. These claims are embedded in every token issued to this client.</value>
+  </data>
+  <data name="Create Client" xml:space="preserve">
+    <value>Create Client</value>
+  </data>
+  <data name="Edit Client — {0}" xml:space="preserve">
+    <value>Edit Client — {0}</value>
+  </data>
+  <data name="Identity" xml:space="preserve">
+    <value>Identity</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="Require PKCE" xml:space="preserve">
+    <value>Require PKCE</value>
+  </data>
+  <data name="One key=value claim per line." xml:space="preserve">
+    <value>One key=value claim per line.</value>
+  </data>
+  <data name="The current secret is stored as a hash and cannot be retrieved. Reset it to generate a new one." xml:space="preserve">
+    <value>The current secret is stored as a hash and cannot be retrieved. Reset it to generate a new one.</value>
+  </data>
+  <data name="Reset Secret" xml:space="preserve">
+    <value>Reset Secret</value>
+  </data>
+  <data name="Client created successfully" xml:space="preserve">
+    <value>Client created successfully</value>
+  </data>
+  <data name="Client" xml:space="preserve">
+    <value>Client</value>
+  </data>
+  <data name="is ready." xml:space="preserve">
+    <value>is ready.</value>
+  </data>
+  <data name="Copy your secret now — it won't be shown again" xml:space="preserve">
+    <value>Copy your secret now — it won't be shown again</value>
+  </data>
+  <data name="This secret is stored as a hash. If you lose it, you'll need to reset it from the client settings." xml:space="preserve">
+    <value>This secret is stored as a hash. If you lose it, you'll need to reset it from the client settings.</value>
+  </data>
+  <data name="I've saved my secret — Go to Clients" xml:space="preserve">
+    <value>I've saved my secret — Go to Clients</value>
+  </data>
+  <data name="No scopes defined yet." xml:space="preserve">
+    <value>No scopes defined yet.</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Claim Types" xml:space="preserve">
+    <value>Claim Types</value>
+  </data>
+  <data name="none" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="Delete scope '{0}'?" xml:space="preserve">
+    <value>Delete scope '{0}'?</value>
+  </data>
+  <data name="Add Scope" xml:space="preserve">
+    <value>Add Scope</value>
+  </data>
+  <data name="My Scope" xml:space="preserve">
+    <value>My Scope</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="What this scope grants access to" xml:space="preserve">
+    <value>What this scope grants access to</value>
+  </data>
+  <data name="Comma-separated. When this scope is granted, these claim types are included in the token from the user's stored claims." xml:space="preserve">
+    <value>Comma-separated. When this scope is granted, these claim types are included in the token from the user's stored claims.</value>
+  </data>
+  <data name="Edit Scope" xml:space="preserve">
+    <value>Edit Scope</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Scope Name" xml:space="preserve">
+    <value>Scope Name</value>
+  </data>
+  <data name="e.g. els_system_permissions" xml:space="preserve">
+    <value>e.g. els_system_permissions</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Press Enter or click Add. Saving replaces all existing claim types for this scope." xml:space="preserve">
+    <value>Press Enter or click Add. Saving replaces all existing claim types for this scope.</value>
+  </data>
+  <data name="No claim types — token will carry no extra claims for this scope." xml:space="preserve">
+    <value>No claim types — token will carry no extra claims for this scope.</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Search by name or email…" xml:space="preserve">
+    <value>Search by name or email…</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="No users found." xml:space="preserve">
+    <value>No users found.</value>
+  </data>
+  <data name="No users matching '{0}'." xml:space="preserve">
+    <value>No users matching '{0}'.</value>
+  </data>
+  <data name="{0} users" xml:space="preserve">
+    <value>{0} users</value>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Last Login" xml:space="preserve">
+    <value>Last Login</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="Activate" xml:space="preserve">
+    <value>Activate</value>
+  </data>
+  <data name="Invalidate all sessions for" xml:space="preserve">
+    <value>Invalidate all sessions for</value>
+  </data>
+  <data name="Invalidate Sessions" xml:space="preserve">
+    <value>Invalidate Sessions</value>
+  </data>
+  <data name="Claims" xml:space="preserve">
+    <value>Claims</value>
+  </data>
+  <data name="User Claims" xml:space="preserve">
+    <value>User Claims</value>
+  </data>
+  <data name="No stored claims for this user." xml:space="preserve">
+    <value>No stored claims for this user.</value>
+  </data>
+  <data name="{0} stored claims" xml:space="preserve">
+    <value>{0} stored claims</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Remove claim '{0}'?" xml:space="preserve">
+    <value>Remove claim '{0}'?</value>
+  </data>
+  <data name="Add Claim" xml:space="preserve">
+    <value>Add Claim</value>
+  </data>
+  <data name="Claim Type" xml:space="preserve">
+    <value>Claim Type</value>
+  </data>
+  <data name="e.g. manage_api" xml:space="preserve">
+    <value>e.g. manage_api</value>
+  </data>
+  <data name="e.g. true" xml:space="preserve">
+    <value>e.g. true</value>
+  </data>
+  <data name="Initial Setup" xml:space="preserve">
+    <value>Initial Setup</value>
+  </data>
+  <data name="Welcome to {0}" xml:space="preserve">
+    <value>Welcome to {0}</value>
+  </data>
+  <data name="Create your administrator account to get started" xml:space="preserve">
+    <value>Create your administrator account to get started</value>
+  </data>
+  <data name="Jane Smith" xml:space="preserve">
+    <value>Jane Smith</value>
+  </data>
+  <data name="Create Administrator Account" xml:space="preserve">
+    <value>Create Administrator Account</value>
   </data>
 </root>
