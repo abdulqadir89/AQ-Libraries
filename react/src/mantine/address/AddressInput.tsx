@@ -4,7 +4,9 @@ import {
   TextInput, Text, ActionIcon,
 } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
-import { COUNTRIES_SORTED, findCountry, findState } from './data';
+import { COUNTRIES, findCountry, findState, getCountryName } from './data';
+import { useAQLocale } from '../locale';
+import type { AddressMessages } from '../locale';
 
 // ─── Value / Field Types ───────────────────────────────────────────────────────
 
@@ -62,6 +64,7 @@ interface CreatableSelectProps {
   value: string;
   onChange: (value: string) => void;
   onClear?: () => void;
+  messages: AddressMessages;
 }
 
 /**
@@ -69,7 +72,7 @@ interface CreatableSelectProps {
  * if their option doesn't appear in the list.
  */
 function CreatableSelect({
-  label, placeholder, required, disabled, error, data, value, onChange, onClear,
+  label, placeholder, required, disabled, error, data, value, onChange, onClear, messages,
 }: CreatableSelectProps) {
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
@@ -102,7 +105,7 @@ function CreatableSelect({
     )),
     !exactMatch && search.trim() ? (
       <Combobox.Option key="__custom__" value={search.trim()}>
-        <Text size="sm" c="dimmed">Use &ldquo;{search.trim()}&rdquo;</Text>
+        <Text size="sm" c="dimmed">{messages.useCustomValue(search.trim())}</Text>
       </Combobox.Option>
     ) : null,
   ].filter(Boolean);
@@ -119,7 +122,7 @@ function CreatableSelect({
       <Combobox.Target>
         <InputBase
           label={label}
-          placeholder={placeholder ?? 'Select or type…'}
+          placeholder={placeholder ?? messages.selectOrType}
           required={required}
           disabled={disabled}
           error={error}
@@ -167,7 +170,7 @@ function CreatableSelect({
         <Combobox.Options mah={200} style={{ overflowY: 'auto' }}>
           {options.length > 0
             ? options
-            : <Combobox.Empty>Nothing found</Combobox.Empty>}
+            : <Combobox.Empty>{messages.nothingFound}</Combobox.Empty>}
         </Combobox.Options>
       </Combobox.Dropdown>
     </Combobox>
@@ -176,16 +179,14 @@ function CreatableSelect({
 
 // ─── Default field configs ─────────────────────────────────────────────────────
 
-const DEFAULT_FIELDS: AddressFieldConfig[] = [
-  { field: 'country', label: 'Country', placeholder: 'Select country', required: false },
-  { field: 'state', label: 'State / Province', placeholder: 'Select state', required: false },
-  { field: 'city', label: 'City', placeholder: 'Select city', required: false },
-  { field: 'street', label: 'Street', placeholder: 'Street address', required: false },
-  { field: 'postalCode', label: 'Postal Code', placeholder: 'Postal / ZIP code', required: false },
-];
-
-function getDefaultConfig(field: AddressField): AddressFieldConfig {
-  return DEFAULT_FIELDS.find(f => f.field === field) ?? { field };
+function buildDefaultFields(messages: AddressMessages): AddressFieldConfig[] {
+  return [
+    { field: 'country', label: messages.country, placeholder: messages.selectCountry, required: false },
+    { field: 'state', label: messages.state, placeholder: messages.selectState, required: false },
+    { field: 'city', label: messages.city, placeholder: messages.selectCity, required: false },
+    { field: 'street', label: messages.street, placeholder: messages.streetAddress, required: false },
+    { field: 'postalCode', label: messages.postalCode, placeholder: messages.postalCodePlaceholder, required: false },
+  ];
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -193,21 +194,39 @@ function getDefaultConfig(field: AddressField): AddressFieldConfig {
 export function AddressInput({
   value = {},
   onChange,
-  fields = DEFAULT_FIELDS,
+  fields,
   optionalFields = [],
-  optionalSectionLabel = 'More address fields',
+  optionalSectionLabel,
   errors = {},
   disabled = false,
 }: AddressInputProps) {
+  const { locale, messages: aqMessages } = useAQLocale();
+  const messages = aqMessages.address;
+  const defaultFields = useMemo(() => buildDefaultFields(messages), [messages]);
+  const resolvedFields = fields ?? defaultFields;
+  const resolvedOptionalSectionLabel = optionalSectionLabel ?? messages.moreAddressFields;
+
+  function getDefaultConfig(field: AddressField): AddressFieldConfig {
+    return defaultFields.find(f => f.field === field) ?? { field };
+  }
+
   const [optionalOpen, setOptionalOpen] = useState(false);
 
   const update = (patch: Partial<AddressValue>) => {
     onChange?.({ ...value, ...patch });
   };
 
+  // Localized country names (via Intl.DisplayNames), sorted with the active locale.
+  const localizedCountries = useMemo(
+    () => [...COUNTRIES]
+      .map(c => ({ code: c.code, name: getCountryName(c.code, locale) }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale)),
+    [locale]
+  );
+
   const handleCountryChange = (newCountry: string) => {
-    // Find country by name or code
-    const match = COUNTRIES_SORTED.find(
+    // Find country by localized name or code
+    const match = localizedCountries.find(
       c => c.name.toLowerCase() === newCountry.toLowerCase() ||
            c.code.toLowerCase() === newCountry.toLowerCase()
     );
@@ -241,15 +260,15 @@ export function AddressInput({
     update({ city });
   };
 
-  // Derive display values (names, not codes)
+  // Derive display values (localized names, not codes)
   const countryObj = findCountry(value.country ?? '');
-  const countryDisplayValue = countryObj?.name ?? value.country ?? '';
+  const countryDisplayValue = value.country ? getCountryName(value.country, locale) : '';
 
   const stateObj = findState(value.country ?? '', value.state ?? '');
   const stateDisplayValue = stateObj?.name ?? value.state ?? '';
 
   // Dropdown data
-  const countryOptions = COUNTRIES_SORTED.map(c => c.name);
+  const countryOptions = localizedCountries.map(c => c.name);
   const stateOptions = countryObj?.states.map(s => s.name) ?? [];
   // Cities for the selected state only; if no state is selected, collect all
   // cities from the country (all states), deduplicated
@@ -282,6 +301,7 @@ export function AddressInput({
             value={countryDisplayValue}
             onChange={handleCountryChange}
             onClear={() => update({ country: undefined, state: undefined, city: undefined })}
+            messages={messages}
           />
         );
       case 'state':
@@ -289,7 +309,7 @@ export function AddressInput({
           <CreatableSelect
             key="state"
             label={c.label}
-            placeholder={!value.country ? 'Select a country first' : c.placeholder}
+            placeholder={!value.country ? messages.selectCountryFirst : c.placeholder}
             required={c.required}
             disabled={disabled || !value.country}
             error={errors.state}
@@ -297,6 +317,7 @@ export function AddressInput({
             value={stateDisplayValue}
             onChange={handleStateChange}
             onClear={() => update({ state: undefined, city: undefined })}
+            messages={messages}
           />
         );
       case 'city':
@@ -312,6 +333,7 @@ export function AddressInput({
             value={value.city ?? ''}
             onChange={handleCityChange}
             onClear={() => update({ city: undefined })}
+            messages={messages}
           />
         );
       case 'street':
@@ -347,7 +369,7 @@ export function AddressInput({
 
   return (
     <Stack gap="sm">
-      {fields.map(renderField)}
+      {resolvedFields.map(renderField)}
 
       {optionalFields.length > 0 && (
         <>
@@ -358,7 +380,7 @@ export function AddressInput({
               rightSection={optionalOpen ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
               onClick={() => setOptionalOpen(o => !o)}
             >
-              {optionalSectionLabel}
+              {resolvedOptionalSectionLabel}
             </Button>
           </Group>
           <Collapse expanded={optionalOpen}>

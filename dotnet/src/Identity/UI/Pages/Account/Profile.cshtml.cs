@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using AQ.Utilities.Email;
 
 namespace AQ.Identity.UI.Pages.Account;
@@ -19,6 +21,7 @@ public class ProfileModel : PageModel
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IOptions<AqIdentityOptions> _options;
     private readonly ILogger<ProfileModel> _logger;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     [BindProperty]
     public string Email { get; set; } = default!;
@@ -34,13 +37,15 @@ public class ProfileModel : PageModel
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
         IOptions<AqIdentityOptions> options,
-        ILogger<ProfileModel> logger)
+        ILogger<ProfileModel> logger,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _userManager = userManager;
         _emailService = emailService;
         _emailTemplateService = emailTemplateService;
         _options = options;
         _logger = logger;
+        _localizer = localizer;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -84,7 +89,7 @@ public class ProfileModel : PageModel
             return Page();
         }
 
-        TempData["AccountSuccess"] = "Your profile has been updated successfully.";
+        TempData["AccountSuccess"] = _localizer["Your profile has been updated successfully."].Value;
         return RedirectToPage();
     }
 
@@ -105,20 +110,20 @@ public class ProfileModel : PageModel
 
         if (string.IsNullOrWhiteSpace(NewEmail) || !new EmailAddressAttribute().IsValid(NewEmail))
         {
-            ModelState.AddModelError("NewEmail", "Enter a valid email address.");
+            ModelState.AddModelError("NewEmail", _localizer["Enter a valid email address."]);
             return Page();
         }
 
         if (string.Equals(NewEmail, user.Email, StringComparison.OrdinalIgnoreCase))
         {
-            ModelState.AddModelError("NewEmail", "That's already your current email address.");
+            ModelState.AddModelError("NewEmail", _localizer["That's already your current email address."]);
             return Page();
         }
 
         var existing = await _userManager.FindByEmailAsync(NewEmail);
         if (existing != null)
         {
-            ModelState.AddModelError("NewEmail", "That email address is already in use.");
+            ModelState.AddModelError("NewEmail", _localizer["That email address is already in use."]);
             return Page();
         }
 
@@ -137,11 +142,11 @@ public class ProfileModel : PageModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send email-change confirmation for user {UserId}", user.Id);
-            ModelState.AddModelError(string.Empty, "Something went wrong sending the confirmation email. Please try again.");
+            ModelState.AddModelError(string.Empty, _localizer["Something went wrong sending the confirmation email. Please try again."]);
             return Page();
         }
 
-        TempData["AccountSuccess"] = $"We've sent a confirmation link to {NewEmail}. Your email won't change until you confirm it.";
+        TempData["AccountSuccess"] = _localizer["We've sent a confirmation link to {0}. Your email won't change until you confirm it.", NewEmail].Value;
         return RedirectToPage();
     }
 }

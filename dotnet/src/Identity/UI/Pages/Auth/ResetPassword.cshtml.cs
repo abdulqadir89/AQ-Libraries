@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 
 namespace AQ.Identity.UI.Pages.Auth;
 
@@ -10,6 +12,7 @@ public class ResetPasswordModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<ResetPasswordModel> _logger;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     [BindProperty(SupportsGet = true)]
     public string UserId { get; set; } = default!;
@@ -25,10 +28,14 @@ public class ResetPasswordModel : PageModel
 
     public bool TokenInvalid { get; set; }
 
-    public ResetPasswordModel(UserManager<ApplicationUser> userManager, ILogger<ResetPasswordModel> logger)
+    public ResetPasswordModel(
+        UserManager<ApplicationUser> userManager,
+        ILogger<ResetPasswordModel> logger,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _userManager = userManager;
         _logger = logger;
+        _localizer = localizer;
     }
 
     public async Task<IActionResult> OnGetAsync(string? userId, string? code)
@@ -62,7 +69,7 @@ public class ResetPasswordModel : PageModel
 
         if (Password != ConfirmPassword)
         {
-            ModelState.AddModelError("ConfirmPassword", "Passwords do not match");
+            ModelState.AddModelError("ConfirmPassword", _localizer["Passwords do not match"]);
             return Page();
         }
 

@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using OpenIddict.Server.AspNetCore;
 
 namespace AQ.Identity.UI.Pages.Auth;
@@ -13,6 +15,7 @@ public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IOptions<AqIdentityOptions> _options;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     [BindProperty]
     public string Email { get; set; } = default!;
@@ -30,10 +33,14 @@ public class LoginModel : PageModel
 
     public string? ExternalError { get; set; }
 
-    public LoginModel(SignInManager<ApplicationUser> signInManager, IOptions<AqIdentityOptions> options)
+    public LoginModel(
+        SignInManager<ApplicationUser> signInManager,
+        IOptions<AqIdentityOptions> options,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _signInManager = signInManager;
         _options = options;
+        _localizer = localizer;
     }
 
     public void OnGet(string? returnUrl, string? error)
@@ -42,10 +49,10 @@ public class LoginModel : PageModel
         ShowGoogleButton = _options.Value.Google != null;
         ExternalError = error switch
         {
-            "email_not_verified" => "That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead.",
-            "no_email" => "Your Google account doesn't have an email address we can use.",
-            "external_auth_failed" => "Google sign-in failed. Please try again.",
-            "user_creation_failed" or "invalid_external_id" => "Something went wrong signing in with Google. Please try again.",
+            "email_not_verified" => _localizer["That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead."].Value,
+            "no_email" => _localizer["Your Google account doesn't have an email address we can use."].Value,
+            "external_auth_failed" => _localizer["Google sign-in failed. Please try again."].Value,
+            "user_creation_failed" or "invalid_external_id" => _localizer["Something went wrong signing in with Google. Please try again."].Value,
             _ => null,
         };
     }
@@ -82,7 +89,7 @@ public class LoginModel : PageModel
             return RedirectToPage("/Apps/Index");
         }
 
-        ModelState.AddModelError(string.Empty, "Incorrect email or password");
+        ModelState.AddModelError(string.Empty, _localizer["Incorrect email or password"]);
         ShowGoogleButton = _options.Value.Google != null;
         return Page();
     }

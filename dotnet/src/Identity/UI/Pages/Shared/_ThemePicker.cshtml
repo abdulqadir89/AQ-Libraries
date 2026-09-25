@@ -8,7 +8,7 @@
 <div class="relative inline-block text-left" id="themePicker">
     <button type="button" id="themePickerToggle"
             class="flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
-            aria-label="Change theme" aria-haspopup="true" aria-expanded="false">
+            aria-label="@L["Change theme"]" aria-haspopup="true" aria-expanded="false">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
             <path d="M12 2a10 10 0 1 0 0 20 2.5 2.5 0 0 0 2-4 2.5 2.5 0 0 1 2-4h1.5a2.5 2.5 0 0 0 2.45-3A10 10 0 0 0 12 2z"/>
@@ -20,21 +20,21 @@
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             @Html.AntiForgeryToken()
 
-            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mode</p>
+            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">@L["Mode"]</p>
             <div class="grid grid-cols-2 gap-2 mb-3">
                 <label class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors @(currentMode == "light" ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")">
                     <input type="radio" name="mode" value="light" class="hidden themePickerModeInput" @(currentMode == "light" ? "checked" : "") />
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                    Light
+                    @L["Light"]
                 </label>
                 <label class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors @(currentMode == "dark" ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")">
                     <input type="radio" name="mode" value="dark" class="hidden themePickerModeInput" @(currentMode == "dark" ? "checked" : "") />
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                    Dark
+                    @L["Dark"]
                 </label>
             </div>
 
-            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Theme</p>
+            <p class="px-1 mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">@L["Theme"]</p>
             <div class="grid grid-cols-3 gap-2 mb-3">
                 @foreach (var t in themes)
                 {
@@ -47,7 +47,7 @@
             </div>
 
             <noscript>
-                <button type="submit" class="w-full text-sm font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg py-2">Apply</button>
+                <button type="submit" class="w-full text-sm font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg py-2">@L["Apply"]</button>
             </noscript>
         </form>
     </div>

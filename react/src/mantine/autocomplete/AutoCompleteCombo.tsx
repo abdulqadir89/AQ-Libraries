@@ -8,6 +8,7 @@ import {
 } from '@mantine/core';
 import type { SelectProps, MultiSelectProps, ComboboxItem } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
+import { useAQLocale } from '../locale';
 
 export interface AutoCompleteItem {
   value: string;
@@ -71,7 +72,7 @@ export const AutoCompleteCombo = forwardRef<HTMLInputElement, AutoCompleteComboP
   (
     {
       fetchData,
-      placeholder = 'Search...',
+      placeholder,
       label,
       description,
       error,
@@ -94,6 +95,9 @@ export const AutoCompleteCombo = forwardRef<HTMLInputElement, AutoCompleteComboP
     },
     ref
   ) => {
+    const { messages: aqMessages } = useAQLocale();
+    const m = aqMessages.autocomplete;
+    const resolvedPlaceholder = placeholder ?? m.searchPlaceholder;
     // State management
     const [searchValue, setSearchValue] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchValue, debounceMs);
@@ -145,7 +149,7 @@ export const AutoCompleteCombo = forwardRef<HTMLInputElement, AutoCompleteComboP
       label,
       description,
       error,
-      placeholder,
+      placeholder: resolvedPlaceholder,
       required,
       disabled,
       withAsterisk,
@@ -159,7 +163,7 @@ export const AutoCompleteCombo = forwardRef<HTMLInputElement, AutoCompleteComboP
       searchValue: searchable ? searchValue : undefined,
       maxDropdownHeight,
       limit,
-      nothingFoundMessage: searchQuery.isLoading ? 'Loading...' : 'No options found',
+      nothingFoundMessage: searchQuery.isLoading ? m.loading : m.noOptionsFound,
       renderOption: renderAutoCompleteOption,
       ...props,
     };

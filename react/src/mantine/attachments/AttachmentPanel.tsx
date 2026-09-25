@@ -10,6 +10,8 @@ export interface AttachmentPanelProps {
   entityType: string;
   entityId: string;
   categories: string[];
+  /** Display label per category, for callers that localize the tab titles. Falls back to the raw (capitalized) category key. */
+  categoryLabels?: Record<string, string>;
   canUpload?: boolean;
   canDelete?: boolean;
   uploadVariant?: AttachmentUploadProps['variant'];
@@ -25,7 +27,7 @@ export interface AttachmentPanelProps {
 }
 
 export function AttachmentPanel({
-  entityType, entityId, categories, canUpload, canDelete, uploadVariant, uploadButtonPosition,
+  entityType, entityId, categories, categoryLabels, canUpload, canDelete, uploadVariant, uploadButtonPosition,
   externalRefreshKey,
   onFetchList, onFetchLimits, onUpload, onDelete, fetchAuthenticated, onError,
 }: AttachmentPanelProps) {
@@ -82,8 +84,8 @@ export function AttachmentPanel({
     <Tabs defaultValue={categories[0]}>
       <Tabs.List mb="md">
         {categories.map((cat) => (
-          <Tabs.Tab key={cat} value={cat} style={{ textTransform: 'capitalize' }}>
-            {cat}
+          <Tabs.Tab key={cat} value={cat} style={categoryLabels?.[cat] ? undefined : { textTransform: 'capitalize' }}>
+            {categoryLabels?.[cat] ?? cat}
           </Tabs.Tab>
         ))}
       </Tabs.List>

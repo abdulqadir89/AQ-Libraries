@@ -4,6 +4,7 @@ import {
 } from '@mantine/core';
 import { IconTrash, IconUpload } from '@tabler/icons-react';
 import type { AttachmentLimits } from './types';
+import { useAQLocale } from '../locale';
 
 export interface AttachmentUploadProps {
   entityType: string;
@@ -37,6 +38,8 @@ function formatContentTypes(types: string[]): string {
 export function AttachmentUpload({
   entityType, entityId, category, onUploaded, limits, existingCount = 0, variant = 'button', buttonPosition = 'right', onUpload, onError,
 }: AttachmentUploadProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.attachments;
   const maxFiles = limits?.maxFiles ?? 10;
   const accept = limits?.allowedContentTypes.join(',');
   const [pending, setPending] = useState<PendingFile[]>([]);
@@ -52,7 +55,7 @@ export function AttachmentUpload({
       const toAdd = arr.slice(0, remaining).map((f) => ({ id: crypto.randomUUID(), file: f }));
       const oversized = toAdd.filter((f) => limits && f.file.size > limits.maxFileSizeBytes);
       if (oversized.length > 0) {
-        onError(new Error(`File too large (max ${formatSize(limits!.maxFileSizeBytes)}): ${oversized.map((f) => f.file.name).join(', ')}`));
+        onError(new Error(m.fileTooLarge(formatSize(limits!.maxFileSizeBytes), oversized.map((f) => f.file.name).join(', '))));
       }
       const accepted = toAdd.filter((f) => !limits || f.file.size <= limits.maxFileSizeBytes);
       return [...prev, ...accepted];
@@ -86,7 +89,7 @@ export function AttachmentUpload({
     setPending([]);
     setUploading(false);
     if (errors.length > 0) {
-      onError(new Error(`Failed to upload: ${errors.join(', ')}`));
+      onError(new Error(m.failedToUpload(errors.join(', '))));
     }
     onUploaded?.();
   };
@@ -130,8 +133,8 @@ export function AttachmentUpload({
           <IconUpload size={24} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', marginBottom: 6 }} />
           <Text size="sm" c="dimmed">
             {atLimit
-              ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
-              : 'Drag & drop files here or click to browse'}
+              ? m.maxFilesReached(maxFiles)
+              : m.dragDropFilesHere}
           </Text>
           <Text size="xs" c="dimmed">{helperText}</Text>
           {fileInput}
@@ -145,11 +148,11 @@ export function AttachmentUpload({
               disabled={atLimit}
               onClick={() => inputRef.current?.click()}
             >
-              Add files
+              {m.addFiles}
             </Button>
           )}
           <Text size="xs" c="dimmed">
-            {atLimit ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached` : helperText}
+            {atLimit ? m.maxFilesReached(maxFiles) : helperText}
           </Text>
           {buttonPosition === 'right' && (
             <Button
@@ -158,7 +161,7 @@ export function AttachmentUpload({
               disabled={atLimit}
               onClick={() => inputRef.current?.click()}
             >
-              Add files
+              {m.addFiles}
             </Button>
           )}
           {fileInput}
@@ -177,7 +180,7 @@ export function AttachmentUpload({
                     : `${(file.size / 1024).toFixed(1)} KB`}
                 </Badge>
               </Group>
-              <Tooltip label="Remove" withArrow>
+              <Tooltip label={m.remove} withArrow>
                 <ActionIcon variant="subtle" color="red" onClick={() => removeFile(id)} disabled={uploading}>
                   <IconTrash size={14} />
                 </ActionIcon>
@@ -193,7 +196,7 @@ export function AttachmentUpload({
               onClick={() => setPending([])}
               disabled={uploading}
             >
-              Clear all
+              {m.clearAll}
             </Button>
             <Button
               size="xs"
@@ -201,7 +204,7 @@ export function AttachmentUpload({
               loading={uploading}
               onClick={() => void handleUpload()}
             >
-              Upload {pending.length} file{pending.length === 1 ? '' : 's'}
+              {m.uploadFiles(pending.length)}
             </Button>
           </Group>
         </Stack>

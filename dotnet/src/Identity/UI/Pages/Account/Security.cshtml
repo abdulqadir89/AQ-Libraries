@@ -1,21 +1,21 @@
 @page
 @model AQ.Identity.UI.Pages.Account.SecurityModel
 @{
-    ViewData["Title"] = "Security";
+    ViewData["Title"] = L["Security"].Value;
     Layout = "_AccountLayout";
 }
 
 <section>
-    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Security Settings</h2>
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">@L["Security Settings"]</h2>
 
     <!-- Change Password Section -->
     <div class="mb-8">
-        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Change Password</h3>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">@L["Change Password"]</h3>
 
         <form method="post" asp-page-handler="ChangePassword" asp-antiforgery="true">
             <div class="mb-4">
                 <label for="currentPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Current Password
+                    @L["Current Password"]
                 </label>
                 <input type="password" id="currentPassword" name="CurrentPassword"
                     class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -28,7 +28,7 @@
 
             <div class="mb-4">
                 <label for="newPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    New Password
+                    @L["New Password"]
                 </label>
                 <input type="password" id="newPassword" name="NewPassword"
                     class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -41,7 +41,7 @@
 
             <div class="mb-6">
                 <label for="confirmPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Confirm New Password
+                    @L["Confirm New Password"]
                 </label>
                 <input type="password" id="confirmPassword" name="ConfirmNewPassword"
                     class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -61,7 +61,7 @@
             }
 
             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                Update Password
+                @L["Update Password"]
             </button>
         </form>
     </div>
@@ -71,11 +71,13 @@
         var newPassword = document.getElementById('newPassword');
         var confirmPassword = document.getElementById('confirmPassword');
         if (!newPassword || !confirmPassword) return;
+        var minLengthMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(L["Password must be at least 8 characters."].Value));
+        var mismatchMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(L["Passwords do not match."].Value));
 
         newPassword.closest('form').addEventListener('submit', function (e) {
             if (newPassword.value.length < 8) {
                 e.preventDefault();
-                newPassword.setCustomValidity('Password must be at least 8 characters.');
+                newPassword.setCustomValidity(minLengthMessage);
                 newPassword.reportValidity();
                 return;
             }
@@ -83,7 +85,7 @@
 
             if (newPassword.value !== confirmPassword.value) {
                 e.preventDefault();
-                confirmPassword.setCustomValidity('Passwords do not match.');
+                confirmPassword.setCustomValidity(mismatchMessage);
                 confirmPassword.reportValidity();
                 return;
             }
@@ -94,36 +96,36 @@
 
     <!-- MFA Section -->
     <div class="mb-8 pt-8 border-t border-slate-200 dark:border-slate-700">
-        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Two-Factor Authentication</h3>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">@L["Two-Factor Authentication"]</h3>
 
         @if (Model.TwoFactorEnabled)
         {
             <div class="mb-4">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span class="text-sm text-green-700 dark:text-green-400 font-medium">Two-factor authentication is on</span>
+                    <span class="text-sm text-green-700 dark:text-green-400 font-medium">@L["Two-factor authentication is on"]</span>
                 </div>
             </div>
 
             <a href="/auth/mfa/disable" class="inline-block border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
-                Disable 2FA
+                @L["Disable 2FA"]
             </a>
 
             <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
-                <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Backup codes</h4>
+                <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">@L["Backup codes"]</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                    @Model.RecoveryCodesLeft remaining. Regenerating invalidates all existing codes.
+                    @L["{0} remaining. Regenerating invalidates all existing codes.", Model.RecoveryCodesLeft]
                 </p>
 
                 <form method="post" asp-page-handler="RegenerateBackupCodes" asp-antiforgery="true" class="flex items-end gap-2">
                     <div class="flex-1">
-                        <label for="regenPassword" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Current password</label>
+                        <label for="regenPassword" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">@L["Current password"]</label>
                         <input type="password" id="regenPassword" name="RegenerateCodesPassword"
                             class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             required />
                     </div>
                     <button type="submit" class="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
-                        Regenerate
+                        @L["Regenerate"]
                     </button>
                 </form>
                 @if (Model.RegenerateCodesError != null)
@@ -134,26 +136,26 @@
         }
         else
         {
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Two-factor authentication is off</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">@L["Two-factor authentication is off"]</p>
 
             <a href="/auth/mfa/setup" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-                Enable 2FA
+                @L["Enable 2FA"]
             </a>
         }
     </div>
 
     <!-- Danger Zone -->
     <div class="pt-8 border-t border-slate-200 dark:border-slate-700">
-        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">Danger zone</h3>
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">@L["Danger zone"]</h3>
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Export a copy of your account data, or permanently delete your account.
+            @L["Export a copy of your account data, or permanently delete your account."]
         </p>
         <div class="flex gap-3">
             <a href="/account/export" class="inline-block border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
-                Export my data
+                @L["Export my data"]
             </a>
             <a href="/account/delete" class="inline-block border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 font-medium py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-sm">
-                Delete account
+                @L["Delete account"]
             </a>
         </div>
     </div>

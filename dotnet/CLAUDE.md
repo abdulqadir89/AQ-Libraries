@@ -28,6 +28,7 @@ dotnet/
       PostgreSql/Search/     # AQ.Utilities.PostgreSql    — PostgreSQL search dialect (Fuzzy/Phonetic/FullText)
       Sort/                  # AQ.Utilities.Sort          — Sorting/ordering
       Results/               # AQ.Utilities.Results       — Result pattern
+      Email/                 # AQ.Utilities.Email         — Email sending + templating (localized, see below)
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
   tests/
     StateMachine/Services/   # AQ.StateMachine.Services.Tests
@@ -73,3 +74,9 @@ dotnet pack AQ.sln --configuration Release
 - Multiple seeder types: test data, configuration, migration.
 - Automatic dependency resolution + priority-based ordering within dependency levels.
 - See `src/DataSeeding/README.md` for usage.
+
+## Email Localization (`Utilities/Email`)
+
+- Email bodies (verification, password reset, workspace invitation, security alert) are localized via `IStringLocalizer<EmailResource>` and `Resources/EmailResource*.resx` (`.zh-Hans.resx`, `.zh-Hant.resx`, `.zh-HK.resx` — HK overrides only, falls back to `zh-Hant`). Resource keys here are descriptive ids (e.g. `Verification.Subject`, `Verification.Heading`), not English text, because bodies are long — unlike `SharedResource` in the ELS backend.
+- All four `IEmailTemplateService` methods take a trailing optional `CultureInfo? culture = null`. When omitted, `DefaultEmailTemplateService` renders in `CultureInfo.CurrentUICulture` (a `CultureScope : IDisposable` sets/restores it for the duration of the call when `culture` is supplied). The rendered HTML's `<html lang="…">` reflects the effective culture, and localized strings inserted into HTML are HTML-encoded.
+- Consuming hosts must call `AddLocalization()` themselves; this library doesn't register it implicitly.

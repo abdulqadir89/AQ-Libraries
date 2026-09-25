@@ -1,13 +1,13 @@
 @page "/auth/consent"
 @model ConsentModel
 @{
-    ViewData["Title"] = "Authorize access";
+    ViewData["Title"] = L["Authorize access"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
-<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">Authorize @Model.ClientDisplayName</h2>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">@L["Authorize {0}", Model.ClientDisplayName]</h2>
 <p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
-    This app is requesting access to your account. Review what it can do before continuing.
+    @L["This app is requesting access to your account. Review what it can do before continuing."]
 </p>
 
 <ul class="space-y-2 mb-8">
@@ -26,13 +26,13 @@
     <form method="post" asp-page-handler="Deny" asp-antiforgery="true" class="flex-1">
         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
         <button type="submit" class="w-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-sm">
-            Deny
+            @L["Deny"]
         </button>
     </form>
     <form method="post" asp-page-handler="Allow" asp-antiforgery="true" class="flex-1">
         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
         <button type="submit" class="w-full bg-slate-900 hover:bg-slate-700 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
-            Allow
+            @L["Allow"]
         </button>
     </form>
 </div>

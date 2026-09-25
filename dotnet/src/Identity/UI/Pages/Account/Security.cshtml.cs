@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using AQ.Utilities.Email;
 
 namespace AQ.Identity.UI.Pages.Account;
@@ -18,6 +20,7 @@ public class SecurityModel : PageModel
     private readonly IEmailService _emailService;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IOptions<AqIdentityOptions> _options;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     public bool TwoFactorEnabled { get; set; }
     public int RecoveryCodesLeft { get; set; }
@@ -32,13 +35,15 @@ public class SecurityModel : PageModel
         IIdentityDbContext context,
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
-        IOptions<AqIdentityOptions> options)
+        IOptions<AqIdentityOptions> options,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _userManager = userManager;
         _context = context;
         _emailService = emailService;
         _emailTemplateService = emailTemplateService;
         _options = options;
+        _localizer = localizer;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -75,7 +80,7 @@ public class SecurityModel : PageModel
 
         if (string.IsNullOrEmpty(RegenerateCodesPassword) || !await _userManager.CheckPasswordAsync(user, RegenerateCodesPassword))
         {
-            RegenerateCodesError = "Incorrect password.";
+            RegenerateCodesError = _localizer["Incorrect password."];
             RecoveryCodesLeft = await _userManager.CountRecoveryCodesAsync(user);
             return Page();
         }
@@ -86,6 +91,8 @@ public class SecurityModel : PageModel
         _context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.BackupCodesRegenerated, user.Id, null, null));
         await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
+        // eventDescription reaches the email builder untranslated by design (Phase 7 scope —
+        // emails are localized separately via IEmailTemplateService's own culture parameter).
         await SendSecurityAlertAsync(user.Email!, "Your two-factor backup codes were regenerated");
 
         return RedirectToPage("/Mfa/BackupCodes");
@@ -121,7 +128,7 @@ public class SecurityModel : PageModel
 
         await SendSecurityAlertAsync(user.Email!, "Your password was changed");
 
-        TempData["AccountSuccess"] = "Your password has been changed successfully.";
+        TempData["AccountSuccess"] = _localizer["Your password has been changed successfully."].Value;
         return RedirectToPage();
     }
 

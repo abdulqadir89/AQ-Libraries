@@ -20,11 +20,12 @@ react/src/
     data-grid/                    # DataGrid, CardDataGrid, ColumnFilter, DataGridSwitch, DataGridViewSwitcher
     datetime/                     # DateTimeOffsetDisplay, DateTimeOffsetRangeInput, DateRangeDisplay, DateTimeOffsetRangeDisplay
     theme/                        # ThemeProvider, ThemeSwitcher, blue/zinc themes + CSS variable resolvers
+    locale/                       # AQLocaleProvider, useAQLocale, AQMessages, defaultMessages (English)
   utils/
     index.ts
     FilterExpressionBuilder.ts    # Builds FilterExpression strings for API queries
     SortExpressionBuilder.ts      # Builds SortExpression strings for API queries
-    DateTimeOffsetUtils.ts        # DateTimeOffset parsing/formatting helpers
+    DateTimeOffsetUtils.ts        # DateTimeOffset parsing/formatting helpers (locale-aware; see Localization below)
 ```
 
 ## Dependency Rules (Critical)
@@ -50,3 +51,29 @@ react/src/
 3. Re-export from `src/mantine/index.ts`.
 4. Re-export from `src/index.ts`.
 5. Verify ELS web still builds: `npm run build --workspace=@els/web`.
+
+## Localization (`AQLocaleProvider`)
+
+Components with user-visible strings (`DataGrid`/`CardDataGrid`, `ColumnFilter`, `RichTextEditor`,
+`DateTimeOffsetRangeInput`, `AddressInput`, `AttachmentList`/`AttachmentPanel`/`AttachmentUpload`,
+`StagedAttachmentPicker`, `ThemeSwitcher`, `MasterDetail`, `SplitButton`, `AutoCompleteCombo`,
+`DateTimeOffsetDisplay`) pull their strings from `useAQLocale()` (`src/mantine/locale/`) rather than
+hard-coding English. `AQLocaleProvider({ locale?, messages?, children })` deep-merges `messages` over
+`defaultMessages` (the built-in English strings) and makes both available via `useAQLocale()`, which
+works fine with **no** provider mounted (returns `defaultMessages`, `locale: undefined`) — so a
+consumer that doesn't opt in sees unchanged English behavior.
+
+- Message shape is a typed `AQMessages` object grouped by component (`dataGrid`, `columnFilter`,
+  `richTextEditor`, `dateTimeRange`, `address`, `attachments`, `themeSwitcher`, `masterDetail`,
+  `splitButton`, `autocomplete`, `cardDataGrid`). Strings with counts/values are **functions**, not
+  ICU templates — e.g. `rowsSelected: (n: number) => string` — because this library doesn't depend
+  on next-intl/ICU; the consuming app's own i18n layer supplies the function bodies.
+- A component prop that already sets a label always wins over the context message for that string.
+- `DateTimeOffsetUtils.ts` exported formatters take an optional trailing `locale?: string` (passed
+  through to `Intl.DateTimeFormat`); `MoneyDisplay` and `AddressInput`'s country list
+  (`mantine/address/data.ts`, `getCountryName`) do the same via `useAQLocale().locale`. The
+  `'en-CA'` literals at `DateTimeOffsetUtils.ts:214/237/242` are internal ISO-date parsing helpers,
+  not display strings — leave them as-is.
+- ELS web supplies actual translated strings by wiring `AQLocaleProvider` into its own
+  `providers/LocaleProvider.tsx` with `buildAqMessages(t)` — see `frontend/web`'s
+  `docs/architecture/frontend.md` "Internationalization" section for that side of the wiring.

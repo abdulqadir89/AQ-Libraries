@@ -1,11 +1,11 @@
 @page "/auth/mfa/backup-codes"
 @model BackupCodesModel
 @{
-    ViewData["Title"] = "Save backup codes";
+    ViewData["Title"] = L["Save backup codes"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
-<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">Save your backup codes</h2>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">@L["Save your backup codes"]</h2>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
@@ -14,15 +14,15 @@
     </p>
 
     <a href="/account/security" class="w-full inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-        Back to Security Settings
+        @L["Back to Security Settings"]
     </a>
 }
 else
 {
     <div class="space-y-6">
         <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <p class="text-sm text-yellow-900 dark:text-yellow-100 font-medium">⚠️ Save these codes somewhere safe — you will not see them again.</p>
-            <p class="text-xs text-yellow-800 dark:text-yellow-200 mt-2">If you lose access to your authenticator app, these codes are your only way to regain access.</p>
+            <p class="text-sm text-yellow-900 dark:text-yellow-100 font-medium">⚠️ @L["Save these codes somewhere safe — you will not see them again."]</p>
+            <p class="text-xs text-yellow-800 dark:text-yellow-200 mt-2">@L["If you lose access to your authenticator app, these codes are your only way to regain access."]</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -39,13 +39,13 @@ else
                 <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
                 </svg>
-                Download
+                @L["Download"]
             </a>
         </div>
 
         <form method="post" asp-antiforgery="true">
             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                I've saved my codes
+                @L["I've saved my codes"]
             </button>
         </form>
     </div>

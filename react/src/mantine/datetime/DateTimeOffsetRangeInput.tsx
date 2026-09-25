@@ -2,6 +2,8 @@ import { Input, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { DateTimeOffsetRangeDto } from '../../utils/DateTimeOffsetUtils';
 import { toDateTimeOffsetString } from '../../utils/DateTimeOffsetUtils';
+import { useAQLocale } from '../locale';
+import type { DateTimeRangeMessages } from '../locale';
 
 function toValidDate(value: unknown): Date | null {
   if (!value) return null;
@@ -56,17 +58,22 @@ export interface DateTimePreset {
   label: string;
 }
 
-function buildPresets(now: Date, minDate: Date | undefined, maxDate: Date | undefined): DateTimePreset[] {
+function buildPresets(
+  now: Date,
+  minDate: Date | undefined,
+  maxDate: Date | undefined,
+  m: DateTimeRangeMessages
+): DateTimePreset[] {
   const candidates: DateTimePreset[] = [
-    { value: fmt(addYears(now, -1)), label: 'Last year' },
-    { value: fmt(addMonths(now, -1)), label: 'Last month' },
-    { value: fmt(shifted(now, -WEEK)), label: 'Last week' },
-    { value: fmt(shifted(now, -DAY)), label: 'Yesterday' },
-    { value: fmt(now), label: 'Now' },
-    { value: fmt(shifted(now, DAY)), label: 'Tomorrow' },
-    { value: fmt(shifted(now, WEEK)), label: 'Next week' },
-    { value: fmt(addMonths(now, 1)), label: 'Next month' },
-    { value: fmt(addYears(now, 1)), label: 'Next year' },
+    { value: fmt(addYears(now, -1)), label: m.lastYear },
+    { value: fmt(addMonths(now, -1)), label: m.lastMonth },
+    { value: fmt(shifted(now, -WEEK)), label: m.lastWeek },
+    { value: fmt(shifted(now, -DAY)), label: m.yesterday },
+    { value: fmt(now), label: m.now },
+    { value: fmt(shifted(now, DAY)), label: m.tomorrow },
+    { value: fmt(shifted(now, WEEK)), label: m.nextWeek },
+    { value: fmt(addMonths(now, 1)), label: m.nextMonth },
+    { value: fmt(addYears(now, 1)), label: m.nextYear },
   ];
 
   return candidates.filter(({ value }) => {
@@ -129,6 +136,8 @@ export function DateTimeOffsetRangeInput({
   endPresets,
   style,
 }: DateTimeOffsetRangeInputProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.dateTimeRange;
   const startDate = toValidDate(value?.start);
   const endDate = toValidDate(value?.end);
 
@@ -136,8 +145,8 @@ export function DateTimeOffsetRangeInput({
   const endMinDate = startDate && (!minDate || startDate > minDate) ? startDate : minDate;
 
   const now = new Date();
-  const resolvedStartPresets = startPresets ?? buildPresets(now, minDate, maxDate);
-  const resolvedEndPresets = endPresets ?? buildPresets(now, endMinDate, maxDate);
+  const resolvedStartPresets = startPresets ?? buildPresets(now, minDate, maxDate, m);
+  const resolvedEndPresets = endPresets ?? buildPresets(now, endMinDate, maxDate, m);
 
   const handleStartChange = (date: unknown) => {
     const normalized = toValidDate(date);
@@ -158,8 +167,8 @@ export function DateTimeOffsetRangeInput({
     <Input.Wrapper label={label} description={description} error={error} required={required} style={style}>
       <Stack gap="sm" mt={label ? 8 : 0}>
         <DateTimePicker
-          label="Start"
-          placeholder="Pick start date & time"
+          label={m.start}
+          placeholder={m.pickStartDateTime}
           value={startDate}
           onChange={handleStartChange}
           clearable={clearable}
@@ -170,8 +179,8 @@ export function DateTimeOffsetRangeInput({
           presets={resolvedStartPresets}
         />
         <DateTimePicker
-          label="End"
-          placeholder="Pick end date & time"
+          label={m.end}
+          placeholder={m.pickEndDateTime}
           value={endDate}
           onChange={handleEndChange}
           clearable={clearable}

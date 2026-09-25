@@ -1,8 +1,10 @@
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using OpenIddict.Abstractions;
 
 namespace AQ.Identity.UI.Pages.Account;
@@ -11,7 +13,8 @@ namespace AQ.Identity.UI.Pages.Account;
 public class AccountAppsModel(
     UserManager<ApplicationUser> userManager,
     IOpenIddictTokenManager tokenManager,
-    IOpenIddictApplicationManager applicationManager) : PageModel
+    IOpenIddictApplicationManager applicationManager,
+    IStringLocalizer<IdentityUIResource> localizer) : PageModel
 {
     public List<ConnectedApp> Apps { get; set; } = [];
 
@@ -74,7 +77,7 @@ public class AccountAppsModel(
                 await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
         }
 
-        TempData["AccountSuccess"] = "Access for that app has been revoked.";
+        TempData["AccountSuccess"] = localizer["Access for that app has been revoked."].Value;
         return RedirectToPage();
     }
 }

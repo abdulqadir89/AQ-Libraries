@@ -11,7 +11,7 @@
     {
         var error = modelStateEntry.Errors[0];
         <p role="alert" class="text-sm text-red-600 dark:text-red-400 mt-1">
-            @(error.ErrorMessage ?? "Validation error")
+            @(error.ErrorMessage ?? L["Validation error"].Value)
         </p>
     }
 }

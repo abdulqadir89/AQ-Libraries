@@ -25,6 +25,7 @@ import { notifications } from '@mantine/notifications';
 import { ColumnFilter } from './ColumnFilter';
 import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
+import { useAQLocale } from '../locale';
 import {
   IconSearch,
   IconRefresh,
@@ -69,7 +70,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   pagination,
   onPageChange,
   searchable = true,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   onSearch,
   toolbarRightSection,
   refreshable = true,
@@ -77,7 +78,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   sortable = true,
   onSortChange,
   onCreate,
-  createButtonText = 'Create',
+  createButtonText,
   createButtonIcon,
   onEdit,
   editHref,
@@ -86,8 +87,8 @@ export function DataGrid<T extends Record<string, unknown>>({
   onDetails,
   detailsHref,
   onDelete,
-  deleteConfirmTitle = 'Confirm Delete',
-  deleteConfirmContent = 'Are you sure you want to delete this item? This action cannot be undone.',
+  deleteConfirmTitle,
+  deleteConfirmContent,
   deleteErrorMessage,
   suppressDefaultDeleteErrorToast = false,
   striped = true,
@@ -101,8 +102,15 @@ export function DataGrid<T extends Record<string, unknown>>({
   onFilterChange,
   bulkActions,
   actionButtonStyle = 'icon',
-  emptyStateText = 'No data available',
+  emptyStateText,
 }: DataGridProps<T>) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.dataGrid;
+  const resolvedSearchPlaceholder = searchPlaceholder ?? m.searchPlaceholder;
+  const resolvedCreateButtonText = createButtonText ?? m.create;
+  const resolvedDeleteConfirmTitle = deleteConfirmTitle ?? m.deleteConfirmTitle;
+  const resolvedDeleteConfirmContent = deleteConfirmContent ?? m.deleteConfirmContent;
+  const resolvedEmptyStateText = emptyStateText ?? m.noData;
   const [state, setState] = useState<ExtendedDataGridState>({
     searchText: '',
     selectedRows: selectedRows || [],
@@ -164,7 +172,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   const defaultActions: ActionButton<T>[] = [
     {
       key: 'overview',
-      label: 'Overview',
+      label: m.overview,
       icon: <IconEye size={18} />,
       color: 'blue',
       variant: 'light',
@@ -178,7 +186,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     },
     {
       key: 'details',
-      label: 'Details',
+      label: m.details,
       icon: <IconListDetails size={18} />,
       color: 'cyan',
       variant: 'light',
@@ -192,7 +200,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     },
     {
       key: 'edit',
-      label: 'Edit',
+      label: m.edit,
       icon: <IconEdit size={18} />,
       color: 'orange',
       variant: 'light',
@@ -206,15 +214,15 @@ export function DataGrid<T extends Record<string, unknown>>({
     },
     {
       key: 'delete',
-      label: 'Delete',
+      label: m.delete,
       icon: <IconTrash size={18} />,
       color: 'red',
       variant: 'light',
       onClick: (record) => {
         modals.openConfirmModal({
-          title: deleteConfirmTitle,
-          children: <Text size="sm">{deleteConfirmContent}</Text>,
-          labels: { confirm: 'Delete', cancel: 'Cancel' },
+          title: resolvedDeleteConfirmTitle,
+          children: <Text size="sm">{resolvedDeleteConfirmContent}</Text>,
+          labels: { confirm: m.delete, cancel: m.cancel },
           confirmProps: { color: 'red' },
           onConfirm: async () => {
             try {
@@ -222,8 +230,8 @@ export function DataGrid<T extends Record<string, unknown>>({
             } catch (error) {
               if (!suppressDefaultDeleteErrorToast) {
                 notifications.show({
-                  title: 'Error',
-                  message: deleteErrorMessage ?? 'Failed to delete item. Please try again.',
+                  title: m.deleteErrorTitle,
+                  message: deleteErrorMessage ?? m.deleteErrorMessage,
                   color: 'red',
                 });
               }
@@ -871,7 +879,7 @@ export function DataGrid<T extends Record<string, unknown>>({
         onClick={onCreate}
         disabled={createConfig.disabled}
       >
-        {createButtonText}
+        {resolvedCreateButtonText}
       </Button>
     );
   };
@@ -891,7 +899,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               <Menu shadow="md" withinPortal>
                 <Menu.Target>
                   <Button variant="light" leftSection={<IconStack2 size={16} />}>
-                    Bulk Actions ({state.selectedRows.length})
+                    {m.bulkActions(state.selectedRows.length)}
                   </Button>
                 </Menu.Target>
                 <Menu.Dropdown>
@@ -914,7 +922,7 @@ export function DataGrid<T extends Record<string, unknown>>({
             {/* Search Input - only show if enabled based on mode */}
             {searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false) && (
               <TextInput
-                placeholder={searchPlaceholder}
+                placeholder={resolvedSearchPlaceholder}
                 leftSection={<IconSearch size={16} />}
                 rightSection={
                   state.searchText ? (
@@ -923,7 +931,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                       variant="subtle"
                       color="gray"
                       onClick={handleClearSearch}
-                      title="Clear search"
+                      title={m.clearSearch}
                     >
                       <IconX size={14} />
                     </ActionIcon>
@@ -942,7 +950,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                 leftSection={<IconRefresh size={16} />}
                 onClick={handleRefresh}
               >
-                Refresh
+                {m.refresh}
               </Button>
             )}
 
@@ -953,14 +961,14 @@ export function DataGrid<T extends Record<string, unknown>>({
                 leftSection={<IconFilterOff size={16} />}
                 onClick={handleResetFilters}
               >
-                Reset Filters
+                {m.resetFilters}
               </Button>
             )}
 
             {columns.length > 1 && (
               <Menu shadow="md" closeOnItemClick={false} withinPortal>
                 <Menu.Target>
-                  <ActionIcon variant="light" size="lg" title="Show/hide columns">
+                  <ActionIcon variant="light" size="lg" title={m.showHideColumns}>
                     <IconColumns size={18} />
                   </ActionIcon>
                 </Menu.Target>
@@ -977,7 +985,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                             size="xs"
                             checked={visible}
                             disabled={locked}
-                            title={column.primary ? 'Primary column cannot be hidden' : undefined}
+                            title={column.primary ? m.primaryColumnLocked : undefined}
                             onChange={() => toggleColumnVisibility(column)}
                           />
                         }
@@ -1084,7 +1092,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     className={styles.stickyActionsHeader}
                     style={{ width: resolvedActionsWidth, textAlign: 'center' }}
                   >
-                    Actions
+                    {m.actions}
                   </Table.Th>
                 )}
               </Table.Tr>
@@ -1096,7 +1104,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     colSpan={visibleColumns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0)}
                     style={{ textAlign: 'center', padding: '2rem' }}
                   >
-                    <Text c="dimmed">{emptyStateText}</Text>
+                    <Text c="dimmed">{resolvedEmptyStateText}</Text>
                   </Table.Td>
                 </Table.Tr>
               )}
@@ -1109,14 +1117,18 @@ export function DataGrid<T extends Record<string, unknown>>({
           <Group justify="space-between" p="md">
             <Text size="sm" c="dimmed">
               {pagination.total === 0
-                ? 'No records'
-                : `Showing ${(pagination.current - 1) * pagination.pageSize + 1} to ${Math.min(pagination.current * pagination.pageSize, pagination.total)} of ${pagination.total} entries`}
+                ? m.noRecords
+                : m.showingEntries(
+                    (pagination.current - 1) * pagination.pageSize + 1,
+                    Math.min(pagination.current * pagination.pageSize, pagination.total),
+                    pagination.total
+                  )}
             </Text>
-            
+
             <Group>
               {pagination.showSizeChanger && (
                 <Group gap="xs">
-                  <Text size="sm">Rows per page:</Text>
+                  <Text size="sm">{m.rowsPerPage}</Text>
                   <Select
                     size="sm"
                     data={pagination.pageSizeOptions?.map(size => ({ 

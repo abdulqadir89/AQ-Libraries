@@ -646,3 +646,18 @@ export function findCountry(code: string): CountryData | undefined {
 export function findState(countryCode: string, stateCode: string): StateData | undefined {
     return findCountry(countryCode)?.states.find(s => s.code === stateCode);
 }
+
+/**
+ * Localized display name for a country, using Intl.DisplayNames. Falls back to
+ * the English name from the static country list (and finally the code itself)
+ * if Intl.DisplayNames can't resolve it (unsupported code, unsupported locale, etc).
+ */
+export function getCountryName(code: string, locale?: string): string {
+    const fallback = findCountry(code)?.name ?? code;
+    try {
+        const displayNames = new Intl.DisplayNames([locale ?? 'en'], { type: 'region' });
+        return displayNames.of(code.toUpperCase()) ?? fallback;
+    } catch {
+        return fallback;
+    }
+}

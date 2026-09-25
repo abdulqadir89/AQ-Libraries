@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using AQ.Utilities.Email;
 
 namespace AQ.Identity.UI.Pages.Auth;
@@ -17,6 +19,7 @@ public class VerifyEmailSentModel : PageModel
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IOptions<AqIdentityOptions> _options;
     private readonly ILogger<VerifyEmailSentModel> _logger;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     private const string RateLimitCookieName = "verify_sent_at";
     private const int RateLimitSeconds = 60;
@@ -34,13 +37,15 @@ public class VerifyEmailSentModel : PageModel
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
         IOptions<AqIdentityOptions> options,
-        ILogger<VerifyEmailSentModel> logger)
+        ILogger<VerifyEmailSentModel> logger,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _userManager = userManager;
         _emailService = emailService;
         _emailTemplateService = emailTemplateService;
         _options = options;
         _logger = logger;
+        _localizer = localizer;
     }
 
     public async Task<IActionResult> OnGetAsync(string? email)
@@ -70,7 +75,7 @@ public class VerifyEmailSentModel : PageModel
             if (secondsElapsed < RateLimitSeconds)
             {
                 var secondsRemaining = Math.Ceiling(RateLimitSeconds - secondsElapsed);
-                RateLimitMessage = $"Please wait {secondsRemaining} second(s) before requesting another link.";
+                RateLimitMessage = _localizer["Please wait {0} second(s) before requesting another link.", secondsRemaining];
                 return Page();
             }
         }

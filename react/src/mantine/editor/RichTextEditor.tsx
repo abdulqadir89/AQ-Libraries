@@ -27,6 +27,7 @@ import {
 } from '@tabler/icons-react';
 import { AttachmentImage } from './extensions/attachmentImage';
 import type { RichTextEditorProps } from './types';
+import { useAQLocale } from '../locale';
 import 'katex/dist/katex.min.css';
 
 function promptForUrl(title: string, onSubmit: (url: string) => void) {
@@ -87,6 +88,8 @@ export function RichTextEditor({
   fetchAuthenticated,
   onError,
 }: RichTextEditorProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.richTextEditor;
   const pendingImageFiles = useMemo(() => new Map<string, File>(), []);
   const lastEmittedValue = useRef(value);
 
@@ -196,7 +199,7 @@ export function RichTextEditor({
         <Group gap={2} p={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           <Menu withArrow>
             <Menu.Target>
-              <Tooltip label="Heading" withArrow>
+              <Tooltip label={m.heading} withArrow>
                 <ActionIcon variant="subtle">
                   <IconHeading size={16} />
                 </ActionIcon>
@@ -207,68 +210,68 @@ export function RichTextEditor({
                 leftSection={<IconH1 size={16} />}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
               >
-                Heading 1
+                {m.heading1}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconH2 size={16} />}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
               >
-                Heading 2
+                {m.heading2}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconH3 size={16} />}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
               >
-                Heading 3
+                {m.heading3}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconH4 size={16} />}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
               >
-                Heading 4
+                {m.heading4}
               </Menu.Item>
               <Menu.Item onClick={() => editor.chain().focus().setParagraph().run()}>
-                Paragraph
+                {m.paragraph}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
 
           <Divider orientation="vertical" />
 
-          <Tooltip label="Bold" withArrow>
+          <Tooltip label={m.bold} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleBold().run()}>
               <IconBold size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Italic" withArrow>
+          <Tooltip label={m.italic} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleItalic().run()}>
               <IconItalic size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Link" withArrow>
+          <Tooltip label={m.link} withArrow>
             <ActionIcon
               variant="subtle"
-              onClick={() => promptForUrl('Insert link', (url) => editor.chain().focus().setLink({ href: url }).run())}
+              onClick={() => promptForUrl(m.insertLinkTitle, (url) => editor.chain().focus().setLink({ href: url }).run())}
             >
               <IconLink size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Underline" withArrow>
+          <Tooltip label={m.underline} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleUnderline().run()}>
               <IconUnderline size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Subscript" withArrow>
+          <Tooltip label={m.subscript} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleSubscript().run()}>
               <IconSubscript size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Superscript" withArrow>
+          <Tooltip label={m.superscript} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleSuperscript().run()}>
               <IconSuperscript size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Highlight" withArrow>
+          <Tooltip label={m.highlight} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleHighlight().run()}>
               <IconHighlight size={16} />
             </ActionIcon>
@@ -276,22 +279,22 @@ export function RichTextEditor({
 
           <Divider orientation="vertical" />
 
-          <Tooltip label="Align left" withArrow>
+          <Tooltip label={m.alignLeft} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().setTextAlign('left').run()}>
               <IconAlignLeft size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Align center" withArrow>
+          <Tooltip label={m.alignCenter} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().setTextAlign('center').run()}>
               <IconAlignCenter size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Align right" withArrow>
+          <Tooltip label={m.alignRight} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().setTextAlign('right').run()}>
               <IconAlignRight size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Justify" withArrow>
+          <Tooltip label={m.justify} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().setTextAlign('justify').run()}>
               <IconAlignJustified size={16} />
             </ActionIcon>
@@ -299,22 +302,22 @@ export function RichTextEditor({
 
           <Divider orientation="vertical" />
 
-          <Tooltip label="Bullet list" withArrow>
+          <Tooltip label={m.bulletList} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleBulletList().run()}>
               <IconList size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Ordered list" withArrow>
+          <Tooltip label={m.orderedList} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleOrderedList().run()}>
               <IconListNumbers size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Task list" withArrow>
+          <Tooltip label={m.taskList} withArrow>
             <ActionIcon variant="subtle" onClick={() => editor.chain().focus().toggleTaskList().run()}>
               <IconListCheck size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Insert table" withArrow>
+          <Tooltip label={m.insertTable} withArrow>
             <ActionIcon
               variant="subtle"
               onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
@@ -322,12 +325,12 @@ export function RichTextEditor({
               <IconTable size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Insert math (LaTeX)" withArrow>
+          <Tooltip label={m.insertMath} withArrow>
             <ActionIcon
               variant="subtle"
               onClick={() => promptForText(
-                'Insert LaTeX',
-                'e.g. E=mc^2',
+                m.insertLatexTitle,
+                m.latexPlaceholder,
                 (latex) => editor.chain().focus().insertInlineMath({ latex }).run(),
               )}
             >
@@ -337,18 +340,18 @@ export function RichTextEditor({
 
           <Divider orientation="vertical" />
 
-          <Tooltip label="Insert video (YouTube URL)" withArrow>
+          <Tooltip label={m.insertVideo} withArrow>
             <ActionIcon
               variant="subtle"
-              onClick={() => promptForUrl('Insert video', (url) => editor.chain().focus().setYoutubeVideo({ src: url }).run())}
+              onClick={() => promptForUrl(m.insertVideoTitle, (url) => editor.chain().focus().setYoutubeVideo({ src: url }).run())}
             >
               <IconMovie size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Insert audio (URL)" withArrow>
+          <Tooltip label={m.insertAudio} withArrow>
             <ActionIcon
               variant="subtle"
-              onClick={() => promptForUrl('Insert audio', (url) => editor.chain().focus().setAudio({ src: url }).run())}
+              onClick={() => promptForUrl(m.insertAudioTitle, (url) => editor.chain().focus().setAudio({ src: url }).run())}
             >
               <IconMusic size={16} />
             </ActionIcon>
@@ -361,7 +364,7 @@ export function RichTextEditor({
               {fetchAuthenticated && (
                 <FileButton onChange={handleImageFile} accept="image/*">
                   {(props) => (
-                    <Tooltip label="Upload image" withArrow>
+                    <Tooltip label={m.uploadImage} withArrow>
                       <ActionIcon variant="subtle" {...props}>
                         <IconPhoto size={16} />
                       </ActionIcon>
@@ -371,7 +374,7 @@ export function RichTextEditor({
               )}
               <FileButton onChange={handleFileAttachment}>
                 {(props) => (
-                  <Tooltip label="Upload file" withArrow>
+                  <Tooltip label={m.uploadFile} withArrow>
                     <ActionIcon variant="subtle" {...props}>
                       <IconFile size={16} />
                     </ActionIcon>

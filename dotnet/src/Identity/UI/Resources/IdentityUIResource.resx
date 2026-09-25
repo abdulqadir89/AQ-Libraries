@@ -1,0 +1,694 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Sign in" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Welcome back" xml:space="preserve">
+    <value>Welcome back</value>
+  </data>
+  <data name="Sign in to your account to continue" xml:space="preserve">
+    <value>Sign in to your account to continue</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Forgot password?" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="Remember me" xml:space="preserve">
+    <value>Remember me</value>
+  </data>
+  <data name="Continue with Google" xml:space="preserve">
+    <value>Continue with Google</value>
+  </data>
+  <data name="Don&apos;t have an account?" xml:space="preserve">
+    <value>Don&apos;t have an account?</value>
+  </data>
+  <data name="Sign up" xml:space="preserve">
+    <value>Sign up</value>
+  </data>
+  <data name="Create account" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Join {0} to access your courses and workspace" xml:space="preserve">
+    <value>Join {0} to access your courses and workspace</value>
+  </data>
+  <data name="Full Name" xml:space="preserve">
+    <value>Full Name</value>
+  </data>
+  <data name="Confirm Password" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="At least {0} characters" xml:space="preserve">
+    <value>At least {0} characters</value>
+  </data>
+  <data name="At least one digit" xml:space="preserve">
+    <value>At least one digit</value>
+  </data>
+  <data name="At least one uppercase letter" xml:space="preserve">
+    <value>At least one uppercase letter</value>
+  </data>
+  <data name="At least one symbol" xml:space="preserve">
+    <value>At least one symbol</value>
+  </data>
+  <data name="Already have an account?" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="Password does not meet the requirements above." xml:space="preserve">
+    <value>Password does not meet the requirements above.</value>
+  </data>
+  <data name="Passwords do not match." xml:space="preserve">
+    <value>Passwords do not match.</value>
+  </data>
+  <data name="Passwords do not match" xml:space="preserve">
+    <value>Passwords do not match</value>
+  </data>
+  <data name="Toggle password visibility" xml:space="preserve">
+    <value>Toggle password visibility</value>
+  </data>
+  <data name="Authorize {0}" xml:space="preserve">
+    <value>Authorize {0}</value>
+  </data>
+  <data name="This app is requesting access to your account. Review what it can do before continuing." xml:space="preserve">
+    <value>This app is requesting access to your account. Review what it can do before continuing.</value>
+  </data>
+  <data name="Deny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="Confirm email change" xml:space="preserve">
+    <value>Confirm email change</value>
+  </data>
+  <data name="Email address updated" xml:space="preserve">
+    <value>Email address updated</value>
+  </data>
+  <data name="Your account email is now {0}." xml:space="preserve">
+    <value>Your account email is now {0}.</value>
+  </data>
+  <data name="Back to profile" xml:space="preserve">
+    <value>Back to profile</value>
+  </data>
+  <data name="Link has expired" xml:space="preserve">
+    <value>Link has expired</value>
+  </data>
+  <data name="This confirmation link has expired or is invalid. Request a new one from your profile page." xml:space="preserve">
+    <value>This confirmation link has expired or is invalid. Request a new one from your profile page.</value>
+  </data>
+  <data name="Forgot password" xml:space="preserve">
+    <value>Forgot password</value>
+  </data>
+  <data name="Enter your email address and we&apos;ll send you a link to reset your password." xml:space="preserve">
+    <value>Enter your email address and we&apos;ll send you a link to reset your password.</value>
+  </data>
+  <data name="Send reset link" xml:space="preserve">
+    <value>Send reset link</value>
+  </data>
+  <data name="Remember your password?" xml:space="preserve">
+    <value>Remember your password?</value>
+  </data>
+  <data name="Check your email" xml:space="preserve">
+    <value>Check your email</value>
+  </data>
+  <data name="If that email address is registered, you&apos;ll receive a reset link shortly. Check your inbox and spam folder." xml:space="preserve">
+    <value>If that email address is registered, you&apos;ll receive a reset link shortly. Check your inbox and spam folder.</value>
+  </data>
+  <data name="Back to sign in" xml:space="preserve">
+    <value>Back to sign in</value>
+  </data>
+  <data name="Account locked" xml:space="preserve">
+    <value>Account locked</value>
+  </data>
+  <data name="Your account is temporarily locked after too many failed sign-in attempts." xml:space="preserve">
+    <value>Your account is temporarily locked after too many failed sign-in attempts.</value>
+  </data>
+  <data name="Try again in a few minutes." xml:space="preserve">
+    <value>Try again in a few minutes.</value>
+  </data>
+  <data name="You can try signing in again now." xml:space="preserve">
+    <value>You can try signing in again now.</value>
+  </data>
+  <data name="Try again in {0}m {1}s." xml:space="preserve">
+    <value>Try again in {0}m {1}s.</value>
+  </data>
+  <data name="Sign out" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Sign out of {0}?" xml:space="preserve">
+    <value>Sign out of {0}?</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="You are not currently signed in." xml:space="preserve">
+    <value>You are not currently signed in.</value>
+  </data>
+  <data name="Go to sign in" xml:space="preserve">
+    <value>Go to sign in</value>
+  </data>
+  <data name="Reset password" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="New Password" xml:space="preserve">
+    <value>New Password</value>
+  </data>
+  <data name="Request a new link" xml:space="preserve">
+    <value>Request a new link</value>
+  </data>
+  <data name="This password reset link has expired or is invalid." xml:space="preserve">
+    <value>This password reset link has expired or is invalid.</value>
+  </data>
+  <data name="Password reset" xml:space="preserve">
+    <value>Password reset</value>
+  </data>
+  <data name="Password reset successfully" xml:space="preserve">
+    <value>Password reset successfully</value>
+  </data>
+  <data name="You can now sign in with your new password." xml:space="preserve">
+    <value>You can now sign in with your new password.</value>
+  </data>
+  <data name="Email verification" xml:space="preserve">
+    <value>Email verification</value>
+  </data>
+  <data name="Your email is confirmed" xml:space="preserve">
+    <value>Your email is confirmed</value>
+  </data>
+  <data name="You can now sign in to your account." xml:space="preserve">
+    <value>You can now sign in to your account.</value>
+  </data>
+  <data name="This verification link has expired or is invalid. Request a new one below." xml:space="preserve">
+    <value>This verification link has expired or is invalid. Request a new one below.</value>
+  </data>
+  <data name="Verify email" xml:space="preserve">
+    <value>Verify email</value>
+  </data>
+  <data name="We sent a verification link to {0}. Check your inbox and spam folder." xml:space="preserve">
+    <value>We sent a verification link to {0}. Check your inbox and spam folder.</value>
+  </data>
+  <data name="Resend link" xml:space="preserve">
+    <value>Resend link</value>
+  </data>
+  <data name="Already signed up?" xml:space="preserve">
+    <value>Already signed up?</value>
+  </data>
+  <data name="Please wait {0} second(s) before requesting another link." xml:space="preserve">
+    <value>Please wait {0} second(s) before requesting another link.</value>
+  </data>
+  <data name="Verify your identity" xml:space="preserve">
+    <value>Verify your identity</value>
+  </data>
+  <data name="Authenticator App" xml:space="preserve">
+    <value>Authenticator App</value>
+  </data>
+  <data name="Backup Code" xml:space="preserve">
+    <value>Backup Code</value>
+  </data>
+  <data name="6-digit code" xml:space="preserve">
+    <value>6-digit code</value>
+  </data>
+  <data name="Enter the code from your authenticator app" xml:space="preserve">
+    <value>Enter the code from your authenticator app</value>
+  </data>
+  <data name="Verify" xml:space="preserve">
+    <value>Verify</value>
+  </data>
+  <data name="Enter one of your backup codes" xml:space="preserve">
+    <value>Enter one of your backup codes</value>
+  </data>
+  <data name="Invalid code format. Please enter a 6-digit code." xml:space="preserve">
+    <value>Invalid code format. Please enter a 6-digit code.</value>
+  </data>
+  <data name="Invalid code. Try again." xml:space="preserve">
+    <value>Invalid code. Try again.</value>
+  </data>
+  <data name="Please enter a backup code." xml:space="preserve">
+    <value>Please enter a backup code.</value>
+  </data>
+  <data name="Invalid backup code. Try again." xml:space="preserve">
+    <value>Invalid backup code. Try again.</value>
+  </data>
+  <data name="Set up authenticator" xml:space="preserve">
+    <value>Set up authenticator</value>
+  </data>
+  <data name="Scan this QR code with an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy." xml:space="preserve">
+    <value>Scan this QR code with an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy.</value>
+  </data>
+  <data name="Or enter this key manually:" xml:space="preserve">
+    <value>Or enter this key manually:</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Copied!" xml:space="preserve">
+    <value>Copied!</value>
+  </data>
+  <data name="Verification code" xml:space="preserve">
+    <value>Verification code</value>
+  </data>
+  <data name="Enter the 6-digit code from your authenticator app" xml:space="preserve">
+    <value>Enter the 6-digit code from your authenticator app</value>
+  </data>
+  <data name="Confirm and continue" xml:space="preserve">
+    <value>Confirm and continue</value>
+  </data>
+  <data name="Disable two-factor authentication" xml:space="preserve">
+    <value>Disable two-factor authentication</value>
+  </data>
+  <data name="Disabling two-factor authentication makes your account less secure." xml:space="preserve">
+    <value>Disabling two-factor authentication makes your account less secure.</value>
+  </data>
+  <data name="Current password" xml:space="preserve">
+    <value>Current password</value>
+  </data>
+  <data name="Incorrect password." xml:space="preserve">
+    <value>Incorrect password.</value>
+  </data>
+  <data name="Save your backup codes" xml:space="preserve">
+    <value>Save your backup codes</value>
+  </data>
+  <data name="Save these codes somewhere safe — you will not see them again." xml:space="preserve">
+    <value>Save these codes somewhere safe — you will not see them again.</value>
+  </data>
+  <data name="If you lose access to your authenticator app, these codes are your only way to regain access." xml:space="preserve">
+    <value>If you lose access to your authenticator app, these codes are your only way to regain access.</value>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="I&apos;ve saved my codes" xml:space="preserve">
+    <value>I&apos;ve saved my codes</value>
+  </data>
+  <data name="Backup codes are only shown once. Go to Security settings to regenerate them." xml:space="preserve">
+    <value>Backup codes are only shown once. Go to Security settings to regenerate them.</value>
+  </data>
+  <data name="Back to Security Settings" xml:space="preserve">
+    <value>Back to Security Settings</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Manage your account, security settings, and connected apps." xml:space="preserve">
+    <value>Manage your account, security settings, and connected apps.</value>
+  </data>
+  <data name="Hello, {0}" xml:space="preserve">
+    <value>Hello, {0}</value>
+  </data>
+  <data name="Two-Factor Auth" xml:space="preserve">
+    <value>Two-Factor Auth</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="App Sessions" xml:space="preserve">
+    <value>App Sessions</value>
+  </data>
+  <data name="Connected Apps" xml:space="preserve">
+    <value>Connected Apps</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Verified" xml:space="preserve">
+    <value>Verified</value>
+  </data>
+  <data name="Change it from the security settings page" xml:space="preserve">
+    <value>Change it from the security settings page</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="Two-Factor Authentication" xml:space="preserve">
+    <value>Two-Factor Authentication</value>
+  </data>
+  <data name="Authenticator app enabled" xml:space="preserve">
+    <value>Authenticator app enabled</value>
+  </data>
+  <data name="Not set up — your account is less secure" xml:space="preserve">
+    <value>Not set up — your account is less secure</value>
+  </data>
+  <data name="Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="Set up" xml:space="preserve">
+    <value>Set up</value>
+  </data>
+  <data name="Last Sign-in" xml:space="preserve">
+    <value>Last Sign-in</value>
+  </data>
+  <data name="Secure your account" xml:space="preserve">
+    <value>Secure your account</value>
+  </data>
+  <data name="Enable two-factor authentication to protect your account from unauthorised access." xml:space="preserve">
+    <value>Enable two-factor authentication to protect your account from unauthorised access.</value>
+  </data>
+  <data name="Enable 2FA" xml:space="preserve">
+    <value>Enable 2FA</value>
+  </data>
+  <data name="Identity Administration" xml:space="preserve">
+    <value>Identity Administration</value>
+  </data>
+  <data name="Manage clients, scopes, and users." xml:space="preserve">
+    <value>Manage clients, scopes, and users.</value>
+  </data>
+  <data name="Open Admin" xml:space="preserve">
+    <value>Open Admin</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Profile Settings" xml:space="preserve">
+    <value>Profile Settings</value>
+  </data>
+  <data name="Email Address" xml:space="preserve">
+    <value>Email Address</value>
+  </data>
+  <data name="Save Changes" xml:space="preserve">
+    <value>Save Changes</value>
+  </data>
+  <data name="Change email address" xml:space="preserve">
+    <value>Change email address</value>
+  </data>
+  <data name="We&apos;ll send a confirmation link to the new address. Your email won&apos;t change until you click it." xml:space="preserve">
+    <value>We&apos;ll send a confirmation link to the new address. Your email won&apos;t change until you click it.</value>
+  </data>
+  <data name="New email address" xml:space="preserve">
+    <value>New email address</value>
+  </data>
+  <data name="Send confirmation link" xml:space="preserve">
+    <value>Send confirmation link</value>
+  </data>
+  <data name="Enter a valid email address." xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="That&apos;s already your current email address." xml:space="preserve">
+    <value>That&apos;s already your current email address.</value>
+  </data>
+  <data name="That email address is already in use." xml:space="preserve">
+    <value>That email address is already in use.</value>
+  </data>
+  <data name="Something went wrong sending the confirmation email. Please try again." xml:space="preserve">
+    <value>Something went wrong sending the confirmation email. Please try again.</value>
+  </data>
+  <data name="We&apos;ve sent a confirmation link to {0}. Your email won&apos;t change until you confirm it." xml:space="preserve">
+    <value>We&apos;ve sent a confirmation link to {0}. Your email won&apos;t change until you confirm it.</value>
+  </data>
+  <data name="Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="Security Settings" xml:space="preserve">
+    <value>Security Settings</value>
+  </data>
+  <data name="Change Password" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="Confirm New Password" xml:space="preserve">
+    <value>Confirm New Password</value>
+  </data>
+  <data name="Update Password" xml:space="preserve">
+    <value>Update Password</value>
+  </data>
+  <data name="Password must be at least 8 characters." xml:space="preserve">
+    <value>Password must be at least 8 characters.</value>
+  </data>
+  <data name="Two-factor authentication is on" xml:space="preserve">
+    <value>Two-factor authentication is on</value>
+  </data>
+  <data name="Backup codes" xml:space="preserve">
+    <value>Backup codes</value>
+  </data>
+  <data name="{0} remaining. Regenerating invalidates all existing codes." xml:space="preserve">
+    <value>{0} remaining. Regenerating invalidates all existing codes.</value>
+  </data>
+  <data name="Regenerate" xml:space="preserve">
+    <value>Regenerate</value>
+  </data>
+  <data name="Two-factor authentication is off" xml:space="preserve">
+    <value>Two-factor authentication is off</value>
+  </data>
+  <data name="Danger zone" xml:space="preserve">
+    <value>Danger zone</value>
+  </data>
+  <data name="Export a copy of your account data, or permanently delete your account." xml:space="preserve">
+    <value>Export a copy of your account data, or permanently delete your account.</value>
+  </data>
+  <data name="Export my data" xml:space="preserve">
+    <value>Export my data</value>
+  </data>
+  <data name="Delete account" xml:space="preserve">
+    <value>Delete account</value>
+  </data>
+  <data name="Your account&apos;s email address was changed to {0}" xml:space="preserve">
+    <value>Your account&apos;s email address was changed to {0}</value>
+  </data>
+  <data name="Two-factor authentication was disabled" xml:space="preserve">
+    <value>Two-factor authentication was disabled</value>
+  </data>
+  <data name="Your two-factor backup codes were regenerated" xml:space="preserve">
+    <value>Your two-factor backup codes were regenerated</value>
+  </data>
+  <data name="Your password was changed" xml:space="preserve">
+    <value>Your password was changed</value>
+  </data>
+  <data name="Your profile has been updated successfully." xml:space="preserve">
+    <value>Your profile has been updated successfully.</value>
+  </data>
+  <data name="Your password has been changed successfully." xml:space="preserve">
+    <value>Your password has been changed successfully.</value>
+  </data>
+  <data name="Session has been revoked." xml:space="preserve">
+    <value>Session has been revoked.</value>
+  </data>
+  <data name="Access for that app has been revoked." xml:space="preserve">
+    <value>Access for that app has been revoked.</value>
+  </data>
+  <data name="This permanently deletes your account, revokes every active session and app authorization, and cannot be undone." xml:space="preserve">
+    <value>This permanently deletes your account, revokes every active session and app authorization, and cannot be undone.</value>
+  </data>
+  <data name="Two-factor code or backup code" xml:space="preserve">
+    <value>Two-factor code or backup code</value>
+  </data>
+  <data name="Permanently delete my account" xml:space="preserve">
+    <value>Permanently delete my account</value>
+  </data>
+  <data name="Invalid two-factor code." xml:space="preserve">
+    <value>Invalid two-factor code.</value>
+  </data>
+  <data name="You&apos;re the last administrator — transfer admin access to another account before deleting yours." xml:space="preserve">
+    <value>You&apos;re the last administrator — transfer admin access to another account before deleting yours.</value>
+  </data>
+  <data name="Something went wrong deleting your account. Please try again or contact support." xml:space="preserve">
+    <value>Something went wrong deleting your account. Please try again or contact support.</value>
+  </data>
+  <data name="Access denied" xml:space="preserve">
+    <value>Access denied</value>
+  </data>
+  <data name="Your account doesn&apos;t have permission to view that page." xml:space="preserve">
+    <value>Your account doesn&apos;t have permission to view that page.</value>
+  </data>
+  <data name="Back to my account" xml:space="preserve">
+    <value>Back to my account</value>
+  </data>
+  <data name="Connected App Sessions" xml:space="preserve">
+    <value>Connected App Sessions</value>
+  </data>
+  <data name="Apps you&apos;ve signed into using this account. This doesn&apos;t include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that." xml:space="preserve">
+    <value>Apps you&apos;ve signed into using this account. This doesn&apos;t include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that.</value>
+  </data>
+  <data name="Revoke all" xml:space="preserve">
+    <value>Revoke all</value>
+  </data>
+  <data name="No active sessions found." xml:space="preserve">
+    <value>No active sessions found.</value>
+  </data>
+  <data name="Issued {0}" xml:space="preserve">
+    <value>Issued {0}</value>
+  </data>
+  <data name="Expires {0}" xml:space="preserve">
+    <value>Expires {0}</value>
+  </data>
+  <data name="Revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="This will sign you out of all sessions everywhere. Continue?" xml:space="preserve">
+    <value>This will sign you out of all sessions everywhere. Continue?</value>
+  </data>
+  <data name="Applications that have active access to your account. Revoking removes their tokens immediately." xml:space="preserve">
+    <value>Applications that have active access to your account. Revoking removes their tokens immediately.</value>
+  </data>
+  <data name="No apps connected yet." xml:space="preserve">
+    <value>No apps connected yet.</value>
+  </data>
+  <data name="Last used {0}" xml:space="preserve">
+    <value>Last used {0}</value>
+  </data>
+  <data name="Revoke access for &apos;{0}&apos;? The app will need to sign in again." xml:space="preserve">
+    <value>Revoke access for &apos;{0}&apos;? The app will need to sign in again.</value>
+  </data>
+  <data name="Where to next?" xml:space="preserve">
+    <value>Where to next?</value>
+  </data>
+  <data name="Select an application to continue" xml:space="preserve">
+    <value>Select an application to continue</value>
+  </data>
+  <data name="That Google account&apos;s email isn&apos;t verified. Please verify it with Google, or sign in with your password instead." xml:space="preserve">
+    <value>That Google account&apos;s email isn&apos;t verified. Please verify it with Google, or sign in with your password instead.</value>
+  </data>
+  <data name="Your Google account doesn&apos;t have an email address we can use." xml:space="preserve">
+    <value>Your Google account doesn&apos;t have an email address we can use.</value>
+  </data>
+  <data name="Google sign-in failed. Please try again." xml:space="preserve">
+    <value>Google sign-in failed. Please try again.</value>
+  </data>
+  <data name="Something went wrong signing in with Google. Please try again." xml:space="preserve">
+    <value>Something went wrong signing in with Google. Please try again.</value>
+  </data>
+  <data name="Incorrect email or password" xml:space="preserve">
+    <value>Incorrect email or password</value>
+  </data>
+  <data name="An error occurred while sending the verification email. Please try again." xml:space="preserve">
+    <value>An error occurred while sending the verification email. Please try again.</value>
+  </data>
+  <data name="Administration" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="Identity Admin" xml:space="preserve">
+    <value>Identity Admin</value>
+  </data>
+  <data name="My Account" xml:space="preserve">
+    <value>My Account</value>
+  </data>
+  <data name="Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Sessions" xml:space="preserve">
+    <value>Sessions</value>
+  </data>
+  <data name="English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Validation error" xml:space="preserve">
+    <value>Validation error</value>
+  </data>
+  <data name="An unknown error occurred." xml:space="preserve">
+    <value>An unknown error occurred.</value>
+  </data>
+  <data name="Optimistic concurrency failure, object has been modified." xml:space="preserve">
+    <value>Optimistic concurrency failure, object has been modified.</value>
+  </data>
+  <data name="Invalid token." xml:space="preserve">
+    <value>Invalid token.</value>
+  </data>
+  <data name="A user with this login already exists." xml:space="preserve">
+    <value>A user with this login already exists.</value>
+  </data>
+  <data name="Username &apos;{0}&apos; is invalid, can only contain letters or digits." xml:space="preserve">
+    <value>Username &apos;{0}&apos; is invalid, can only contain letters or digits.</value>
+  </data>
+  <data name="Email &apos;{0}&apos; is invalid." xml:space="preserve">
+    <value>Email &apos;{0}&apos; is invalid.</value>
+  </data>
+  <data name="Username &apos;{0}&apos; is already taken." xml:space="preserve">
+    <value>Username &apos;{0}&apos; is already taken.</value>
+  </data>
+  <data name="Email &apos;{0}&apos; is already taken." xml:space="preserve">
+    <value>Email &apos;{0}&apos; is already taken.</value>
+  </data>
+  <data name="Role name &apos;{0}&apos; is invalid." xml:space="preserve">
+    <value>Role name &apos;{0}&apos; is invalid.</value>
+  </data>
+  <data name="Role name &apos;{0}&apos; is already taken." xml:space="preserve">
+    <value>Role name &apos;{0}&apos; is already taken.</value>
+  </data>
+  <data name="User already has a password set." xml:space="preserve">
+    <value>User already has a password set.</value>
+  </data>
+  <data name="Lockout is not enabled for this user." xml:space="preserve">
+    <value>Lockout is not enabled for this user.</value>
+  </data>
+  <data name="User already in role &apos;{0}&apos;." xml:space="preserve">
+    <value>User already in role &apos;{0}&apos;.</value>
+  </data>
+  <data name="User is not in role &apos;{0}&apos;." xml:space="preserve">
+    <value>User is not in role &apos;{0}&apos;.</value>
+  </data>
+  <data name="Passwords must be at least {0} characters." xml:space="preserve">
+    <value>Passwords must be at least {0} characters.</value>
+  </data>
+  <data name="Passwords must have at least one non alphanumeric character." xml:space="preserve">
+    <value>Passwords must have at least one non alphanumeric character.</value>
+  </data>
+  <data name="Passwords must have at least one digit (&apos;0&apos;-&apos;9&apos;)." xml:space="preserve">
+    <value>Passwords must have at least one digit (&apos;0&apos;-&apos;9&apos;).</value>
+  </data>
+  <data name="Passwords must have at least one lowercase (&apos;a&apos;-&apos;z&apos;)." xml:space="preserve">
+    <value>Passwords must have at least one lowercase (&apos;a&apos;-&apos;z&apos;).</value>
+  </data>
+  <data name="Passwords must have at least one uppercase (&apos;A&apos;-&apos;Z&apos;)." xml:space="preserve">
+    <value>Passwords must have at least one uppercase (&apos;A&apos;-&apos;Z&apos;).</value>
+  </data>
+  <data name="Passwords must use at least {0} different characters." xml:space="preserve">
+    <value>Passwords must use at least {0} different characters.</value>
+  </data>
+  <data name="Recovery code redemption failed." xml:space="preserve">
+    <value>Recovery code redemption failed.</value>
+  </data>
+  <data name="Clients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="Scopes" xml:space="preserve">
+    <value>Scopes</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="or" xml:space="preserve">
+    <value>or</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Change theme" xml:space="preserve">
+    <value>Change theme</value>
+  </data>
+  <data name="Authorize access" xml:space="preserve">
+    <value>Authorize access</value>
+  </data>
+  <data name="Unknown App" xml:space="preserve">
+    <value>Unknown App</value>
+  </data>
+  <data name="Choose an app" xml:space="preserve">
+    <value>Choose an app</value>
+  </data>
+  <data name="Backup code label" xml:space="preserve">
+    <value>Backup code label</value>
+  </data>
+</root>

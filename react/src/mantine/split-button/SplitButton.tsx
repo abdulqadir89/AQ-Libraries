@@ -4,6 +4,7 @@ import { Button, Menu, Tooltip } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 import type { ButtonProps, MenuProps, MantineColor } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { useAQLocale } from '../locale';
 
 export interface SplitButtonItem {
   key: string;
@@ -55,6 +56,8 @@ export function SplitButton({
   size = 'xs',
   menuPosition = 'bottom-end',
 }: SplitButtonProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.splitButton;
   const mainButton = (
     <Button
       size={size}
@@ -87,7 +90,7 @@ export function SplitButton({
                 color={color}
                 disabled={disabled}
                 px={6}
-                aria-label="More options"
+                aria-label={m.moreOptions}
               >
                 <IconChevronDown size={12} />
               </Button>
@@ -99,7 +102,7 @@ export function SplitButton({
               color={color}
               disabled={disabled}
               px={6}
-              aria-label="More options"
+              aria-label={m.moreOptions}
             >
               <IconChevronDown size={12} />
             </Button>
