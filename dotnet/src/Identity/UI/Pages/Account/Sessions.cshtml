@@ -1,23 +1,24 @@
 @page "/account/sessions"
 @model AQ.Identity.UI.Pages.Account.SessionsModel
 @{
-    ViewData["Title"] = "Sessions";
+    ViewData["Title"] = L["Sessions"].Value;
     Layout = "_AccountLayout";
 }
 
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Connected App Sessions</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Apps you've signed into using this account. This doesn't include your current sign-in here — use "Sign out" in the sidebar for that.</p>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">@L["Connected App Sessions"]</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">@L["Apps you've signed into using this account. This doesn't include your current sign-in here — use \"Sign out\" in the sidebar for that."]</p>
         </div>
         @if (Model.Sessions.Count > 1)
         {
             <form method="post">
                 <button type="submit" asp-page-handler="RevokeAll"
-                        onclick="return confirm('This will sign you out of all sessions everywhere. Continue?')"
+                        data-confirm="@L["This will sign you out of all sessions everywhere. Continue?"]"
+                        onclick="return confirm(this.dataset.confirm)"
                         class="text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                    Revoke all
+                    @L["Revoke all"]
                 </button>
             </form>
         }
@@ -29,7 +30,7 @@
             <svg class="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
             </svg>
-            <p class="text-sm text-slate-400">No active sessions found.</p>
+            <p class="text-sm text-slate-400">@L["No active sessions found."]</p>
         </div>
     }
     else
@@ -47,10 +48,10 @@
                         <div>
                             <p class="text-sm font-medium text-slate-900 dark:text-white">@session.AppName</p>
                             <p class="text-xs text-slate-400 mt-0.5">
-                                Issued @session.CreatedAt.ToString("d MMM yyyy, HH:mm")
+                                @L["Issued {0}", session.CreatedAt.ToString("d MMM yyyy, HH:mm")]
                                 @if (session.ExpiresAt.HasValue)
                                 {
-                                    <span> · Expires @session.ExpiresAt.Value.ToString("d MMM yyyy, HH:mm")</span>
+                                    <span> · @L["Expires {0}", session.ExpiresAt.Value.ToString("d MMM yyyy, HH:mm")]</span>
                                 }
                             </p>
                         </div>
@@ -59,7 +60,7 @@
                         <input type="hidden" name="authorizationId" value="@session.AuthorizationId" />
                         <button type="submit" asp-page-handler="Revoke"
                                 class="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">
-                            Revoke
+                            @L["Revoke"]
                         </button>
                     </form>
                 </div>

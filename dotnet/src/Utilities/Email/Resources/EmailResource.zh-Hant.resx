@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Verification.Subject" xml:space="preserve">
+    <value>驗證你的電子郵件 - {0}</value>
+  </data>
+  <data name="Verification.Heading" xml:space="preserve">
+    <value>驗證你的電子郵件地址</value>
+  </data>
+  <data name="Verification.Intro" xml:space="preserve">
+    <value>感謝你註冊&lt;strong&gt;{0}&lt;/strong&gt;。請點選下方按鈕，驗證你的電子郵件地址。</value>
+  </data>
+  <data name="Verification.Button" xml:space="preserve">
+    <value>驗證電子郵件</value>
+  </data>
+  <data name="Verification.FallbackLink" xml:space="preserve">
+    <value>如果按鈕無法使用，請複製以下連結並貼到瀏覽器中：</value>
+  </data>
+  <data name="Verification.Ignore" xml:space="preserve">
+    <value>如果你並未在{0}註冊帳號，請忽略這封郵件即可。</value>
+  </data>
+  <data name="Verification.Text" xml:space="preserve">
+    <value>驗證你在{0}的電子郵件地址
+
+請前往以下連結，驗證你的電子郵件：
+{1}
+
+如果你並未在{0}註冊帳號，請忽略這封郵件即可。</value>
+  </data>
+  <data name="PasswordReset.Subject" xml:space="preserve">
+    <value>重設你的密碼 - {0}</value>
+  </data>
+  <data name="PasswordReset.Heading" xml:space="preserve">
+    <value>重設你的密碼</value>
+  </data>
+  <data name="PasswordReset.Intro" xml:space="preserve">
+    <value>我們收到一則要求，重設你在&lt;strong&gt;{0}&lt;/strong&gt;的密碼。請點選下方按鈕，設定新密碼。</value>
+  </data>
+  <data name="PasswordReset.Button" xml:space="preserve">
+    <value>重設密碼</value>
+  </data>
+  <data name="PasswordReset.FallbackLink" xml:space="preserve">
+    <value>如果按鈕無法使用，請複製以下連結並貼到瀏覽器中：</value>
+  </data>
+  <data name="PasswordReset.Ignore" xml:space="preserve">
+    <value>如果你並未要求重設密碼，請忽略這封郵件即可，你的密碼不會被變更。</value>
+  </data>
+  <data name="PasswordReset.Text" xml:space="preserve">
+    <value>重設你在{0}的密碼
+
+我們收到一則重設密碼的要求。請前往以下連結，設定新密碼：
+{1}
+
+如果你並未要求重設密碼，請忽略這封郵件即可，你的密碼不會被變更。</value>
+  </data>
+  <data name="WorkspaceInvitation.Subject" xml:space="preserve">
+    <value>你已受邀加入{1}的{0}</value>
+  </data>
+  <data name="WorkspaceInvitation.Heading" xml:space="preserve">
+    <value>你已受邀加入{0}</value>
+  </data>
+  <data name="WorkspaceInvitation.Intro" xml:space="preserve">
+    <value>&lt;strong&gt;{0}&lt;/strong&gt;邀請你加入{2}的&lt;strong&gt;{1}&lt;/strong&gt;。請點選下方按鈕，接受邀請。</value>
+  </data>
+  <data name="WorkspaceInvitation.Button" xml:space="preserve">
+    <value>接受邀請</value>
+  </data>
+  <data name="WorkspaceInvitation.FallbackLink" xml:space="preserve">
+    <value>如果按鈕無法使用，請複製以下連結並貼到瀏覽器中：</value>
+  </data>
+  <data name="WorkspaceInvitation.Ignore" xml:space="preserve">
+    <value>如果你並未預期收到這則邀請，請忽略這封郵件即可。</value>
+  </data>
+  <data name="WorkspaceInvitation.Text" xml:space="preserve">
+    <value>{0}邀請你加入{2}的{1}
+
+請前往以下連結，接受邀請：
+{3}
+
+如果你並未預期收到這則邀請，請忽略這封郵件即可。</value>
+  </data>
+  <data name="SecurityAlert.Subject" xml:space="preserve">
+    <value>安全性提醒 - {0}</value>
+  </data>
+  <data name="SecurityAlert.Heading" xml:space="preserve">
+    <value>你的帳號安全性提醒</value>
+  </data>
+  <data name="SecurityAlert.Intro" xml:space="preserve">
+    <value>你的&lt;strong&gt;{1}&lt;/strong&gt;帳號{0}。</value>
+  </data>
+  <data name="SecurityAlert.Text" xml:space="preserve">
+    <value>你的{1}帳號安全性提醒
+
+{0}。
+
+如果這是你本人的操作，則不需要採取任何行動。如果你並不認得這項變更，請立即重設密碼，並檢查帳號的安全性設定。</value>
+  </data>
+  <data name="SecurityAlert.NotYou" xml:space="preserve">
+    <value>如果這是你本人的操作，則不需要採取任何行動。如果你並不認得這項變更，請立即重設密碼，並檢查帳號的安全性設定。</value>
+  </data>
+</root>

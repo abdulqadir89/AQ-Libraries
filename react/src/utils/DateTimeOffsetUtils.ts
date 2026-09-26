@@ -37,7 +37,8 @@ export function getUserTimezoneOffset(): number {
  */
 export function formatDateTimeOffset(
   dateTimeOffset: string | null | undefined,
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
+  locale?: string
 ): string {
   if (!dateTimeOffset) return '';
 
@@ -53,7 +54,7 @@ export function formatDateTimeOffset(
     ...options,
   };
 
-  return new Intl.DateTimeFormat(undefined, defaultOptions).format(date);
+  return new Intl.DateTimeFormat(locale, defaultOptions).format(date);
 }
 
 /**
@@ -62,14 +63,15 @@ export function formatDateTimeOffset(
  * @returns Formatted string showing both timezones (e.g., "Jan 15, 2024 10:00 AM EST (Original: 9:00 AM CST)")
  */
 export function formatDateTimeOffsetWithOriginal(
-  dateTimeOffset: string | null | undefined
+  dateTimeOffset: string | null | undefined,
+  locale?: string
 ): string {
   if (!dateTimeOffset) return '';
 
   const date = new Date(dateTimeOffset);
   if (isNaN(date.getTime())) return '';
 
-  const userTimeFormat = new Intl.DateTimeFormat(undefined, {
+  const userTimeFormat = new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -96,13 +98,13 @@ export function formatDateTimeOffsetWithOriginal(
  * @param dateTimeOffset - ISO 8601 date string with timezone offset
  * @returns Formatted date string
  */
-export function formatDateOnly(dateTimeOffset: string | null | undefined): string {
+export function formatDateOnly(dateTimeOffset: string | null | undefined, locale?: string): string {
   if (!dateTimeOffset) return '';
 
   const date = new Date(dateTimeOffset);
   if (isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -114,13 +116,13 @@ export function formatDateOnly(dateTimeOffset: string | null | undefined): strin
  * @param dateTimeOffset - ISO 8601 date string with timezone offset
  * @returns Formatted time string
  */
-export function formatTimeOnly(dateTimeOffset: string | null | undefined): string {
+export function formatTimeOnly(dateTimeOffset: string | null | undefined, locale?: string): string {
   if (!dateTimeOffset) return '';
 
   const date = new Date(dateTimeOffset);
   if (isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
@@ -134,12 +136,13 @@ export function formatTimeOnly(dateTimeOffset: string | null | undefined): strin
  */
 export function formatDateTimeOffsetRange(
   range: DateTimeOffsetRangeDto | null | undefined,
-  separator: string = ' - '
+  separator: string = ' - ',
+  locale?: string
 ): string {
   if (!range) return '';
 
-  const start = range.start ? formatDateTimeOffset(range.start) : '';
-  const end = range.end ? formatDateTimeOffset(range.end) : '';
+  const start = range.start ? formatDateTimeOffset(range.start, undefined, locale) : '';
+  const end = range.end ? formatDateTimeOffset(range.end, undefined, locale) : '';
 
   if (start && end) {
     return `${start}${separator}${end}`;
@@ -311,7 +314,7 @@ export interface TimezoneOption {
   group: string;
 }
 
-export function getCommonTimezones(at: Date = new Date()): TimezoneOption[] {
+export function getCommonTimezones(at: Date = new Date(), locale?: string): TimezoneOption[] {
   const tzList: Array<{ value: string; group: string }> = [
     // UTC
     { value: 'UTC', group: 'UTC' },
@@ -394,7 +397,7 @@ export function getCommonTimezones(at: Date = new Date()): TimezoneOption[] {
   return tzList.map(tz => {
     try {
       const offset = timezoneIdToOffsetString(tz.value, at);
-      const shortName = new Intl.DateTimeFormat('en', { timeZone: tz.value, timeZoneName: 'short' })
+      const shortName = new Intl.DateTimeFormat(locale ?? 'en', { timeZone: tz.value, timeZoneName: 'short' })
         .formatToParts(at)
         .find(p => p.type === 'timeZoneName')?.value ?? '';
       return {
@@ -507,13 +510,13 @@ export function toGmtLabel(offsetMinutes: number): string {
  * @param value - ISO 8601 date string with timezone offset
  * @returns Formatted date/time string without timezone (e.g., "Mar 2, 2026, 12:00 AM")
  */
-export function formatDateTimeNoTz(value: string | null | undefined): string {
+export function formatDateTimeNoTz(value: string | null | undefined, locale?: string): string {
   if (!value) return '';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -527,13 +530,13 @@ export function formatDateTimeNoTz(value: string | null | undefined): string {
  * @param value - ISO 8601 date string with timezone offset
  * @returns Formatted date string without timezone
  */
-export function formatDateOnlyNoTz(value: string | null | undefined): string {
+export function formatDateOnlyNoTz(value: string | null | undefined, locale?: string): string {
   if (!value) return '';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -545,13 +548,13 @@ export function formatDateOnlyNoTz(value: string | null | undefined): string {
  * @param value - ISO 8601 date string with timezone offset
  * @returns Formatted time string
  */
-export function formatTimeOnlyNoTz(value: string | null | undefined): string {
+export function formatTimeOnlyNoTz(value: string | null | undefined, locale?: string): string {
   if (!value) return '';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
@@ -712,14 +715,14 @@ export function buildRangeIntervalTooltip(value: DateTimeOffsetRangeDto): string
  * @param dateStr - ISO date string (e.g., "2024-01-15")
  * @returns Formatted date string in user's locale (e.g., "Jan 15, 2024")
  */
-export function formatDate(dateStr: string | null | undefined): string {
+export function formatDate(dateStr: string | null | undefined, locale?: string): string {
   if (!dateStr) return '';
 
   try {
     const date = new Date(dateStr + 'T00:00:00Z');
     if (Number.isNaN(date.getTime())) return '';
 
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

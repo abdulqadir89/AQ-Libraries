@@ -22,3 +22,19 @@ would require a tenant concept in `AQ.Identity.Core.Entities`, tenant-scoped cla
 tenant-resolution middleware — a materially larger change. Don't build this speculatively; revisit
 only if a second, genuinely separate tenant needs to share one IdP deployment rather than running
 its own.
+
+## Localization
+
+`UI` ships localized login/register/MFA/account/apps pages (not `Pages/Manage/**`, which stays
+English) via `services.AddAqIdentityLocalization()` / `app.UseAqIdentityLocalization()`
+(`Identity/UI/Localization/`). Supported cultures: `en`, `zh-CN`, `zh-TW`, `zh-HK`, resolved in
+order from the OIDC `ui_locales` param (direct, or embedded in `ReturnUrl`'s query string, via
+`UiLocalesRequestCultureProvider`/`UiLocaleMapper`), then a `CookieRequestCultureProvider` cookie
+(set for a year once a `ui_locales` match lands, so register/forgot-password/MFA keep whatever
+language the user arrived in), then `Accept-Language`, then `en`. Page text and validation come
+from `IdentityUIResource` (`.resx`, `.zh-Hans.resx`, `.zh-Hant.resx`, `.zh-HK.resx` — keys are the
+English source text) and a registered `LocalizedIdentityErrorDescriber` (localizes ASP.NET Core
+Identity's built-in `IdentityError` messages). Consuming apps (ELS's `backend/src/Identity`) just
+call the two extension methods — no per-app localization wiring needed, though an app-owned layout
+override (see `UI/README.md`) must re-declare `<html lang="@CultureInfo.CurrentUICulture.Name">`
+and its own `:lang()` CJK font rules if it replaces the shared layout.

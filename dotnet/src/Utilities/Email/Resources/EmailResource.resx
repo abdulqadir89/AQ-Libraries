@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Neutral (English) resource. Keys are descriptive ids, not English text, because email bodies
+       are long (see chinese-localization-plan.md Phase 7). This is the English fallback. -->
+  <data name="Verification.Subject" xml:space="preserve">
+    <value>Verify your email - {0}</value>
+  </data>
+  <data name="Verification.Heading" xml:space="preserve">
+    <value>Verify your email address</value>
+  </data>
+  <data name="Verification.Intro" xml:space="preserve">
+    <value>Thank you for signing up with &lt;strong&gt;{0}&lt;/strong&gt;. Please verify your email address by clicking the button below.</value>
+  </data>
+  <data name="Verification.Button" xml:space="preserve">
+    <value>Verify Email</value>
+  </data>
+  <data name="Verification.FallbackLink" xml:space="preserve">
+    <value>If the button doesn't work, copy and paste this link into your browser:</value>
+  </data>
+  <data name="Verification.Ignore" xml:space="preserve">
+    <value>If you didn't create an account with {0}, you can safely ignore this email.</value>
+  </data>
+  <data name="Verification.Text" xml:space="preserve">
+    <value>Verify your email address for {0}
+
+Please verify your email by visiting the following link:
+{1}
+
+If you didn't create an account with {0}, you can safely ignore this email.</value>
+  </data>
+  <data name="PasswordReset.Subject" xml:space="preserve">
+    <value>Reset your password - {0}</value>
+  </data>
+  <data name="PasswordReset.Heading" xml:space="preserve">
+    <value>Reset your password</value>
+  </data>
+  <data name="PasswordReset.Intro" xml:space="preserve">
+    <value>We received a request to reset your password for &lt;strong&gt;{0}&lt;/strong&gt;. Click the button below to create a new password.</value>
+  </data>
+  <data name="PasswordReset.Button" xml:space="preserve">
+    <value>Reset Password</value>
+  </data>
+  <data name="PasswordReset.FallbackLink" xml:space="preserve">
+    <value>If the button doesn't work, copy and paste this link into your browser:</value>
+  </data>
+  <data name="PasswordReset.Ignore" xml:space="preserve">
+    <value>If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</value>
+  </data>
+  <data name="PasswordReset.Text" xml:space="preserve">
+    <value>Reset your password for {0}
+
+We received a request to reset your password. Please visit the following link to create a new password:
+{1}
+
+If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</value>
+  </data>
+  <data name="WorkspaceInvitation.Subject" xml:space="preserve">
+    <value>You've been invited to join {0} on {1}</value>
+  </data>
+  <data name="WorkspaceInvitation.Heading" xml:space="preserve">
+    <value>You've been invited to join {0}</value>
+  </data>
+  <data name="WorkspaceInvitation.Intro" xml:space="preserve">
+    <value>&lt;strong&gt;{0}&lt;/strong&gt; has invited you to join &lt;strong&gt;{1}&lt;/strong&gt; on {2}. Click the button below to accept the invitation.</value>
+  </data>
+  <data name="WorkspaceInvitation.Button" xml:space="preserve">
+    <value>Accept Invitation</value>
+  </data>
+  <data name="WorkspaceInvitation.FallbackLink" xml:space="preserve">
+    <value>If the button doesn't work, copy and paste this link into your browser:</value>
+  </data>
+  <data name="WorkspaceInvitation.Ignore" xml:space="preserve">
+    <value>If you weren't expecting this invitation, you can safely ignore this email.</value>
+  </data>
+  <data name="WorkspaceInvitation.Text" xml:space="preserve">
+    <value>{0} has invited you to join {1} on {2}
+
+Accept the invitation by visiting the following link:
+{3}
+
+If you weren't expecting this invitation, you can safely ignore this email.</value>
+  </data>
+  <data name="SecurityAlert.Subject" xml:space="preserve">
+    <value>Security alert - {0}</value>
+  </data>
+  <data name="SecurityAlert.Heading" xml:space="preserve">
+    <value>Security alert for your account</value>
+  </data>
+  <data name="SecurityAlert.Intro" xml:space="preserve">
+    <value>{0} on your &lt;strong&gt;{1}&lt;/strong&gt; account.</value>
+  </data>
+  <data name="SecurityAlert.Text" xml:space="preserve">
+    <value>Security alert for your {1} account
+
+{0}.
+
+If this was you, no action is needed. If you don't recognize this change, reset your password immediately and review your account's security settings.</value>
+  </data>
+  <data name="SecurityAlert.NotYou" xml:space="preserve">
+    <value>If this was you, no action is needed. If you don't recognize this change, reset your password immediately and review your account's security settings.</value>
+  </data>
+</root>

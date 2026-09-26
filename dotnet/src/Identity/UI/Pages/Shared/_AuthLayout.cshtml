@@ -1,3 +1,4 @@
+@using System.Globalization
 @using AQ.Identity.Core.Configuration
 @using AQ.Identity.UI.Pages
 @using Microsoft.Extensions.Options
@@ -8,9 +9,11 @@
     var currentMode = themeCookie.Length > 1 ? themeCookie[1] : "light";
     ViewData["CurrentTheme"] = currentTheme;
     ViewData["CurrentMode"] = currentMode;
+    var currentCultureName = CultureInfo.CurrentUICulture.Name;
+    var cultureReturnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@currentTheme" data-mode="@currentMode">
+<html lang="@currentCultureName" data-theme="@currentTheme" data-mode="@currentMode">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,7 +38,16 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center px-4 py-8">
 
-    <div class="absolute top-4 right-4">
+    <div class="absolute top-4 right-4 flex items-center gap-2">
+        <form method="post" asp-page="/Culture/Set" asp-antiforgery="true">
+            <input type="hidden" name="returnUrl" value="@cultureReturnUrl" />
+            <select name="culture" class="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5" onchange="this.form.submit()" aria-label="@L["Language"]">
+                <option value="en" selected="@(currentCultureName == "en")">English</option>
+                <option value="zh-CN" selected="@(currentCultureName == "zh-CN")">简体中文</option>
+                <option value="zh-TW" selected="@(currentCultureName == "zh-TW")">繁體中文（台灣）</option>
+                <option value="zh-HK" selected="@(currentCultureName == "zh-HK")">繁體中文（香港）</option>
+            </select>
+        </form>
         <partial name="_ThemePicker" />
     </div>
 

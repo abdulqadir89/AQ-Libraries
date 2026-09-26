@@ -1,8 +1,13 @@
+@using System.Globalization
 @using AQ.Identity.Core.Configuration
 @using Microsoft.Extensions.Options
 @inject IOptions<AqIdentityOptions> options
+@{
+    var currentCultureName = CultureInfo.CurrentUICulture.Name;
+    var cultureReturnUrl = Context.Request.Path + Context.Request.QueryString;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@currentCultureName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -26,7 +31,7 @@
             {
                 <span class="text-base font-black tracking-tight text-slate-900 dark:text-white">@options.Value.AppName</span>
             }
-            <p class="text-xs text-slate-400 mt-0.5">Identity Admin</p>
+            <p class="text-xs text-slate-400 mt-0.5">@L["Identity Admin"]</p>
         </div>
 
         <nav class="flex flex-col gap-1 p-3 flex-1">
@@ -43,21 +48,21 @@
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4"/>
                 </svg>
-                Clients
+                @L["Clients"]
             </a>
 
             <a href="/manage/scopes" class="@NavClass("/Manage/Scopes")">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
                 </svg>
-                Scopes
+                @L["Scopes"]
             </a>
 
             <a href="/manage/users" class="@NavClass("/Manage/Users")">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
-                Users
+                @L["Users"]
             </a>
 
             <div class="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -65,7 +70,7 @@
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
                     </svg>
-                    My Account
+                    @L["My Account"]
                 </a>
             </div>
         </nav>
@@ -75,10 +80,21 @@
     <main class="flex-1 min-h-screen flex flex-col">
         <header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-4 flex items-center justify-between">
             <h1 class="text-lg font-semibold text-slate-900 dark:text-white">@ViewData["Title"]</h1>
-            @if (ViewData["Actions"] != null)
-            {
-                @Html.Raw(ViewData["Actions"]!.ToString())
-            }
+            <div class="flex items-center gap-2">
+                <form method="post" asp-page="/Culture/Set" asp-antiforgery="true">
+                    <input type="hidden" name="returnUrl" value="@cultureReturnUrl" />
+                    <select name="culture" class="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5" onchange="this.form.submit()" aria-label="@L["Language"]">
+                        <option value="en" selected="@(currentCultureName == "en")">English</option>
+                        <option value="zh-CN" selected="@(currentCultureName == "zh-CN")">简体中文</option>
+                        <option value="zh-TW" selected="@(currentCultureName == "zh-TW")">繁體中文（台灣）</option>
+                        <option value="zh-HK" selected="@(currentCultureName == "zh-HK")">繁體中文（香港）</option>
+                    </select>
+                </form>
+                @if (ViewData["Actions"] != null)
+                {
+                    @Html.Raw(ViewData["Actions"]!.ToString())
+                }
+            </div>
         </header>
 
         <div class="flex-1 p-8">

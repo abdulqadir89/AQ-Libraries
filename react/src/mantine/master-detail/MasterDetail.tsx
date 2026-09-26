@@ -7,6 +7,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react';
 import type { MasterDetailProps } from './MasterDetail.types';
+import { useAQLocale } from '../locale';
 
 /**
  * Master-detail split view: a scrollable, flexbox-rendered list panel on the left
@@ -33,7 +34,7 @@ export function MasterDetail<T = Record<string, unknown>>({
   onSelectionChange,
   renderRow,
   renderDetail,
-  emptyListText = 'No items found.',
+  emptyListText,
   searchable,
   searchPlaceholder,
   onSearch,
@@ -51,6 +52,10 @@ export function MasterDetail<T = Record<string, unknown>>({
   listSpan = 4,
   listHeight = 'calc(100vh - 260px)',
 }: MasterDetailProps<T>) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.masterDetail;
+  const resolvedEmptyListText = emptyListText ?? m.noItemsFound;
+  const resolvedSortPlaceholder = m.sortBy;
   const getKey = (record: T): string => (
     typeof rowKey === 'function' ? rowKey(record) : String(record[rowKey])
   );
@@ -97,7 +102,7 @@ export function MasterDetail<T = Record<string, unknown>>({
             )}
             {sortOptions && sortOptions.length > 0 && (
               <Select
-                placeholder="Sort by"
+                placeholder={resolvedSortPlaceholder}
                 data={sortOptions}
                 value={sortValue ?? null}
                 onChange={(value) => onSortChange?.(value ?? '')}
@@ -129,11 +134,11 @@ export function MasterDetail<T = Record<string, unknown>>({
                 );
               })}
               {!loading && data.length === 0 && (
-                <Text c="dimmed" ta="center" p="lg">{emptyListText}</Text>
+                <Text c="dimmed" ta="center" p="lg">{resolvedEmptyListText}</Text>
               )}
               {hasMore && (
                 <Button variant="subtle" loading={loadingMore} onClick={onLoadMore} m="sm">
-                  Load more{totalCount ? ` (${data.length} of ${totalCount})` : ''}
+                  {m.loadMore(data.length, totalCount)}
                 </Button>
               )}
             </Stack>

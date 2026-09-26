@@ -8,6 +8,7 @@
 import { ActionIcon, Menu, Group, Text } from '@mantine/core';
 import { IconPalette, IconSun, IconMoon } from '@tabler/icons-react';
 import { useTheme } from './ThemeProvider';
+import { useAQLocale } from '../locale';
 
 /** Get display name for a theme (capitalizes first letter) */
 function getThemeDisplayName(themeName: string): string {
@@ -16,6 +17,8 @@ function getThemeDisplayName(themeName: string): string {
 
 export function ThemeSwitcher() {
   const { themeName, setThemeName, availableThemes, colorScheme, toggleColorScheme } = useTheme();
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.themeSwitcher;
 
   return (
     <Group gap="xs">
@@ -24,7 +27,7 @@ export function ThemeSwitcher() {
         variant="default"
         size="lg"
         onClick={toggleColorScheme}
-        aria-label="Toggle color scheme"
+        aria-label={m.toggleColorScheme}
       >
         {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
       </ActionIcon>
@@ -36,14 +39,14 @@ export function ThemeSwitcher() {
             <ActionIcon
               variant="default"
               size="lg"
-              aria-label="Change theme"
+              aria-label={m.changeTheme}
             >
               <IconPalette size={18} />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
-            <Menu.Label>Theme</Menu.Label>
+            <Menu.Label>{m.theme}</Menu.Label>
             {availableThemes.map((theme) => (
               <Menu.Item
                 key={theme}

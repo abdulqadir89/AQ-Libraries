@@ -17,6 +17,8 @@ import {
 import { DateInput } from '@mantine/dates';
 import { IconFilter, IconX } from '@tabler/icons-react';
 import type { DataGridColumn } from './DataGrid.types';
+import { useAQLocale } from '../locale';
+import type { ColumnFilterMessages } from '../locale';
 
 export interface ColumnFilterProps<T = Record<string, unknown>> {
   column: DataGridColumn<T>;
@@ -34,61 +36,65 @@ export interface ColumnFilterRef {
 
 const ENUM_SEARCH_THRESHOLD = 8;
 
-const STRING_OPERATORS = [
-  { value: 'contains', label: 'Contains' },
-  { value: 'eq', label: 'Equals' },
-  { value: 'ne', label: 'Not Equals' },
-  { value: 'startswith', label: 'Starts With' },
-  { value: 'endswith', label: 'Ends With' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+function buildOperatorSets(op: ColumnFilterMessages['operators']) {
+  const STRING_OPERATORS = [
+    { value: 'contains', label: op.contains },
+    { value: 'eq', label: op.eq },
+    { value: 'ne', label: op.ne },
+    { value: 'startswith', label: op.startswith },
+    { value: 'endswith', label: op.endswith },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
 
-const NUMBER_OPERATORS = [
-  { value: 'eq', label: 'Equals' },
-  { value: 'ne', label: 'Not Equals' },
-  { value: 'gt', label: 'Greater Than' },
-  { value: 'gte', label: 'Greater Than or Equal' },
-  { value: 'lt', label: 'Less Than' },
-  { value: 'lte', label: 'Less Than or Equal' },
-  { value: 'between', label: 'Between' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+  const NUMBER_OPERATORS = [
+    { value: 'eq', label: op.eq },
+    { value: 'ne', label: op.ne },
+    { value: 'gt', label: op.gt },
+    { value: 'gte', label: op.gte },
+    { value: 'lt', label: op.lt },
+    { value: 'lte', label: op.lte },
+    { value: 'between', label: op.between },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
 
-const DATE_OPERATORS = [
-  { value: 'eq', label: 'Equals' },
-  { value: 'ne', label: 'Not Equals' },
-  { value: 'gt', label: 'After' },
-  { value: 'gte', label: 'On or After' },
-  { value: 'lt', label: 'Before' },
-  { value: 'lte', label: 'On or Before' },
-  { value: 'between', label: 'Between' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+  const DATE_OPERATORS = [
+    { value: 'eq', label: op.on },
+    { value: 'ne', label: op.noton },
+    { value: 'gt', label: op.after },
+    { value: 'gte', label: op.onOrAfter },
+    { value: 'lt', label: op.before },
+    { value: 'lte', label: op.onOrBefore },
+    { value: 'between', label: op.between },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
 
-const DATERANGE_OPERATORS = [
-  { value: 'between', label: 'Between' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+  const DATERANGE_OPERATORS = [
+    { value: 'between', label: op.between },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
 
-const BOOLEAN_OPERATORS = [
-  { value: 'eq', label: 'Equals' },
-  { value: 'ne', label: 'Not Equals' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+  const BOOLEAN_OPERATORS = [
+    { value: 'eq', label: op.eq },
+    { value: 'ne', label: op.ne },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
 
-const ENUM_OPERATORS = [
-  { value: 'in', label: 'Is Any Of' },
-  { value: 'notin', label: 'Is Not Any Of' },
-  { value: 'eq', label: 'Equals' },
-  { value: 'ne', label: 'Not Equals' },
-  { value: 'isnull', label: 'Is Null' },
-  { value: 'isnotnull', label: 'Is Not Null' },
-];
+  const ENUM_OPERATORS = [
+    { value: 'in', label: op.in },
+    { value: 'notin', label: op.notin },
+    { value: 'eq', label: op.eq },
+    { value: 'ne', label: op.ne },
+    { value: 'isnull', label: op.isnull },
+    { value: 'isnotnull', label: op.isnotnull },
+  ];
+
+  return { STRING_OPERATORS, NUMBER_OPERATORS, DATE_OPERATORS, DATERANGE_OPERATORS, BOOLEAN_OPERATORS, ENUM_OPERATORS };
+}
 
 function getDefaultOperator(type?: string): string {
   switch (type) {
@@ -139,6 +145,9 @@ function parseFilterExpression(expression: string): { operator: string; value: s
 
 export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
   ({ column, onApplyFilter, onClearFilter, onFilterOpen }, ref) => {
+    const { messages: aqMessages } = useAQLocale();
+    const m = aqMessages.columnFilter;
+    const operatorSets = buildOperatorSets(m.operators);
     const [opened, setOpened] = useState(false);
     const [hasActiveFilter, setHasActiveFilter] = useState(false);
     // Popover's onClose also fires for our own programmatic close (setOpened(false) in
@@ -243,21 +252,21 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     function getOperators(type?: string) {
       switch (type) {
         case 'string':
-          return STRING_OPERATORS;
+          return operatorSets.STRING_OPERATORS;
         case 'number':
-          return NUMBER_OPERATORS;
+          return operatorSets.NUMBER_OPERATORS;
         case 'date':
-          return DATE_OPERATORS;
+          return operatorSets.DATE_OPERATORS;
         case 'daterange':
-          return DATERANGE_OPERATORS;
+          return operatorSets.DATERANGE_OPERATORS;
         case 'boolean':
-          return BOOLEAN_OPERATORS;
+          return operatorSets.BOOLEAN_OPERATORS;
         case 'enum':
-          return ENUM_OPERATORS;
+          return operatorSets.ENUM_OPERATORS;
         case 'lookup':
-          return ENUM_OPERATORS;
+          return operatorSets.ENUM_OPERATORS;
         default:
-          return STRING_OPERATORS;
+          return operatorSets.STRING_OPERATORS;
       }
     }
 
@@ -371,14 +380,14 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           const fromDate = parseValue(value, 'date') as Date;
           const toDate = parseValue(secondValue, 'date') as Date;
           if (fromDate.getTime() > toDate.getTime()) {
-            setRangeError('"From" date must not be after "To" date.');
+            setRangeError(m.fromDateAfterToDate);
             return;
           }
         } else if (column.type === 'number') {
           const fromNum = parseValue(value, 'number') as number;
           const toNum = parseValue(secondValue, 'number') as number;
           if (fromNum > toNum) {
-            setRangeError('"From" value must not be greater than "To" value.');
+            setRangeError(m.fromValueGreaterThanToValue);
             return;
           }
         }
@@ -426,7 +435,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           if (!column.enumOptions || column.enumOptions.length === 0) {
             return (
               <Text size="sm" c="dimmed">
-                No enum options available
+                {m.noEnumOptions}
               </Text>
             );
           }
@@ -441,7 +450,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
             <Stack gap="xs">
               {column.enumOptions.length > ENUM_SEARCH_THRESHOLD && (
                 <TextInput
-                  placeholder="Search..."
+                  placeholder={m.search}
                   value={enumSearch}
                   onChange={(event) => setEnumSearch(event.currentTarget.value)}
                   size="xs"
@@ -450,7 +459,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
               <Stack gap="xs" mah={200} style={{ overflowY: 'auto' }}>
                 {filteredEnumOptions.length === 0 ? (
                   <Text size="xs" c="dimmed">
-                    No matches
+                    {m.noMatches}
                   </Text>
                 ) : (
                   filteredEnumOptions.map((option) => (
@@ -478,7 +487,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           if (!column.lookupConfig) {
             return (
               <Text size="sm" c="dimmed">
-                No lookup configuration available
+                {m.noLookupConfig}
               </Text>
             );
           }
@@ -495,7 +504,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
               })}
               {capReached && (
                 <Text size="xs" c="dimmed">
-                  Limit reached ({maxValues}) — remove a selection to add another.
+                  {m.limitReached(maxValues)}
                 </Text>
               )}
             </Stack>
@@ -505,14 +514,14 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'number':
           return (
             <NumberInput
-              label={operator === 'between' ? 'From' : 'Value'}
+              label={operator === 'between' ? m.from : m.value}
               value={value ? parseValue(value, 'number') as number : undefined}
               onChange={(val) => {
                 setValue(formatValueToString(val || 0));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Enter number..."
+              placeholder={m.enterNumber}
               error={operator === 'between' && !!rangeError}
             />
           );
@@ -520,14 +529,14 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'date':
           return (
             <DateInput
-              label={operator === 'between' ? 'From' : 'Value'}
+              label={operator === 'between' ? m.from : m.value}
               value={value ? parseValue(value, 'date') as Date : null}
               onChange={(val) => {
                 setValue(val ? formatValueToString(val) : '');
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Select date..."
+              placeholder={m.selectDate}
               error={operator === 'between' && !!rangeError}
             />
           );
@@ -535,34 +544,34 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'daterange':
           return (
             <DateInput
-              label="From"
+              label={m.from}
               value={value ? parseValue(value, 'date') as Date : null}
               onChange={(val) => setValue(val ? formatValueToString(val) : '')}
               onKeyDown={handleKeyDown}
-              placeholder="Select start date..."
+              placeholder={m.selectStartDate}
             />
           );
-          
+
         case 'boolean':
           return (
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Value</Text>
+              <Text size="sm" fw={500}>{m.value}</Text>
               <Switch
-                label={parseValue(value, 'boolean') ? 'True' : 'False'}
+                label={parseValue(value, 'boolean') ? m.true : m.false}
                 checked={parseValue(value, 'boolean') as boolean}
                 onChange={(event) => setValue(formatValueToString(event.currentTarget.checked))}
               />
             </Stack>
           );
-          
+
         default:
           return (
             <TextInput
-              label="Value"
+              label={m.value}
               value={value}
               onChange={(event) => setValue(event.currentTarget.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter text..."
+              placeholder={m.enterText}
             />
           );
       }
@@ -583,14 +592,14 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'number':
           return (
             <NumberInput
-              label="To"
+              label={m.to}
               value={secondValue ? parseValue(secondValue, 'number') as number : undefined}
               onChange={(val) => {
                 setSecondValue(formatValueToString(val || 0));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Enter number..."
+              placeholder={m.enterNumber}
               error={!!rangeError}
             />
           );
@@ -599,26 +608,26 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         case 'daterange':
           return (
             <DateInput
-              label="To"
+              label={m.to}
               value={secondValue ? parseValue(secondValue, 'date') as Date : null}
               onChange={(val) => {
                 setSecondValue(val ? formatValueToString(val) : '');
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Select end date..."
+              placeholder={m.selectEndDate}
               error={!!rangeError}
             />
           );
-          
+
         default:
           return (
             <TextInput
-              label="To"
+              label={m.to}
               value={secondValue}
               onChange={(event) => setSecondValue(event.currentTarget.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter text..."
+              placeholder={m.enterText}
             />
           );
       }
@@ -654,7 +663,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         <Popover.Dropdown>
           <FocusTrap active={opened}>
             <Stack gap="md" style={{ minWidth: 250 }}>
-              <Text size="sm" fw={500}>Filter by {column.title}</Text>
+              <Text size="sm" fw={500}>{m.filterByLabel(column.title)}</Text>
 
               {rangeError && (
                 <Text size="xs" c="red">{rangeError}</Text>
@@ -662,7 +671,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
               {column.type !== 'enum' && column.type !== 'lookup' && column.type !== 'daterange' && (
                 <Select
-                  label="Operator"
+                  label={m.operator}
                   data={getOperators(column.type)}
                   value={operator}
                   onChange={(val) => {
@@ -691,13 +700,13 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
                   onClick={handleClear}
                   leftSection={<IconX size={14} />}
                 >
-                  Clear
+                  {m.clear}
                 </Button>
-                
+
                 <Button
                   onClick={handleApply}
                 >
-                  Apply
+                  {m.apply}
                 </Button>
               </Group>
             </Stack>

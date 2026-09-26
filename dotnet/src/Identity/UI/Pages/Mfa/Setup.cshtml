@@ -1,16 +1,16 @@
 @page "/auth/mfa/setup"
 @model SetupModel
 @{
-    ViewData["Title"] = "Set up authenticator";
+    ViewData["Title"] = L["Set up authenticator"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
-<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">Set up authenticator</h2>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">@L["Set up authenticator"]</h2>
 
 <div class="space-y-6">
     <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
         <p class="text-sm text-indigo-900 dark:text-indigo-100">
-            Scan this QR code with an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy.
+            @L["Scan this QR code with an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy."]
         </p>
     </div>
 
@@ -19,13 +19,13 @@
     </div>
 
     <div>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">Or enter this key manually:</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">@L["Or enter this key manually:"]</p>
         <div class="flex gap-2">
             <code class="flex-1 font-mono text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-slate-900 dark:text-slate-100 break-all">
                 @Model.AuthenticatorKey
             </code>
-            <button type="button" id="copyBtn" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm whitespace-nowrap" title="Copy to clipboard">
-                Copy
+            <button type="button" id="copyBtn" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm whitespace-nowrap" title="@L["Copy"]">
+                @L["Copy"]
             </button>
         </div>
     </div>
@@ -45,22 +45,23 @@
         }
 
         <div>
-            <label for="verificationCode" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Verification code</label>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Enter the 6-digit code from your authenticator app</p>
+            <label for="verificationCode" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">@L["Verification code"]</label>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">@L["Enter the 6-digit code from your authenticator app"]</p>
             <input type="text" id="verificationCode" name="verificationCode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="000000" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-center text-sm tracking-widest text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required />
         </div>
 
-        <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", "Confirm and continue" } })" />
+        <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", L["Confirm and continue"].Value } })" />
     </form>
 </div>
 
 <script>
 document.getElementById('copyBtn').addEventListener('click', function() {
     const key = '@Model.AuthenticatorKey';
+    const copiedLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(L["Copied!"].Value));
     navigator.clipboard.writeText(key).then(() => {
         const btn = document.getElementById('copyBtn');
         const original = btn.textContent;
-        btn.textContent = 'Copied!';
+        btn.textContent = copiedLabel;
         setTimeout(() => {
             btn.textContent = original;
         }, 2000);

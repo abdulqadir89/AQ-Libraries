@@ -1,7 +1,7 @@
 @page "/auth/verify-email"
 @model VerifyEmailModel
 @{
-    ViewData["Title"] = "Email verification";
+    ViewData["Title"] = L["Email verification"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
@@ -14,9 +14,9 @@
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
         </div>
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Your email is confirmed</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">You can now sign in to your account.</p>
-        <a href="/auth/login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block">Sign in</a>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">@L["Your email is confirmed"]</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">@L["You can now sign in to your account."]</p>
+        <a href="/auth/login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block">@L["Sign in"]</a>
     </div>
 }
 else
@@ -29,11 +29,11 @@ else
                 <line x1="9" y1="9" x2="15" y2="15"></line>
             </svg>
         </div>
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Link has expired</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">This verification link has expired or is invalid. Request a new one below.</p>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">@L["Link has expired"]</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">@L["This verification link has expired or is invalid. Request a new one below."]</p>
         <form method="get" asp-page="/Auth/VerifyEmailSent" asp-route-email="@Model.Email" class="mb-4">
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">Request a new link</button>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">@L["Request a new link"]</button>
         </form>
-        <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Back to sign in</a>
+        <a href="/auth/login" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">@L["Back to sign in"]</a>
     </div>
 }

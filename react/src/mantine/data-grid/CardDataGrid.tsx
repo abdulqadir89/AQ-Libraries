@@ -37,6 +37,8 @@ import {
 } from '@tabler/icons-react';
 import { FilterExpressionBuilder } from '../../utils/FilterExpressionBuilder';
 import { SortExpressionBuilder } from '../../utils/SortExpressionBuilder';
+import { useAQLocale } from '../locale';
+import type { CardDataGridMessages } from '../locale';
 import type {
   BulkAction,
   CardDataGridProps,
@@ -86,63 +88,66 @@ function getDefaultOperator(type?: DataGridColumn['type']): FilterOperator {
   }
 }
 
-function getOperators(type?: DataGridColumn['type']): Array<{ value: FilterOperator; label: string }> {
+function getOperators(
+  type: DataGridColumn['type'] | undefined,
+  m: CardDataGridMessages
+): Array<{ value: FilterOperator; label: string }> {
   if (type === 'number') {
     return [
-      { value: 'eq', label: 'Equals' },
-      { value: 'ne', label: 'Not Equals' },
-      { value: 'gt', label: 'Greater Than' },
-      { value: 'gte', label: 'Greater Than or Equal' },
-      { value: 'lt', label: 'Less Than' },
-      { value: 'lte', label: 'Less Than or Equal' },
-      { value: 'between', label: 'Between' },
-      { value: 'isnull', label: 'Is Null' },
-      { value: 'isnotnull', label: 'Is Not Null' },
+      { value: 'eq', label: m.operatorEquals },
+      { value: 'ne', label: m.operatorNotEquals },
+      { value: 'gt', label: m.operatorGreaterThan },
+      { value: 'gte', label: m.operatorGreaterThanOrEqual },
+      { value: 'lt', label: m.operatorLessThan },
+      { value: 'lte', label: m.operatorLessThanOrEqual },
+      { value: 'between', label: m.operatorBetween },
+      { value: 'isnull', label: m.operatorIsNull },
+      { value: 'isnotnull', label: m.operatorIsNotNull },
     ];
   }
 
   if (type === 'date') {
     return [
-      { value: 'eq', label: 'On' },
-      { value: 'ne', label: 'Not On' },
-      { value: 'gt', label: 'After' },
-      { value: 'gte', label: 'On or After' },
-      { value: 'lt', label: 'Before' },
-      { value: 'lte', label: 'On or Before' },
-      { value: 'between', label: 'Between' },
-      { value: 'isnull', label: 'Is Null' },
-      { value: 'isnotnull', label: 'Is Not Null' },
+      { value: 'eq', label: m.operatorOn },
+      { value: 'ne', label: m.operatorNotOn },
+      { value: 'gt', label: m.operatorAfter },
+      { value: 'gte', label: m.operatorOnOrAfter },
+      { value: 'lt', label: m.operatorBefore },
+      { value: 'lte', label: m.operatorOnOrBefore },
+      { value: 'between', label: m.operatorBetween },
+      { value: 'isnull', label: m.operatorIsNull },
+      { value: 'isnotnull', label: m.operatorIsNotNull },
     ];
   }
 
   if (type === 'boolean') {
     return [
-      { value: 'eq', label: 'Equals' },
-      { value: 'ne', label: 'Not Equals' },
-      { value: 'isnull', label: 'Is Null' },
-      { value: 'isnotnull', label: 'Is Not Null' },
+      { value: 'eq', label: m.operatorEquals },
+      { value: 'ne', label: m.operatorNotEquals },
+      { value: 'isnull', label: m.operatorIsNull },
+      { value: 'isnotnull', label: m.operatorIsNotNull },
     ];
   }
 
   if (type === 'enum') {
     return [
-      { value: 'in', label: 'Is Any Of' },
-      { value: 'notin', label: 'Is Not Any Of' },
-      { value: 'eq', label: 'Equals' },
-      { value: 'ne', label: 'Not Equals' },
-      { value: 'isnull', label: 'Is Null' },
-      { value: 'isnotnull', label: 'Is Not Null' },
+      { value: 'in', label: m.operatorIsAnyOf },
+      { value: 'notin', label: m.operatorIsNotAnyOf },
+      { value: 'eq', label: m.operatorEquals },
+      { value: 'ne', label: m.operatorNotEquals },
+      { value: 'isnull', label: m.operatorIsNull },
+      { value: 'isnotnull', label: m.operatorIsNotNull },
     ];
   }
 
   return [
-    { value: 'contains', label: 'Contains' },
-    { value: 'eq', label: 'Equals' },
-    { value: 'ne', label: 'Not Equals' },
-    { value: 'startswith', label: 'Starts With' },
-    { value: 'endswith', label: 'Ends With' },
-    { value: 'isnull', label: 'Is Null' },
-    { value: 'isnotnull', label: 'Is Not Null' },
+    { value: 'contains', label: m.operatorContains },
+    { value: 'eq', label: m.operatorEquals },
+    { value: 'ne', label: m.operatorNotEquals },
+    { value: 'startswith', label: m.operatorStartsWith },
+    { value: 'endswith', label: m.operatorEndsWith },
+    { value: 'isnull', label: m.operatorIsNull },
+    { value: 'isnotnull', label: m.operatorIsNotNull },
   ];
 }
 
@@ -167,7 +172,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   pagination,
   onPageChange,
   searchable = true,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   onSearch,
   toolbarRightSection,
   refreshable = true,
@@ -175,7 +180,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   sortable = true,
   onSortChange,
   onCreate,
-  createButtonText = 'Create',
+  createButtonText,
   createButtonIcon,
   selectable = false,
   selectedRows,
@@ -192,11 +197,16 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   cardTitle,
   cardSubtitle,
   renderCard,
-  emptyStateText = 'No data available',
+  emptyStateText,
   onCardClick,
   cardHref,
   bulkActions,
 }: CardDataGridProps<T>) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.cardDataGrid;
+  const resolvedSearchPlaceholder = searchPlaceholder ?? m.searchPlaceholder;
+  const resolvedCreateButtonText = createButtonText ?? m.create;
+  const resolvedEmptyStateText = emptyStateText ?? m.noData;
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText] = useDebouncedValue(searchText, 500);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -385,7 +395,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         modals.openConfirmModal({
           title: action.confirm.title,
           children: <Text size="sm">{action.confirm.content}</Text>,
-          labels: { confirm: 'Confirm', cancel: 'Cancel' },
+          labels: { confirm: m.confirm, cancel: m.cancel },
           confirmProps: { color: action.color || 'blue' },
           onConfirm: execute,
         });
@@ -393,7 +403,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         execute();
       }
     },
-    [internalSelection, onSelectionChange]
+    [internalSelection, onSelectionChange, m.confirm, m.cancel]
   );
 
   const renderFieldValue = useCallback(
@@ -454,7 +464,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         if (draft.operator === 'in' || draft.operator === 'notin') {
           return (
             <MultiSelect
-              placeholder="Select values"
+              placeholder={m.selectValues}
               data={options}
               value={Array.isArray(draft.value) ? (draft.value as string[]) : []}
               onChange={(value: string[]) => {
@@ -468,7 +478,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
         return (
           <Select
-            placeholder="Select value"
+            placeholder={m.selectValue}
             data={options}
             value={draft.value ? String(draft.value) : null}
             onChange={(value: string | null) => {
@@ -482,10 +492,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
       if (column.type === 'boolean') {
         return (
           <Select
-            placeholder="Select value"
+            placeholder={m.selectValue}
             data={[
-              { value: 'true', label: 'True' },
-              { value: 'false', label: 'False' },
+              { value: 'true', label: m.true },
+              { value: 'false', label: m.false },
             ]}
             value={draft.value ? String(draft.value) : null}
             onChange={(value: string | null) => {
@@ -500,7 +510,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         return (
           <TextInput
             type="number"
-            placeholder="Value"
+            placeholder={m.enumValue}
             value={draft.value ? String(draft.value) : ''}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
               handleFilterDraftChange(draft.id, (current) => ({
@@ -516,7 +526,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         return (
           <DateInput
             value={draft.value ? new Date(String(draft.value)) : null}
-            placeholder="Pick date"
+            placeholder={m.pickDate}
             onChange={(value) => {
               handleFilterDraftChange(draft.id, (current) => ({
                 ...current,
@@ -530,7 +540,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
       return (
         <TextInput
-          placeholder="Value"
+          placeholder={m.enumValue}
           value={draft.value ? String(draft.value) : ''}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             handleFilterDraftChange(draft.id, (current) => ({
@@ -541,7 +551,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         />
       );
     },
-    [handleFilterDraftChange]
+    [handleFilterDraftChange, m]
   );
 
   const cards = data.map((record, index) => {
@@ -581,7 +591,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               ) : (
                 <Image
                   src={imageUrl}
-                  alt={cardImage?.alt || 'Card image'}
+                  alt={cardImage?.alt || m.cardImageAlt}
                   h={cardImage?.height || 180}
                   fit={cardImage?.fit || 'cover'}
                   radius="sm"
@@ -598,7 +608,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                     ? cardTitle(record, index)
                     : cardTitleColumn
                       ? renderFieldValue(cardTitleColumn, record, index)
-                      : 'Item'}
+                      : m.item}
                 </Box>
               ) : (
                 <Text component="div" fw={600} lineClamp={2}>
@@ -606,7 +616,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                     ? cardTitle(record, index)
                     : cardTitleColumn
                       ? renderFieldValue(cardTitleColumn, record, index)
-                      : 'Item'}
+                      : m.item}
                 </Text>
               )}
               {cardSubtitle ? (
@@ -659,13 +669,13 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                 leftSection={createButtonIcon || <IconPlus size={16} />}
                 onClick={onCreate}
               >
-                {createButtonText}
+                {resolvedCreateButtonText}
               </Button>
             )}
 
             {selectable && (
               <Checkbox
-                label="Select all"
+                label={m.selectAll}
                 checked={internalSelection.length > 0 && data.every((record) => internalSelection.includes(getRowKey(record)))}
                 indeterminate={internalSelection.length > 0 && !data.every((record) => internalSelection.includes(getRowKey(record)))}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelectAll(event.currentTarget.checked)}
@@ -676,7 +686,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               <Menu shadow="md" withinPortal>
                 <Menu.Target>
                   <Button variant="light" leftSection={<IconStack2 size={16} />}>
-                    Bulk Actions ({internalSelection.length})
+                    {m.bulkActions(internalSelection.length)}
                   </Button>
                 </Menu.Target>
                 <Menu.Dropdown>
@@ -698,7 +708,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           <Group>
             {toolbar.showSearch && (
               <TextInput
-                placeholder={searchPlaceholder}
+                placeholder={resolvedSearchPlaceholder}
                 leftSection={<IconSearch size={16} />}
                 rightSection={
                   searchText ? (
@@ -710,7 +720,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                         setSearchText('');
                         onSearchRef.current?.('');
                       }}
-                      title="Clear search"
+                      title={m.clearSearch}
                     >
                       <IconX size={14} />
                     </ActionIcon>
@@ -724,13 +734,13 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
             {toolbar.showRefresh && (
               <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={handleRefresh}>
-                Refresh
+                {m.refresh}
               </Button>
             )}
 
             {hasActiveFilters && (
               <Button variant="light" color="orange" leftSection={<IconFilterOff size={16} />} onClick={handleClearFilters}>
-                Reset Filters
+                {m.resetFilters}
               </Button>
             )}
 
@@ -740,7 +750,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                 leftSection={<IconAdjustmentsHorizontal size={16} />}
                 onClick={() => setOptionsOpen(true)}
               >
-                Options
+                {m.options}
               </Button>
             )}
 
@@ -753,7 +763,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         {cards.length > 0 ? cards : (
           <Paper withBorder p="xl">
             <Text c="dimmed" ta="center">
-              {emptyStateText}
+              {resolvedEmptyStateText}
             </Text>
           </Paper>
         )}
@@ -763,14 +773,18 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         <Group justify="space-between" p="md">
           <Text size="sm" c="dimmed">
             {pagination.total === 0
-              ? 'No records'
-              : `Showing ${(pagination.current - 1) * pagination.pageSize + 1} to ${Math.min(pagination.current * pagination.pageSize, pagination.total)} of ${pagination.total} entries`}
+              ? m.noRecords
+              : m.showingEntries(
+                  (pagination.current - 1) * pagination.pageSize + 1,
+                  Math.min(pagination.current * pagination.pageSize, pagination.total),
+                  pagination.total
+                )}
           </Text>
 
           <Group>
             {pagination.showSizeChanger && (
               <Group gap="xs">
-                <Text size="sm">Rows per page:</Text>
+                <Text size="sm">{m.rowsPerPage}</Text>
                 <Select
                   size="sm"
                   data={pagination.pageSizeOptions?.map((size) => ({
@@ -798,27 +812,27 @@ export function CardDataGrid<T extends Record<string, unknown>>({
       <Modal
         opened={optionsOpen}
         onClose={() => setOptionsOpen(false)}
-        title="Filter and Sort"
+        title={m.filterAndSort}
         size="xl"
       >
         <Stack gap="md">
           <Group justify="space-between">
             <Group>
-              <Text fw={600}>Filter conditions</Text>
+              <Text fw={600}>{m.filterConditions}</Text>
             </Group>
             <Group>
               <Select
                 size="xs"
                 data={[
-                  { value: 'and', label: 'Match all (AND)' },
-                  { value: 'or', label: 'Match any (OR)' },
+                  { value: 'and', label: m.matchAll },
+                  { value: 'or', label: m.matchAny },
                 ]}
                 value={filterOperator}
                 onChange={(value: string | null) => setFilterOperator((value as LogicalOperator) || 'and')}
                 w={180}
               />
               <Button size="xs" variant="light" onClick={handleAddFilter}>
-                Add filter
+                {m.addFilter}
               </Button>
             </Group>
           </Group>
@@ -826,13 +840,13 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           <Stack gap="xs">
             {filterDrafts.map((draft) => {
               const column = availableFilterColumns.find((item) => String(item.key) === draft.property);
-              const operatorOptions = getOperators(column?.type);
+              const operatorOptions = getOperators(column?.type, m);
 
               return (
                 <Paper key={draft.id} p="sm" withBorder>
                   <Group grow align="flex-end">
                     <Select
-                      label="Field"
+                      label={m.field}
                       data={availableFilterColumns.map((item) => ({
                         value: String(item.key),
                         label: item.title,
@@ -854,7 +868,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                     />
 
                     <Select
-                      label="Operator"
+                      label={m.operator}
                       data={operatorOptions}
                       value={draft.operator}
                       onChange={(value: string | null) => {
@@ -874,7 +888,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
 
                     {draft.operator === 'between' && (
                       <TextInput
-                        label="Second value"
+                        label={m.secondValue}
                         value={draft.secondValue ? String(draft.secondValue) : ''}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => {
                           handleFilterDraftChange(draft.id, (current) => ({
@@ -889,7 +903,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                       variant="subtle"
                       color="red"
                       onClick={() => handleRemoveFilter(draft.id)}
-                      title="Remove filter"
+                      title={m.removeFilter}
                     >
                       <IconTrash size={16} />
                     </ActionIcon>
@@ -898,11 +912,11 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               );
             })}
 
-            {filterDrafts.length === 0 && <Text c="dimmed">No filters configured.</Text>}
+            {filterDrafts.length === 0 && <Text c="dimmed">{m.noFiltersConfigured}</Text>}
           </Stack>
 
           <Group justify="space-between" align="flex-end">
-            <Text fw={600}>Sort</Text>
+            <Text fw={600}>{m.sort}</Text>
             <Button
               size="xs"
               variant="light"
@@ -921,7 +935,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                 ]);
               }}
             >
-              Add sort
+              {m.addSort}
             </Button>
           </Group>
 
@@ -930,7 +944,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               <Paper key={`${condition.property}-${index}`} p="sm" withBorder>
                 <Group grow align="flex-end">
                   <Select
-                    label="Field"
+                    label={m.field}
                     data={availableSortColumns.map((column) => ({
                       value: String(column.key),
                       label: column.title,
@@ -949,10 +963,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                   />
 
                   <Select
-                    label="Direction"
+                    label={m.direction}
                     data={[
-                      { value: 'asc', label: 'Ascending' },
-                      { value: 'desc', label: 'Descending' },
+                      { value: 'asc', label: m.ascending },
+                      { value: 'desc', label: m.descending },
                     ]}
                     value={condition.direction}
                     onChange={(value: string | null) => {
@@ -975,7 +989,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                     onClick={() => {
                       setSortConditions((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
                     }}
-                    title="Remove sort"
+                    title={m.removeSort}
                   >
                     <IconTrash size={16} />
                   </ActionIcon>
@@ -983,7 +997,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               </Paper>
             ))}
 
-            {sortConditions.length === 0 && <Text c="dimmed">No sort configured.</Text>}
+            {sortConditions.length === 0 && <Text c="dimmed">{m.noSortConfigured}</Text>}
           </Stack>
 
           <Group justify="space-between">
@@ -995,14 +1009,14 @@ export function CardDataGrid<T extends Record<string, unknown>>({
                 setSortConditions([]);
               }}
             >
-              Reset options
+              {m.resetOptions}
             </Button>
 
             <Group>
               <Button variant="default" onClick={() => setOptionsOpen(false)}>
-                Cancel
+                {m.cancel}
               </Button>
-              <Button onClick={handleApplyOptions}>Apply</Button>
+              <Button onClick={handleApplyOptions}>{m.apply}</Button>
             </Group>
           </Group>
         </Stack>

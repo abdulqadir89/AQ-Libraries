@@ -1,0 +1,1008 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Sign in" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Welcome back" xml:space="preserve">
+    <value>欢迎回来</value>
+  </data>
+  <data name="Sign in to your account to continue" xml:space="preserve">
+    <value>登录你的账户以继续</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>电子邮箱</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="Forgot password?" xml:space="preserve">
+    <value>忘记密码？</value>
+  </data>
+  <data name="Remember me" xml:space="preserve">
+    <value>记住我</value>
+  </data>
+  <data name="Continue with Google" xml:space="preserve">
+    <value>使用 Google 继续</value>
+  </data>
+  <data name="Don't have an account?" xml:space="preserve">
+    <value>还没有账户？</value>
+  </data>
+  <data name="Sign up" xml:space="preserve">
+    <value>注册</value>
+  </data>
+  <data name="Create account" xml:space="preserve">
+    <value>创建账户</value>
+  </data>
+  <data name="Join {0} to access your courses and workspace" xml:space="preserve">
+    <value>加入 {0}，访问你的课程和工作区</value>
+  </data>
+  <data name="Full Name" xml:space="preserve">
+    <value>姓名</value>
+  </data>
+  <data name="Confirm Password" xml:space="preserve">
+    <value>确认密码</value>
+  </data>
+  <data name="At least {0} characters" xml:space="preserve">
+    <value>至少 {0} 个字符</value>
+  </data>
+  <data name="At least one digit" xml:space="preserve">
+    <value>至少一个数字</value>
+  </data>
+  <data name="At least one uppercase letter" xml:space="preserve">
+    <value>至少一个大写字母</value>
+  </data>
+  <data name="At least one symbol" xml:space="preserve">
+    <value>至少一个符号</value>
+  </data>
+  <data name="Already have an account?" xml:space="preserve">
+    <value>已经有账户？</value>
+  </data>
+  <data name="Password does not meet the requirements above." xml:space="preserve">
+    <value>密码不符合上述要求。</value>
+  </data>
+  <data name="Passwords do not match." xml:space="preserve">
+    <value>两次输入的密码不一致。</value>
+  </data>
+  <data name="Passwords do not match" xml:space="preserve">
+    <value>两次输入的密码不一致</value>
+  </data>
+  <data name="Toggle password visibility" xml:space="preserve">
+    <value>切换密码可见性</value>
+  </data>
+  <data name="Authorize {0}" xml:space="preserve">
+    <value>授权 {0}</value>
+  </data>
+  <data name="This app is requesting access to your account. Review what it can do before continuing." xml:space="preserve">
+    <value>此应用正在请求访问你的账户。请在继续之前查看它可以执行的操作。</value>
+  </data>
+  <data name="Deny" xml:space="preserve">
+    <value>拒绝</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>允许</value>
+  </data>
+  <data name="Confirm email change" xml:space="preserve">
+    <value>确认邮箱更改</value>
+  </data>
+  <data name="Email address updated" xml:space="preserve">
+    <value>邮箱地址已更新</value>
+  </data>
+  <data name="Your account email is now {0}." xml:space="preserve">
+    <value>你的账户邮箱现在是 {0}。</value>
+  </data>
+  <data name="Back to profile" xml:space="preserve">
+    <value>返回个人资料</value>
+  </data>
+  <data name="Link has expired" xml:space="preserve">
+    <value>链接已过期</value>
+  </data>
+  <data name="This confirmation link has expired or is invalid. Request a new one from your profile page." xml:space="preserve">
+    <value>此确认链接已过期或无效。请在个人资料页面重新申请。</value>
+  </data>
+  <data name="Forgot password" xml:space="preserve">
+    <value>忘记密码</value>
+  </data>
+  <data name="Enter your email address and we'll send you a link to reset your password." xml:space="preserve">
+    <value>输入你的电子邮箱，我们会发送一个重置密码的链接给你。</value>
+  </data>
+  <data name="Send reset link" xml:space="preserve">
+    <value>发送重置链接</value>
+  </data>
+  <data name="Remember your password?" xml:space="preserve">
+    <value>想起密码了？</value>
+  </data>
+  <data name="Check your email" xml:space="preserve">
+    <value>查看你的邮箱</value>
+  </data>
+  <data name="If that email address is registered, you'll receive a reset link shortly. Check your inbox and spam folder." xml:space="preserve">
+    <value>如果该邮箱地址已注册，你很快会收到一封重置链接邮件。请查看收件箱和垃圾邮件文件夹。</value>
+  </data>
+  <data name="Back to sign in" xml:space="preserve">
+    <value>返回登录</value>
+  </data>
+  <data name="Account locked" xml:space="preserve">
+    <value>账户已锁定</value>
+  </data>
+  <data name="Your account is temporarily locked after too many failed sign-in attempts." xml:space="preserve">
+    <value>由于登录失败次数过多，你的账户已被临时锁定。</value>
+  </data>
+  <data name="Try again in a few minutes." xml:space="preserve">
+    <value>请几分钟后再试。</value>
+  </data>
+  <data name="You can try signing in again now." xml:space="preserve">
+    <value>你现在可以再次尝试登录。</value>
+  </data>
+  <data name="Try again in {0}m {1}s." xml:space="preserve">
+    <value>请在 {0} 分 {1} 秒后重试。</value>
+  </data>
+  <data name="Sign out" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="Sign out of {0}?" xml:space="preserve">
+    <value>要退出 {0} 的登录吗？</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="You are not currently signed in." xml:space="preserve">
+    <value>你目前尚未登录。</value>
+  </data>
+  <data name="Go to sign in" xml:space="preserve">
+    <value>前往登录</value>
+  </data>
+  <data name="Reset password" xml:space="preserve">
+    <value>重置密码</value>
+  </data>
+  <data name="New Password" xml:space="preserve">
+    <value>新密码</value>
+  </data>
+  <data name="Request a new link" xml:space="preserve">
+    <value>申请新链接</value>
+  </data>
+  <data name="This password reset link has expired or is invalid." xml:space="preserve">
+    <value>此密码重置链接已过期或无效。</value>
+  </data>
+  <data name="Password reset" xml:space="preserve">
+    <value>密码重置</value>
+  </data>
+  <data name="Password reset successfully" xml:space="preserve">
+    <value>密码重置成功</value>
+  </data>
+  <data name="You can now sign in with your new password." xml:space="preserve">
+    <value>你现在可以使用新密码登录。</value>
+  </data>
+  <data name="Email verification" xml:space="preserve">
+    <value>邮箱验证</value>
+  </data>
+  <data name="Your email is confirmed" xml:space="preserve">
+    <value>你的邮箱已确认</value>
+  </data>
+  <data name="You can now sign in to your account." xml:space="preserve">
+    <value>你现在可以登录你的账户。</value>
+  </data>
+  <data name="This verification link has expired or is invalid. Request a new one below." xml:space="preserve">
+    <value>此验证链接已过期或无效。请在下方申请新链接。</value>
+  </data>
+  <data name="Verify email" xml:space="preserve">
+    <value>验证邮箱</value>
+  </data>
+  <data name="We sent a verification link to {0}. Check your inbox and spam folder." xml:space="preserve">
+    <value>我们已向 {0} 发送验证链接。请查看收件箱和垃圾邮件文件夹。</value>
+  </data>
+  <data name="Resend link" xml:space="preserve">
+    <value>重新发送链接</value>
+  </data>
+  <data name="Already signed up?" xml:space="preserve">
+    <value>已经注册过了？</value>
+  </data>
+  <data name="Please wait {0} second(s) before requesting another link." xml:space="preserve">
+    <value>请等待 {0} 秒后再申请新链接。</value>
+  </data>
+  <data name="Verify your identity" xml:space="preserve">
+    <value>验证你的身份</value>
+  </data>
+  <data name="Authenticator App" xml:space="preserve">
+    <value>身份验证器应用</value>
+  </data>
+  <data name="Backup Code" xml:space="preserve">
+    <value>备用代码</value>
+  </data>
+  <data name="6-digit code" xml:space="preserve">
+    <value>6 位数验证码</value>
+  </data>
+  <data name="Enter the code from your authenticator app" xml:space="preserve">
+    <value>输入身份验证器应用中的验证码</value>
+  </data>
+  <data name="Verify" xml:space="preserve">
+    <value>验证</value>
+  </data>
+  <data name="Enter one of your backup codes" xml:space="preserve">
+    <value>输入你的一个备用代码</value>
+  </data>
+  <data name="Invalid code format. Please enter a 6-digit code." xml:space="preserve">
+    <value>验证码格式无效，请输入 6 位数验证码。</value>
+  </data>
+  <data name="Invalid code. Try again." xml:space="preserve">
+    <value>验证码无效，请重试。</value>
+  </data>
+  <data name="Please enter a backup code." xml:space="preserve">
+    <value>请输入备用代码。</value>
+  </data>
+  <data name="Invalid backup code. Try again." xml:space="preserve">
+    <value>备用代码无效，请重试。</value>
+  </data>
+  <data name="Set up authenticator" xml:space="preserve">
+    <value>设置身份验证器</value>
+  </data>
+  <data name="Scan this QR code with an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy." xml:space="preserve">
+    <value>使用 Google Authenticator、Microsoft Authenticator 或 Authy 等身份验证器应用扫描此二维码。</value>
+  </data>
+  <data name="Or enter this key manually:" xml:space="preserve">
+    <value>或手动输入此密钥：</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="Copied!" xml:space="preserve">
+    <value>已复制！</value>
+  </data>
+  <data name="Verification code" xml:space="preserve">
+    <value>验证码</value>
+  </data>
+  <data name="Enter the 6-digit code from your authenticator app" xml:space="preserve">
+    <value>输入身份验证器应用中的 6 位数验证码</value>
+  </data>
+  <data name="Confirm and continue" xml:space="preserve">
+    <value>确认并继续</value>
+  </data>
+  <data name="Disable two-factor authentication" xml:space="preserve">
+    <value>停用双重验证</value>
+  </data>
+  <data name="Disabling two-factor authentication makes your account less secure." xml:space="preserve">
+    <value>停用双重验证会降低你账户的安全性。</value>
+  </data>
+  <data name="Current password" xml:space="preserve">
+    <value>当前密码</value>
+  </data>
+  <data name="Incorrect password." xml:space="preserve">
+    <value>密码不正确。</value>
+  </data>
+  <data name="Save your backup codes" xml:space="preserve">
+    <value>保存你的备用代码</value>
+  </data>
+  <data name="Save these codes somewhere safe — you will not see them again." xml:space="preserve">
+    <value>请将这些代码保存在安全的地方——之后将无法再次查看。</value>
+  </data>
+  <data name="If you lose access to your authenticator app, these codes are your only way to regain access." xml:space="preserve">
+    <value>如果你无法访问身份验证器应用，这些代码是你重新获得访问权限的唯一方式。</value>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>下载</value>
+  </data>
+  <data name="I've saved my codes" xml:space="preserve">
+    <value>我已保存我的代码</value>
+  </data>
+  <data name="Backup codes are only shown once. Go to Security settings to regenerate them." xml:space="preserve">
+    <value>备用代码仅显示一次。请前往安全设置重新生成。</value>
+  </data>
+  <data name="Back to Security Settings" xml:space="preserve">
+    <value>返回安全设置</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="Manage your account, security settings, and connected apps." xml:space="preserve">
+    <value>管理你的账户、安全设置和已连接的应用。</value>
+  </data>
+  <data name="Hello, {0}" xml:space="preserve">
+    <value>你好，{0}</value>
+  </data>
+  <data name="Two-Factor Auth" xml:space="preserve">
+    <value>双重验证</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="App Sessions" xml:space="preserve">
+    <value>应用会话</value>
+  </data>
+  <data name="Connected Apps" xml:space="preserve">
+    <value>已连接的应用</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="Verified" xml:space="preserve">
+    <value>已验证</value>
+  </data>
+  <data name="Change it from the security settings page" xml:space="preserve">
+    <value>在安全设置页面更改</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>更改</value>
+  </data>
+  <data name="Two-Factor Authentication" xml:space="preserve">
+    <value>双重验证</value>
+  </data>
+  <data name="Authenticator app enabled" xml:space="preserve">
+    <value>已启用身份验证器应用</value>
+  </data>
+  <data name="Not set up — your account is less secure" xml:space="preserve">
+    <value>尚未设置——你的账户安全性较低</value>
+  </data>
+  <data name="Manage" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="Set up" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Last Sign-in" xml:space="preserve">
+    <value>上次登录</value>
+  </data>
+  <data name="Secure your account" xml:space="preserve">
+    <value>保护你的账户</value>
+  </data>
+  <data name="Enable two-factor authentication to protect your account from unauthorised access." xml:space="preserve">
+    <value>启用双重验证以保护你的账户免遭未经授权的访问。</value>
+  </data>
+  <data name="Enable 2FA" xml:space="preserve">
+    <value>启用双重验证</value>
+  </data>
+  <data name="Disable 2FA" xml:space="preserve">
+    <value>停用双重验证</value>
+  </data>
+  <data name="Identity Administration" xml:space="preserve">
+    <value>身份管理</value>
+  </data>
+  <data name="Manage clients, scopes, and users." xml:space="preserve">
+    <value>管理客户端、作用域和用户。</value>
+  </data>
+  <data name="Open Admin" xml:space="preserve">
+    <value>打开管理后台</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>个人资料</value>
+  </data>
+  <data name="Profile Settings" xml:space="preserve">
+    <value>个人资料设置</value>
+  </data>
+  <data name="Email Address" xml:space="preserve">
+    <value>电子邮箱地址</value>
+  </data>
+  <data name="Save Changes" xml:space="preserve">
+    <value>保存更改</value>
+  </data>
+  <data name="Change email address" xml:space="preserve">
+    <value>更改邮箱地址</value>
+  </data>
+  <data name="We'll send a confirmation link to the new address. Your email won't change until you click it." xml:space="preserve">
+    <value>我们会向新地址发送一个确认链接。在你点击链接之前，你的邮箱不会更改。</value>
+  </data>
+  <data name="New email address" xml:space="preserve">
+    <value>新邮箱地址</value>
+  </data>
+  <data name="Send confirmation link" xml:space="preserve">
+    <value>发送确认链接</value>
+  </data>
+  <data name="Enter a valid email address." xml:space="preserve">
+    <value>请输入有效的电子邮箱地址。</value>
+  </data>
+  <data name="That's already your current email address." xml:space="preserve">
+    <value>这已经是你当前的邮箱地址。</value>
+  </data>
+  <data name="That email address is already in use." xml:space="preserve">
+    <value>该邮箱地址已被使用。</value>
+  </data>
+  <data name="Something went wrong sending the confirmation email. Please try again." xml:space="preserve">
+    <value>发送确认邮件时出错，请重试。</value>
+  </data>
+  <data name="We've sent a confirmation link to {0}. Your email won't change until you confirm it." xml:space="preserve">
+    <value>我们已向 {0} 发送确认链接。在你确认之前，你的邮箱不会更改。</value>
+  </data>
+  <data name="Security" xml:space="preserve">
+    <value>安全</value>
+  </data>
+  <data name="Security Settings" xml:space="preserve">
+    <value>安全设置</value>
+  </data>
+  <data name="Change Password" xml:space="preserve">
+    <value>更改密码</value>
+  </data>
+  <data name="Confirm New Password" xml:space="preserve">
+    <value>确认新密码</value>
+  </data>
+  <data name="Update Password" xml:space="preserve">
+    <value>更新密码</value>
+  </data>
+  <data name="Password must be at least 8 characters." xml:space="preserve">
+    <value>密码至少需要 8 个字符。</value>
+  </data>
+  <data name="Two-factor authentication is on" xml:space="preserve">
+    <value>双重验证已开启</value>
+  </data>
+  <data name="Backup codes" xml:space="preserve">
+    <value>备用代码</value>
+  </data>
+  <data name="{0} remaining. Regenerating invalidates all existing codes." xml:space="preserve">
+    <value>剩余 {0} 个。重新生成会使所有现有代码失效。</value>
+  </data>
+  <data name="Regenerate" xml:space="preserve">
+    <value>重新生成</value>
+  </data>
+  <data name="Two-factor authentication is off" xml:space="preserve">
+    <value>双重验证已关闭</value>
+  </data>
+  <data name="Danger zone" xml:space="preserve">
+    <value>危险区域</value>
+  </data>
+  <data name="Export a copy of your account data, or permanently delete your account." xml:space="preserve">
+    <value>导出你的账户数据副本，或永久删除你的账户。</value>
+  </data>
+  <data name="Export my data" xml:space="preserve">
+    <value>导出我的数据</value>
+  </data>
+  <data name="Delete account" xml:space="preserve">
+    <value>删除账户</value>
+  </data>
+  <data name="Your account's email address was changed to {0}" xml:space="preserve">
+    <value>你账户的邮箱地址已更改为 {0}</value>
+  </data>
+  <data name="Two-factor authentication was disabled" xml:space="preserve">
+    <value>双重验证已被停用</value>
+  </data>
+  <data name="Your two-factor backup codes were regenerated" xml:space="preserve">
+    <value>你的双重验证备用代码已重新生成</value>
+  </data>
+  <data name="Your password was changed" xml:space="preserve">
+    <value>你的密码已更改</value>
+  </data>
+  <data name="Your profile has been updated successfully." xml:space="preserve">
+    <value>你的个人资料已成功更新。</value>
+  </data>
+  <data name="Your password has been changed successfully." xml:space="preserve">
+    <value>你的密码已成功更改。</value>
+  </data>
+  <data name="Session has been revoked." xml:space="preserve">
+    <value>会话已被撤销。</value>
+  </data>
+  <data name="Access for that app has been revoked." xml:space="preserve">
+    <value>该应用的访问权限已被撤销。</value>
+  </data>
+  <data name="This permanently deletes your account, revokes every active session and app authorization, and cannot be undone." xml:space="preserve">
+    <value>此操作将永久删除你的账户，撤销所有活跃会话和应用授权，且无法撤销。</value>
+  </data>
+  <data name="Two-factor code or backup code" xml:space="preserve">
+    <value>双重验证码或备用代码</value>
+  </data>
+  <data name="Permanently delete my account" xml:space="preserve">
+    <value>永久删除我的账户</value>
+  </data>
+  <data name="Invalid two-factor code." xml:space="preserve">
+    <value>双重验证码无效。</value>
+  </data>
+  <data name="You're the last administrator — transfer admin access to another account before deleting yours." xml:space="preserve">
+    <value>你是最后一位管理员——请先将管理权限转移给其他账户，再删除你的账户。</value>
+  </data>
+  <data name="Something went wrong deleting your account. Please try again or contact support." xml:space="preserve">
+    <value>删除账户时出错，请重试或联系支持团队。</value>
+  </data>
+  <data name="Access denied" xml:space="preserve">
+    <value>拒绝访问</value>
+  </data>
+  <data name="Your account doesn't have permission to view that page." xml:space="preserve">
+    <value>你的账户没有权限查看该页面。</value>
+  </data>
+  <data name="Back to my account" xml:space="preserve">
+    <value>返回我的账户</value>
+  </data>
+  <data name="Connected App Sessions" xml:space="preserve">
+    <value>已连接应用会话</value>
+  </data>
+  <data name="Apps you've signed into using this account. This doesn't include your current sign-in here — use &quot;Sign out&quot; in the sidebar for that." xml:space="preserve">
+    <value>你使用此账户登录过的应用。不包括你在此处的当前登录——如需退出当前登录，请使用侧边栏中的「退出登录」。</value>
+  </data>
+  <data name="Revoke all" xml:space="preserve">
+    <value>全部撤销</value>
+  </data>
+  <data name="No active sessions found." xml:space="preserve">
+    <value>未找到活跃会话。</value>
+  </data>
+  <data name="Issued {0}" xml:space="preserve">
+    <value>签发于 {0}</value>
+  </data>
+  <data name="Expires {0}" xml:space="preserve">
+    <value>过期于 {0}</value>
+  </data>
+  <data name="Revoke" xml:space="preserve">
+    <value>撤销</value>
+  </data>
+  <data name="This will sign you out of all sessions everywhere. Continue?" xml:space="preserve">
+    <value>这将使你退出所有位置的所有会话。是否继续？</value>
+  </data>
+  <data name="Applications that have active access to your account. Revoking removes their tokens immediately." xml:space="preserve">
+    <value>对你的账户拥有活跃访问权限的应用。撤销将立即移除其令牌。</value>
+  </data>
+  <data name="No apps connected yet." xml:space="preserve">
+    <value>尚未连接任何应用。</value>
+  </data>
+  <data name="Last used {0}" xml:space="preserve">
+    <value>最后使用于 {0}</value>
+  </data>
+  <data name="Revoke access for '{0}'? The app will need to sign in again." xml:space="preserve">
+    <value>撤销「{0}」的访问权限？该应用将需要重新登录。</value>
+  </data>
+  <data name="Where to next?" xml:space="preserve">
+    <value>接下来去哪里？</value>
+  </data>
+  <data name="Select an application to continue" xml:space="preserve">
+    <value>选择一个应用以继续</value>
+  </data>
+  <data name="That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead." xml:space="preserve">
+    <value>该 Google 账户的邮箱尚未验证。请到 Google 完成验证，或改用密码登录。</value>
+  </data>
+  <data name="Your Google account doesn't have an email address we can use." xml:space="preserve">
+    <value>你的 Google 账户没有可用的邮箱地址。</value>
+  </data>
+  <data name="Google sign-in failed. Please try again." xml:space="preserve">
+    <value>Google 登录失败，请重试。</value>
+  </data>
+  <data name="Something went wrong signing in with Google. Please try again." xml:space="preserve">
+    <value>使用 Google 登录时出错，请重试。</value>
+  </data>
+  <data name="Incorrect email or password" xml:space="preserve">
+    <value>邮箱或密码不正确</value>
+  </data>
+  <data name="An error occurred while sending the verification email. Please try again." xml:space="preserve">
+    <value>发送验证邮件时出错，请重试。</value>
+  </data>
+  <data name="Administration" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="Identity Admin" xml:space="preserve">
+    <value>身份管理后台</value>
+  </data>
+  <data name="My Account" xml:space="preserve">
+    <value>我的账户</value>
+  </data>
+  <data name="Account" xml:space="preserve">
+    <value>账户</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Sessions" xml:space="preserve">
+    <value>会话</value>
+  </data>
+  <data name="English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Validation error" xml:space="preserve">
+    <value>验证错误</value>
+  </data>
+  <data name="An unknown error occurred." xml:space="preserve">
+    <value>发生未知错误。</value>
+  </data>
+  <data name="Optimistic concurrency failure, object has been modified." xml:space="preserve">
+    <value>并发冲突：该对象已被修改。</value>
+  </data>
+  <data name="Invalid token." xml:space="preserve">
+    <value>令牌无效。</value>
+  </data>
+  <data name="A user with this login already exists." xml:space="preserve">
+    <value>已存在使用此登录方式的用户。</value>
+  </data>
+  <data name="Username '{0}' is invalid, can only contain letters or digits." xml:space="preserve">
+    <value>用户名「{0}」无效，只能包含字母或数字。</value>
+  </data>
+  <data name="Email '{0}' is invalid." xml:space="preserve">
+    <value>电子邮箱「{0}」无效。</value>
+  </data>
+  <data name="Username '{0}' is already taken." xml:space="preserve">
+    <value>用户名「{0}」已被使用。</value>
+  </data>
+  <data name="Email '{0}' is already taken." xml:space="preserve">
+    <value>电子邮箱「{0}」已被使用。</value>
+  </data>
+  <data name="Role name '{0}' is invalid." xml:space="preserve">
+    <value>角色名称「{0}」无效。</value>
+  </data>
+  <data name="Role name '{0}' is already taken." xml:space="preserve">
+    <value>角色名称「{0}」已被使用。</value>
+  </data>
+  <data name="User already has a password set." xml:space="preserve">
+    <value>用户已设置密码。</value>
+  </data>
+  <data name="Lockout is not enabled for this user." xml:space="preserve">
+    <value>此用户未启用锁定功能。</value>
+  </data>
+  <data name="User already in role '{0}'." xml:space="preserve">
+    <value>用户已在角色「{0}」中。</value>
+  </data>
+  <data name="User is not in role '{0}'." xml:space="preserve">
+    <value>用户不在角色「{0}」中。</value>
+  </data>
+  <data name="Passwords must be at least {0} characters." xml:space="preserve">
+    <value>密码长度至少为 {0} 个字符。</value>
+  </data>
+  <data name="Passwords must have at least one non alphanumeric character." xml:space="preserve">
+    <value>密码必须至少包含一个非字母数字字符。</value>
+  </data>
+  <data name="Passwords must have at least one digit ('0'-'9')." xml:space="preserve">
+    <value>密码必须至少包含一个数字（0-9）。</value>
+  </data>
+  <data name="Passwords must have at least one lowercase ('a'-'z')." xml:space="preserve">
+    <value>密码必须至少包含一个小写字母（a-z）。</value>
+  </data>
+  <data name="Passwords must have at least one uppercase ('A'-'Z')." xml:space="preserve">
+    <value>密码必须至少包含一个大写字母（A-Z）。</value>
+  </data>
+  <data name="Passwords must use at least {0} different characters." xml:space="preserve">
+    <value>密码必须至少使用 {0} 个不同的字符。</value>
+  </data>
+  <data name="Recovery code redemption failed." xml:space="preserve">
+    <value>备用代码兑换失败。</value>
+  </data>
+  <data name="Clients" xml:space="preserve">
+    <value>客户端</value>
+  </data>
+  <data name="Scopes" xml:space="preserve">
+    <value>作用域</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>用户</value>
+  </data>
+  <data name="or" xml:space="preserve">
+    <value>或</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>主题</value>
+  </data>
+  <data name="Light" xml:space="preserve">
+    <value>浅色</value>
+  </data>
+  <data name="Dark" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Change theme" xml:space="preserve">
+    <value>更改主题</value>
+  </data>
+  <data name="Authorize access" xml:space="preserve">
+    <value>授权访问</value>
+  </data>
+  <data name="Unknown App" xml:space="preserve">
+    <value>未知应用</value>
+  </data>
+  <data name="Choose an app" xml:space="preserve">
+    <value>选择一个应用</value>
+  </data>
+  <data name="Backup code label" xml:space="preserve">
+    <value>备用代码</value>
+  </data>
+  <data name="{0} clients registered" xml:space="preserve">
+    <value>已注册 {0} 个客户端</value>
+  </data>
+  <data name="Add Client" xml:space="preserve">
+    <value>添加客户端</value>
+  </data>
+  <data name="No clients registered yet." xml:space="preserve">
+    <value>尚未注册任何客户端。</value>
+  </data>
+  <data name="Add your first client" xml:space="preserve">
+    <value>添加您的第一个客户端</value>
+  </data>
+  <data name="Client ID" xml:space="preserve">
+    <value>客户端 ID</value>
+  </data>
+  <data name="Display Name" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="Grant" xml:space="preserve">
+    <value>授权方式</value>
+  </data>
+  <data name="Confidential" xml:space="preserve">
+    <value>机密</value>
+  </data>
+  <data name="Public" xml:space="preserve">
+    <value>公共</value>
+  </data>
+  <data name="Client Credentials" xml:space="preserve">
+    <value>客户端凭据</value>
+  </data>
+  <data name="Auth Code" xml:space="preserve">
+    <value>授权码</value>
+  </data>
+  <data name="+{0} more" xml:space="preserve">
+    <value>还有 {0} 个</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="Delete Client" xml:space="preserve">
+    <value>删除客户端</value>
+  </data>
+  <data name="Are you sure you want to delete:" xml:space="preserve">
+    <value>您确定要删除：</value>
+  </data>
+  <data name="This will immediately revoke all tokens issued to this client. This action cannot be undone." xml:space="preserve">
+    <value>此操作将立即吊销颁发给此客户端的所有令牌，且无法撤销。</value>
+  </data>
+  <data name="Back to Clients" xml:space="preserve">
+    <value>返回客户端列表</value>
+  </data>
+  <data name="Basic Information" xml:space="preserve">
+    <value>基本信息</value>
+  </data>
+  <data name="My Application" xml:space="preserve">
+    <value>我的应用</value>
+  </data>
+  <data name="Client Type" xml:space="preserve">
+    <value>客户端类型</value>
+  </data>
+  <data name="Public: no secret — SPA, mobile, CLI. Confidential: holds a secret — server-side app or service." xml:space="preserve">
+    <value>公共：无密钥 — 适用于单页应用、移动端、命令行工具。机密：持有密钥 — 适用于服务端应用或服务。</value>
+  </data>
+  <data name="Grant Type" xml:space="preserve">
+    <value>授权类型</value>
+  </data>
+  <data name="Authorization Code" xml:space="preserve">
+    <value>授权码模式</value>
+  </data>
+  <data name="Authorization Code: user signs in via browser. Client Credentials: service-to-service, no user — confidential clients only." xml:space="preserve">
+    <value>授权码模式：用户通过浏览器登录。客户端凭据模式：服务间通信，无用户参与 — 仅限机密客户端使用。</value>
+  </data>
+  <data name="Client Secret" xml:space="preserve">
+    <value>客户端密钥</value>
+  </data>
+  <data name="A strong secret will be generated automatically and shown once after creation." xml:space="preserve">
+    <value>创建后将自动生成一个强密钥，并仅显示一次。</value>
+  </data>
+  <data name="Require PKCE (Proof Key for Code Exchange)" xml:space="preserve">
+    <value>要求使用 PKCE（授权码交换验证密钥）</value>
+  </data>
+  <data name="First-party (skip consent screen)" xml:space="preserve">
+    <value>第一方应用（跳过授权同意页面）</value>
+  </data>
+  <data name="No scopes available." xml:space="preserve">
+    <value>暂无可用的作用域。</value>
+  </data>
+  <data name="Redirects" xml:space="preserve">
+    <value>重定向设置</value>
+  </data>
+  <data name="Redirect URIs" xml:space="preserve">
+    <value>重定向 URI</value>
+  </data>
+  <data name="One URI per line. HTTPS required; HTTP allowed for localhost." xml:space="preserve">
+    <value>每行一个 URI。需使用 HTTPS；本地主机（localhost）允许使用 HTTP。</value>
+  </data>
+  <data name="Post-Logout Redirect URIs" xml:space="preserve">
+    <value>注销后重定向 URI</value>
+  </data>
+  <data name="One URI per line." xml:space="preserve">
+    <value>每行一个 URI。</value>
+  </data>
+  <data name="Service Account Claims" xml:space="preserve">
+    <value>服务账户声明</value>
+  </data>
+  <data name="One claim per line in key=value format. These claims are embedded in every token issued to this client." xml:space="preserve">
+    <value>每行一个声明，格式为 key=value。这些声明会被嵌入到颁发给此客户端的每个令牌中。</value>
+  </data>
+  <data name="Create Client" xml:space="preserve">
+    <value>创建客户端</value>
+  </data>
+  <data name="Edit Client — {0}" xml:space="preserve">
+    <value>编辑客户端 — {0}</value>
+  </data>
+  <data name="Identity" xml:space="preserve">
+    <value>身份信息</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Require PKCE" xml:space="preserve">
+    <value>要求使用 PKCE</value>
+  </data>
+  <data name="One key=value claim per line." xml:space="preserve">
+    <value>每行一个 key=value 格式的声明。</value>
+  </data>
+  <data name="The current secret is stored as a hash and cannot be retrieved. Reset it to generate a new one." xml:space="preserve">
+    <value>当前密钥以哈希形式存储，无法找回。请重置以生成新密钥。</value>
+  </data>
+  <data name="Reset Secret" xml:space="preserve">
+    <value>重置密钥</value>
+  </data>
+  <data name="Client created successfully" xml:space="preserve">
+    <value>客户端创建成功</value>
+  </data>
+  <data name="Client" xml:space="preserve">
+    <value>客户端</value>
+  </data>
+  <data name="is ready." xml:space="preserve">
+    <value>已就绪。</value>
+  </data>
+  <data name="Copy your secret now — it won't be shown again" xml:space="preserve">
+    <value>请立即复制您的密钥 — 之后将不再显示</value>
+  </data>
+  <data name="This secret is stored as a hash. If you lose it, you'll need to reset it from the client settings." xml:space="preserve">
+    <value>此密钥以哈希形式存储。如果遗失，您需要在客户端设置中重置它。</value>
+  </data>
+  <data name="I've saved my secret — Go to Clients" xml:space="preserve">
+    <value>我已保存密钥 — 前往客户端列表</value>
+  </data>
+  <data name="No scopes defined yet." xml:space="preserve">
+    <value>尚未定义任何作用域。</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Claim Types" xml:space="preserve">
+    <value>声明类型</value>
+  </data>
+  <data name="none" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="Delete scope '{0}'?" xml:space="preserve">
+    <value>删除作用域“{0}”？</value>
+  </data>
+  <data name="Add Scope" xml:space="preserve">
+    <value>添加作用域</value>
+  </data>
+  <data name="My Scope" xml:space="preserve">
+    <value>我的作用域</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>描述</value>
+  </data>
+  <data name="What this scope grants access to" xml:space="preserve">
+    <value>此作用域授予的访问权限说明</value>
+  </data>
+  <data name="Comma-separated. When this scope is granted, these claim types are included in the token from the user's stored claims." xml:space="preserve">
+    <value>以逗号分隔。当授予此作用域时，这些声明类型将从用户的已存储声明中包含到令牌中。</value>
+  </data>
+  <data name="Edit Scope" xml:space="preserve">
+    <value>编辑作用域</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Scope Name" xml:space="preserve">
+    <value>作用域名称</value>
+  </data>
+  <data name="e.g. els_system_permissions" xml:space="preserve">
+    <value>例如 els_system_permissions</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Press Enter or click Add. Saving replaces all existing claim types for this scope." xml:space="preserve">
+    <value>按 Enter 键或点击“添加”。保存后将替换此作用域的所有现有声明类型。</value>
+  </data>
+  <data name="No claim types — token will carry no extra claims for this scope." xml:space="preserve">
+    <value>无声明类型 — 此作用域的令牌将不包含额外声明。</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Search by name or email…" xml:space="preserve">
+    <value>按姓名或邮箱搜索…</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="No users found." xml:space="preserve">
+    <value>未找到用户。</value>
+  </data>
+  <data name="No users matching '{0}'." xml:space="preserve">
+    <value>没有匹配“{0}”的用户。</value>
+  </data>
+  <data name="{0} users" xml:space="preserve">
+    <value>{0} 位用户</value>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>用户</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Last Login" xml:space="preserve">
+    <value>上次登录</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>创建时间</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>从未</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>停用</value>
+  </data>
+  <data name="Activate" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="Invalidate all sessions for" xml:space="preserve">
+    <value>使以下用户的所有会话失效：</value>
+  </data>
+  <data name="Invalidate Sessions" xml:space="preserve">
+    <value>使会话失效</value>
+  </data>
+  <data name="Claims" xml:space="preserve">
+    <value>声明</value>
+  </data>
+  <data name="User Claims" xml:space="preserve">
+    <value>用户声明</value>
+  </data>
+  <data name="No stored claims for this user." xml:space="preserve">
+    <value>此用户暂无已存储的声明。</value>
+  </data>
+  <data name="{0} stored claims" xml:space="preserve">
+    <value>已存储 {0} 个声明</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>值</value>
+  </data>
+  <data name="Remove claim '{0}'?" xml:space="preserve">
+    <value>移除声明“{0}”？</value>
+  </data>
+  <data name="Add Claim" xml:space="preserve">
+    <value>添加声明</value>
+  </data>
+  <data name="Claim Type" xml:space="preserve">
+    <value>声明类型</value>
+  </data>
+  <data name="e.g. manage_api" xml:space="preserve">
+    <value>例如 manage_api</value>
+  </data>
+  <data name="e.g. true" xml:space="preserve">
+    <value>例如 true</value>
+  </data>
+  <data name="Initial Setup" xml:space="preserve">
+    <value>初始设置</value>
+  </data>
+  <data name="Welcome to {0}" xml:space="preserve">
+    <value>欢迎使用 {0}</value>
+  </data>
+  <data name="Create your administrator account to get started" xml:space="preserve">
+    <value>创建您的管理员账户以开始使用</value>
+  </data>
+  <data name="Jane Smith" xml:space="preserve">
+    <value>张三</value>
+  </data>
+  <data name="Create Administrator Account" xml:space="preserve">
+    <value>创建管理员账户</value>
+  </data>
+</root>

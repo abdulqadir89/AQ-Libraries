@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Only keys whose wording differs in Hong Kong (glossary §9: Email noun -> 電郵). Falls back to
+       EmailResource.zh-Hant.resx for everything else via the .NET resource chain (zh-HK -> zh-Hant -> neutral). -->
+  <data name="Verification.Subject" xml:space="preserve">
+    <value>驗證你的電郵 - {0}</value>
+  </data>
+  <data name="Verification.Heading" xml:space="preserve">
+    <value>驗證你的電郵地址</value>
+  </data>
+  <data name="Verification.Intro" xml:space="preserve">
+    <value>感謝你註冊&lt;strong&gt;{0}&lt;/strong&gt;。請點選下方按鈕，驗證你的電郵地址。</value>
+  </data>
+  <data name="Verification.Button" xml:space="preserve">
+    <value>驗證電郵</value>
+  </data>
+  <data name="Verification.Ignore" xml:space="preserve">
+    <value>如果你並未在{0}註冊帳戶，請忽略這封電郵即可。</value>
+  </data>
+  <data name="Verification.Text" xml:space="preserve">
+    <value>驗證你在{0}的電郵地址
+
+請前往以下連結，驗證你的電郵：
+{1}
+
+如果你並未在{0}註冊帳戶，請忽略這封電郵即可。</value>
+  </data>
+  <data name="PasswordReset.Ignore" xml:space="preserve">
+    <value>如果你並未要求重設密碼，請忽略這封電郵即可，你的密碼不會被變更。</value>
+  </data>
+  <data name="PasswordReset.Text" xml:space="preserve">
+    <value>重設你在{0}的密碼
+
+我們收到一則重設密碼的要求。請前往以下連結，設定新密碼：
+{1}
+
+如果你並未要求重設密碼，請忽略這封電郵即可，你的密碼不會被變更。</value>
+  </data>
+  <data name="WorkspaceInvitation.Ignore" xml:space="preserve">
+    <value>如果你並未預期收到這則邀請，請忽略這封電郵即可。</value>
+  </data>
+  <data name="WorkspaceInvitation.Text" xml:space="preserve">
+    <value>{0}邀請你加入{2}的{1}
+
+請前往以下連結，接受邀請：
+{3}
+
+如果你並未預期收到這則邀請，請忽略這封電郵即可。</value>
+  </data>
+</root>

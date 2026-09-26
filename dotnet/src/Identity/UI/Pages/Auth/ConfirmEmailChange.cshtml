@@ -1,7 +1,7 @@
 @page "/auth/confirm-email-change"
 @model ConfirmEmailChangeModel
 @{
-    ViewData["Title"] = "Confirm email change";
+    ViewData["Title"] = L["Confirm email change"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
@@ -14,9 +14,9 @@
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
         </div>
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Email address updated</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Your account email is now @Model.NewEmail.</p>
-        <a href="/account/profile" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block">Back to profile</a>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">@L["Email address updated"]</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">@L["Your account email is now {0}.", Model.NewEmail]</p>
+        <a href="/account/profile" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block">@L["Back to profile"]</a>
     </div>
 }
 else
@@ -29,8 +29,8 @@ else
                 <line x1="9" y1="9" x2="15" y2="15"></line>
             </svg>
         </div>
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Link has expired</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">This confirmation link has expired or is invalid. Request a new one from your profile page.</p>
-        <a href="/account/profile" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Back to profile</a>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">@L["Link has expired"]</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">@L["This confirmation link has expired or is invalid. Request a new one from your profile page."]</p>
+        <a href="/account/profile" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">@L["Back to profile"]</a>
     </div>
 }

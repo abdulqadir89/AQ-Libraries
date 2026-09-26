@@ -4,6 +4,7 @@ import {
 } from '@mantine/core';
 import { IconTrash, IconUpload } from '@tabler/icons-react';
 import type { AttachmentLimits } from './types';
+import { useAQLocale } from '../locale';
 
 interface StagedFile {
   id: string;
@@ -32,6 +33,8 @@ function formatSize(bytes: number): string {
 
 export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, StagedAttachmentPickerProps>(
   function StagedAttachmentPicker({ categories, defaultCategory, limits, onUpload, onError }, ref) {
+    const { messages: aqMessages } = useAQLocale();
+    const m = aqMessages.attachments;
     const maxFiles = limits?.maxFiles ?? 10;
     const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
     const [pendingCategory, setPendingCategory] = useState<string>(defaultCategory ?? categories[0] ?? 'general');
@@ -52,7 +55,7 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
         }));
         const oversized = toAdd.filter((f) => limits && f.file.size > limits.maxFileSizeBytes);
         if (oversized.length > 0) {
-          onError(new Error(`File too large (max ${formatSize(limits!.maxFileSizeBytes)}): ${oversized.map((f) => f.file.name).join(', ')}`));
+          onError(new Error(m.fileTooLarge(formatSize(limits!.maxFileSizeBytes), oversized.map((f) => f.file.name).join(', '))));
         }
         const accepted = toAdd.filter((f) => !limits || f.file.size <= limits.maxFileSizeBytes);
         return [...prev, ...accepted];
@@ -91,18 +94,18 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
         }
         setStagedFiles([]);
         if (errors.length > 0) {
-          onError(new Error(`Failed to upload: ${errors.join(', ')}`));
+          onError(new Error(m.failedToUpload(errors.join(', '))));
         }
       },
     }));
 
     return (
       <Stack gap="sm">
-        <Title order={6} c="dimmed">Attachments</Title>
+        <Title order={6} c="dimmed">{m.attachments}</Title>
 
         {categories.length > 1 && (
           <Select
-            label="Category"
+            label={m.category}
             data={categoryOptions}
             value={pendingCategory}
             onChange={(v: string | null) => v && setPendingCategory(v)}
@@ -128,8 +131,8 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
           <IconUpload size={20} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', marginBottom: 4 }} />
           <Text size="sm" c="dimmed">
             {atLimit
-              ? `Maximum ${maxFiles} file${maxFiles === 1 ? '' : 's'} reached`
-              : 'Drag & drop or click to browse'}
+              ? m.maxFilesReached(maxFiles)
+              : m.dragDropOrClick}
           </Text>
           <Text size="xs" c="dimmed">
             {stagedFiles.length}/{maxFiles} files
@@ -157,7 +160,7 @@ export const StagedAttachmentPicker = forwardRef<StagedAttachmentPickerHandle, S
                     </Badge>
                   )}
                 </Group>
-                <Tooltip label="Remove" withArrow>
+                <Tooltip label={m.remove} withArrow>
                   <ActionIcon variant="subtle" color="red" onClick={() => handleRemove(staged.id)}>
                     <IconTrash size={14} />
                   </ActionIcon>

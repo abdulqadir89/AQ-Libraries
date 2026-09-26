@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 
 namespace AQ.Identity.UI.Pages.Mfa;
 
 [Authorize]
-public class BackupCodesModel : PageModel
+public class BackupCodesModel(IStringLocalizer<IdentityUIResource> localizer) : PageModel
 {
     public List<string> BackupCodes { get; set; } = new();
     public string ErrorMessage { get; set; } = string.Empty;
@@ -15,7 +17,7 @@ public class BackupCodesModel : PageModel
     {
         if (TempData["BackupCodes"] is not string codesData || string.IsNullOrEmpty(codesData))
         {
-            ErrorMessage = "Backup codes are only shown once. Go to Security settings to regenerate them.";
+            ErrorMessage = localizer["Backup codes are only shown once. Go to Security settings to regenerate them."];
             return Page();
         }
 

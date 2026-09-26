@@ -6,6 +6,7 @@ import { modals } from '@mantine/modals';
 import { IconCheck, IconDownload, IconFile, IconLink, IconTrash } from '@tabler/icons-react';
 import { DateTimeOffsetDisplay } from '../datetime';
 import type { AttachmentDto } from './types';
+import { useAQLocale } from '../locale';
 
 function formatSize(bytes?: number): string {
   if (bytes == null) return '—';
@@ -58,6 +59,8 @@ interface AttachmentRowProps {
 }
 
 function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, onError }: AttachmentRowProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.attachments;
   const isImage = attachment.contentType?.startsWith('image/');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -109,14 +112,14 @@ function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, on
 
       <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
         {attachment.downloadUrl && (
-          <Tooltip label={copied ? 'Copied!' : 'Copy link'} withArrow>
+          <Tooltip label={copied ? m.copied : m.copyLink} withArrow>
             <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={handleCopyLink}>
               {copied ? <IconCheck size={16} /> : <IconLink size={16} />}
             </ActionIcon>
           </Tooltip>
         )}
         {attachment.downloadUrl && (
-          <Tooltip label="Download" withArrow>
+          <Tooltip label={m.download} withArrow>
             <ActionIcon variant="subtle" color="blue" onClick={() => {
               void triggerDownload(attachment, fetchAuthenticated).catch(onError);
             }}>
@@ -125,7 +128,7 @@ function AttachmentRow({ attachment, canDelete, onDelete, fetchAuthenticated, on
           </Tooltip>
         )}
         {canDelete && (
-          <Tooltip label="Delete" withArrow>
+          <Tooltip label={m.delete} withArrow>
             <ActionIcon variant="subtle" color="red" onClick={onDelete}>
               <IconTrash size={16} />
             </ActionIcon>
@@ -140,6 +143,8 @@ export function AttachmentList({
   entityType, entityId, category, canDelete, refreshKey,
   onFetchList, onDelete, fetchAuthenticated, onError, onCountChange,
 }: AttachmentListProps) {
+  const { messages: aqMessages } = useAQLocale();
+  const m = aqMessages.attachments;
   const [attachments, setAttachments] = useState<AttachmentDto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -160,9 +165,9 @@ export function AttachmentList({
 
   const handleDelete = (attachment: AttachmentDto) => {
     modals.openConfirmModal({
-      title: 'Delete Attachment',
-      children: <Text size="sm">Delete &quot;{attachment.fileName}&quot;? This cannot be undone.</Text>,
-      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      title: m.deleteAttachmentTitle,
+      children: <Text size="sm">{m.deleteAttachmentConfirm(attachment.fileName ?? '')}</Text>,
+      labels: { confirm: m.delete, cancel: m.cancel },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
         try {
@@ -190,7 +195,7 @@ export function AttachmentList({
   }
 
   if (attachments.length === 0) {
-    return <Text size="sm" c="dimmed">No attachments.</Text>;
+    return <Text size="sm" c="dimmed">{m.noAttachments}</Text>;
   }
 
   return (

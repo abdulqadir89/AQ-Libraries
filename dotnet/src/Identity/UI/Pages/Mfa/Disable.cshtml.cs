@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using AQ.Utilities.Email;
 
 namespace AQ.Identity.UI.Pages.Mfa;
@@ -16,6 +18,7 @@ public class DisableModel : PageModel
     private readonly IEmailService _emailService;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IOptions<AqIdentityOptions> _options;
+    private readonly IStringLocalizer<IdentityUIResource> _localizer;
 
     [BindProperty]
     public string CurrentPassword { get; set; } = string.Empty;
@@ -26,12 +29,14 @@ public class DisableModel : PageModel
         UserManager<ApplicationUser> userManager,
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
-        IOptions<AqIdentityOptions> options)
+        IOptions<AqIdentityOptions> options,
+        IStringLocalizer<IdentityUIResource> localizer)
     {
         _userManager = userManager;
         _emailService = emailService;
         _emailTemplateService = emailTemplateService;
         _options = options;
+        _localizer = localizer;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -60,7 +65,7 @@ public class DisableModel : PageModel
 
         if (string.IsNullOrEmpty(CurrentPassword) || !await _userManager.CheckPasswordAsync(user, CurrentPassword))
         {
-            ErrorMessage = "Incorrect password.";
+            ErrorMessage = _localizer["Incorrect password."];
             return Page();
         }
 
@@ -78,7 +83,7 @@ public class DisableModel : PageModel
             // Best-effort notification — never block the security-relevant action itself on email delivery.
         }
 
-        TempData["AccountSuccess"] = "Two-factor authentication has been disabled.";
+        TempData["AccountSuccess"] = _localizer["Two-factor authentication was disabled"].Value;
         return RedirectToPage("/Account/Security");
     }
 }

@@ -1,9 +1,11 @@
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 using OpenIddict.Abstractions;
 
 namespace AQ.Identity.UI.Pages.Account;
@@ -14,7 +16,8 @@ public class SessionsModel(
     SignInManager<ApplicationUser> signInManager,
     IOpenIddictTokenManager tokenManager,
     IOpenIddictAuthorizationManager authorizationManager,
-    IOpenIddictApplicationManager applicationManager) : PageModel
+    IOpenIddictApplicationManager applicationManager,
+    IStringLocalizer<IdentityUIResource> localizer) : PageModel
 {
     public List<SessionRow> Sessions { get; set; } = [];
 
@@ -79,7 +82,7 @@ public class SessionsModel(
             Sessions.Add(new SessionRow
             {
                 AuthorizationId = authorizationId ?? string.Empty,
-                AppName = appName ?? "Unknown App",
+                AppName = appName ?? localizer["Unknown App"],
                 CreatedAt = creationDate ?? DateTimeOffset.UtcNow,
                 ExpiresAt = expiresAt
             });
@@ -102,7 +105,7 @@ public class SessionsModel(
                 await RevokeAuthorizationAndTokensAsync(authorizationId, user.Id.ToString());
         }
 
-        TempData["AccountSuccess"] = "Session has been revoked.";
+        TempData["AccountSuccess"] = localizer["Session has been revoked."].Value;
         return RedirectToPage();
     }
 

@@ -10,3 +10,4 @@ export * from './attachments';
 export * from './split-button';
 export * from './editor';
 export * from './html-display';
+export * from './locale';

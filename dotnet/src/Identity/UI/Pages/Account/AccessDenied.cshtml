@@ -1,7 +1,7 @@
 @page "/Account/AccessDenied"
 @model AccessDeniedModel
 @{
-    ViewData["Title"] = "Access denied";
+    ViewData["Title"] = L["Access denied"].Value;
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
@@ -12,9 +12,9 @@
             <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
         </svg>
     </div>
-    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Access denied</h2>
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">@L["Access denied"]</h2>
     <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
-        Your account doesn't have permission to view that page.
+        @L["Your account doesn't have permission to view that page."]
     </p>
-    <a href="/account" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">Back to my account</a>
+    <a href="/account" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm">@L["Back to my account"]</a>
 </div>

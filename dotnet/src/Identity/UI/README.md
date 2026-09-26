@@ -77,3 +77,19 @@ this shared library untouched.
 **Do not** add your app's SVG markup, hex colors, `@font-face` rules, or font files into
 this RCL — that leaks one app's brand into every other consumer's build. Everything
 brand-specific belongs in the *consuming* app's own project.
+
+## Localization
+
+`Pages/Auth/**`, `Pages/Account/**`, `Pages/Mfa/**`, `Pages/Apps/**`, `Pages/Shared/**` and the
+three layouts above are localized (`Pages/Manage/**` stays English — layout chrome only, not page
+content). See the parent `Identity/README.md` "Localization" section for the culture-resolution
+pipeline (`ui_locales` → cookie → `Accept-Language` → `en`) and the resource files involved
+(`IdentityUIResource*.resx`, `LocalizedIdentityErrorDescriber`).
+
+If you override `_AuthLayout.cshtml`/`_AccountLayout.cshtml`/`_ManageLayout.cshtml` in your own app
+per the section above, keep the `<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">`
+attribute and the `:lang(zh-CN|zh-TW|zh-HK)` CJK font-stack rules from the original — losing either
+one in a diverged copy silently breaks localized rendering for that layout only, since the RCL's
+other pages resolve culture the same way regardless of which layout wraps them. The language
+`<select>` on the auth layout posts to `Pages/Culture/Set.cshtml`, which validates the value against
+the supported list before setting the culture cookie — don't bypass it with a raw cookie write.

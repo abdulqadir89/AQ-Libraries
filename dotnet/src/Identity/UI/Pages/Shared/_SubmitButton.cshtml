@@ -1,5 +1,5 @@
 @{
-    var buttonText = ViewData["text"]?.ToString() ?? "Continue";
+    var buttonText = ViewData["text"]?.ToString() ?? L["Continue"].Value;
 }
 
 <button type="submit" class="w-full bg-slate-900 hover:bg-slate-700 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm tracking-wide" id="submitBtn">

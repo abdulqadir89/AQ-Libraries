@@ -137,3 +137,14 @@
   --color-indigo-500: #a78bfa;
   --color-indigo-600: #7c5cfc;
 }
+
+/* ---- CJK font stacks — keyed off <html lang="..."> set from the request culture ---- */
+html:lang(zh-CN) body {
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif;
+}
+html:lang(zh-TW) body {
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
+}
+html:lang(zh-HK) body {
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang HK", "Microsoft JhengHei", "Noto Sans HK", "Noto Sans CJK HK", sans-serif;
+}

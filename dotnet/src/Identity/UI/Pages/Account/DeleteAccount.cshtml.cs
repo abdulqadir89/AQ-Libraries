@@ -1,10 +1,12 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Resources;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using OpenIddict.Abstractions;
 using AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -17,7 +19,8 @@ public class DeleteAccountModel(
     IIdentityDbContext context,
     IOpenIddictTokenManager tokenManager,
     IOpenIddictAuthorizationManager authorizationManager,
-    IEnumerable<IUserDataLifecycleHook> lifecycleHooks) : PageModel
+    IEnumerable<IUserDataLifecycleHook> lifecycleHooks,
+    IStringLocalizer<IdentityUIResource> localizer) : PageModel
 {
     [BindProperty]
     public string CurrentPassword { get; set; } = string.Empty;
@@ -46,7 +49,7 @@ public class DeleteAccountModel(
 
         if (string.IsNullOrEmpty(CurrentPassword) || !await userManager.CheckPasswordAsync(user, CurrentPassword))
         {
-            ErrorMessage = "Incorrect password.";
+            ErrorMessage = localizer["Incorrect password."];
             return Page();
         }
 
@@ -60,7 +63,7 @@ public class DeleteAccountModel(
 
             if (!validTotp && !validRecoveryCode)
             {
-                ErrorMessage = "Invalid two-factor code.";
+                ErrorMessage = localizer["Invalid two-factor code."];
                 return Page();
             }
         }
@@ -70,7 +73,7 @@ public class DeleteAccountModel(
 
         if (holdsAdminClaim && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, user.Id, HttpContext.RequestAborted))
         {
-            ErrorMessage = "You're the last administrator — transfer admin access to another account before deleting yours.";
+            ErrorMessage = localizer["You're the last administrator — transfer admin access to another account before deleting yours."];
             return Page();
         }
 
@@ -100,7 +103,7 @@ public class DeleteAccountModel(
         var result = await userManager.DeleteAsync(user);
         if (!result.Succeeded)
         {
-            ErrorMessage = "Something went wrong deleting your account. Please try again or contact support.";
+            ErrorMessage = localizer["Something went wrong deleting your account. Please try again or contact support."];
             return Page();
         }
 
