@@ -561,6 +561,9 @@
   <data name="Google sign-in failed. Please try again." xml:space="preserve">
     <value>Google 登录失败，请重试。</value>
   </data>
+  <data name="This account has been disabled." xml:space="preserve">
+    <value>此账户已被停用。</value>
+  </data>
   <data name="Something went wrong signing in with Google. Please try again." xml:space="preserve">
     <value>使用 Google 登录时出错，请重试。</value>
   </data>

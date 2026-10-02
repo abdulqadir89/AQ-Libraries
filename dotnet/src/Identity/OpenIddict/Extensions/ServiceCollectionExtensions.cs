@@ -11,6 +11,7 @@ using AQ.Identity.OpenIddict.KeyManagement;
 using AQ.Identity.OpenIddict.Middleware;
 using AQ.Identity.OpenIddict.Seeding;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -152,16 +153,6 @@ public static class ServiceCollectionExtensions
                 validationOptions.UseLocalServer();
                 validationOptions.UseAspNetCore();
 
-                if (options.Google != null)
-                {
-                    services.AddAuthentication()
-                        .AddGoogle(o =>
-                        {
-                            o.ClientId = options.Google.ClientId;
-                            o.ClientSecret = options.Google.ClientSecret;
-                        });
-                }
-
                 // Reject tokens for inactive users or invalidated SecurityStamp
                 validationOptions.AddEventHandler<OpenIddictValidationEvents.ValidateTokenContext>(builder =>
                     builder.UseInlineHandler(async context =>
@@ -238,6 +229,10 @@ public static class ServiceCollectionExtensions
                 {
                     googleOptions.ClientId = options.Google.ClientId;
                     googleOptions.ClientSecret = options.Google.ClientSecret;
+
+                    // Not mapped by default; ExternalCallback relies on it before linking
+                    // a Google login to an existing password account.
+                    googleOptions.ClaimActions.MapJsonKey("email_verified", "email_verified");
                 });
         }
 

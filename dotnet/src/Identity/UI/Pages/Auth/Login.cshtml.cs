@@ -52,6 +52,7 @@ public class LoginModel : PageModel
             "email_not_verified" => _localizer["That Google account's email isn't verified. Please verify it with Google, or sign in with your password instead."].Value,
             "no_email" => _localizer["Your Google account doesn't have an email address we can use."].Value,
             "external_auth_failed" => _localizer["Google sign-in failed. Please try again."].Value,
+            "account_disabled" => _localizer["This account has been disabled."].Value,
             "user_creation_failed" or "invalid_external_id" => _localizer["Something went wrong signing in with Google. Please try again."].Value,
             _ => null,
         };

@@ -561,6 +561,9 @@
   <data name="Google sign-in failed. Please try again." xml:space="preserve">
     <value>Google sign-in failed. Please try again.</value>
   </data>
+  <data name="This account has been disabled." xml:space="preserve">
+    <value>This account has been disabled.</value>
+  </data>
   <data name="Something went wrong signing in with Google. Please try again." xml:space="preserve">
     <value>Something went wrong signing in with Google. Please try again.</value>
   </data>

@@ -13,6 +13,11 @@ public class GoogleChallengeModel : PageModel
 {
     public IActionResult OnGet(string? returnUrl)
     {
+        if (!string.IsNullOrEmpty(returnUrl) && !Url.IsLocalUrl(returnUrl))
+        {
+            returnUrl = null;
+        }
+
         var redirectUrl = Url.Page("/Auth/ExternalCallback", pageHandler: null, values: new { returnUrl });
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
