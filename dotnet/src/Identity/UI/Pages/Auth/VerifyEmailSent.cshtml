@@ -5,25 +5,43 @@
     Layout = "~/Pages/Shared/_AuthLayout.cshtml";
 }
 
-<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">@L["Check your email"]</h2>
+@if (Model.PromptForEmail)
+{
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 text-center">@L["Resend verification email"]</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">@L["Enter your email and we'll send you a new verification link."]</p>
 
-<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
-    <p class="text-sm text-blue-700 dark:text-blue-400">
-        @L["We sent a verification link to {0}. Check your inbox and spam folder.", Html.Raw("<span class=\"font-semibold\">" + System.Net.WebUtility.HtmlEncode(Model.Email) + "</span>")]
-    </p>
-</div>
+    <form method="post" asp-antiforgery="true" class="space-y-5">
+        <div class="space-y-1">
+            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300">@L["Email"]</label>
+            <input type="email" id="email" name="email" value="@Model.PrefillEmail" autocomplete="email" required placeholder="you@example.com"
+                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white focus:border-transparent transition" />
+            <partial name="_FieldError" view-data="@(new ViewDataDictionary(ViewData) { { "fieldName", "Email" } })" />
+        </div>
+        <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", L["Send verification link"].Value } })" />
+    </form>
+}
+else
+{
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 text-center">@L["Check your email"]</h2>
 
-<form method="post" asp-antiforgery="true">
-    @if (!string.IsNullOrEmpty(Model.RateLimitMessage))
-    {
-        <p role="alert" class="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-4">
-            @Model.RateLimitMessage
+    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+        <p class="text-sm text-blue-700 dark:text-blue-400">
+            @L["We sent a verification link to {0}. Check your inbox and spam folder.", Html.Raw("<span class=\"font-semibold\">" + System.Net.WebUtility.HtmlEncode(Model.Email) + "</span>")]
         </p>
-    }
+    </div>
 
-    <input type="hidden" name="email" value="@Model.Email" />
-    <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", L["Resend link"].Value } })" />
-</form>
+    <form method="post" asp-antiforgery="true">
+        @if (!string.IsNullOrEmpty(Model.RateLimitMessage))
+        {
+            <p role="alert" class="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-4">
+                @Model.RateLimitMessage
+            </p>
+        }
+
+        <input type="hidden" name="email" value="@Model.Email" />
+        <partial name="_SubmitButton" view-data="@(new ViewDataDictionary(ViewData) { { "text", L["Resend link"].Value } })" />
+    </form>
+}
 
 <p class="text-sm text-center text-slate-600 dark:text-slate-400 mt-6">
     @L["Already signed up?"] <a href="/auth/login@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">@L["Sign in"]</a>

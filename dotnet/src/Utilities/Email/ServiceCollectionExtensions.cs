@@ -12,6 +12,11 @@ public static class ServiceCollectionExtensions
     /// <see cref="IOptionsMonitor{TOptions}"/> against the given configuration section — so
     /// values sourced from a DB-backed configuration provider (e.g. an AppSettings table) are
     /// picked up live, without a restart.
+    /// <para>
+    /// Mail goes over SMTP whenever a <c>Host</c> is configured (so Development can deliver to a
+    /// local catcher such as Mailpit). <see cref="ConsoleEmailService"/> is only used in
+    /// Development when no host is configured.
+    /// </para>
     /// </summary>
     public static IServiceCollection AddAqEmail(
         this IServiceCollection services,
@@ -20,7 +25,9 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<EmailOptions>(emailConfigSection);
 
-        if (env.IsDevelopment())
+        var smtpConfigured = !string.IsNullOrWhiteSpace(emailConfigSection["Host"]);
+
+        if (env.IsDevelopment() && !smtpConfigured)
         {
             services.AddTransient<IEmailService, ConsoleEmailService>();
         }

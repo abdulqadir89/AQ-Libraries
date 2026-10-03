@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Localization;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Extensions;
 using AQ.Identity.UI.Resources;
 
 namespace AQ.Identity.UI.Pages.Mfa;
@@ -35,10 +36,13 @@ public class ChallengeModel : PageModel
             return Page();
         }
 
+        var mfaUser = await _signInManager.GetTwoFactorAuthenticationUserAsync();
         var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(code, isPersistent: false, rememberClient: false);
 
         if (result.Succeeded)
         {
+            await _signInManager.UserManager.RecordLoginAsync(mfaUser);
+
             if (!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))
             {
                 return Redirect(ReturnUrl);
@@ -64,10 +68,13 @@ public class ChallengeModel : PageModel
             return Page();
         }
 
+        var mfaUser = await _signInManager.GetTwoFactorAuthenticationUserAsync();
         var result = await _signInManager.TwoFactorRecoveryCodeSignInAsync(code);
 
         if (result.Succeeded)
         {
+            await _signInManager.UserManager.RecordLoginAsync(mfaUser);
+
             if (!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))
             {
                 return Redirect(ReturnUrl);

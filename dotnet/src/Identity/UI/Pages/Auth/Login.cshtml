@@ -78,11 +78,26 @@
 }
 
 <p class="text-sm text-center text-slate-500 dark:text-slate-400 mt-6">
+    @L["Didn't get a verification email?"]
+    <a id="resendVerification" href="/auth/verify-email-sent@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">@L["Resend"]</a>
+</p>
+
+<p class="text-sm text-center text-slate-500 dark:text-slate-400 mt-2">
     @L["Don't have an account?"]
     <a href="/auth/register@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="font-medium text-slate-900 dark:text-white hover:underline">@L["Sign up"]</a>
 </p>
 
 <script>
+// Carry the typed email into the resend link so the user doesn't retype it
+document.getElementById('resendVerification').addEventListener('click', function (e) {
+    var value = document.getElementById('email').value.trim();
+    if (!value) return;
+    e.preventDefault();
+    var url = new URL(this.href, window.location.origin);
+    url.searchParams.set('prefill', value);
+    window.location.href = url.toString();
+});
+
 document.getElementById('togglePassword').addEventListener('click', function () {
     var input = document.getElementById('password');
     var icon = document.getElementById('eyeIcon');

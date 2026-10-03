@@ -1008,4 +1008,46 @@
   <data name="Create Administrator Account" xml:space="preserve">
     <value>建立管理員帳戶</value>
   </data>
+  <data name="Please enter your email address." xml:space="preserve">
+    <value>請輸入你的電子郵件地址。</value>
+  </data>
+  <data name="Resend verification email" xml:space="preserve">
+    <value>重新寄送驗證郵件</value>
+  </data>
+  <data name="Enter your email and we'll send you a new verification link." xml:space="preserve">
+    <value>輸入你的電子郵件，我們將寄送新的驗證連結給你。</value>
+  </data>
+  <data name="Send verification link" xml:space="preserve">
+    <value>寄送驗證連結</value>
+  </data>
+  <data name="Didn't get a verification email?" xml:space="preserve">
+    <value>沒有收到驗證郵件？</value>
+  </data>
+  <data name="Resend" xml:space="preserve">
+    <value>重新寄送</value>
+  </data>
+  <data name="Showing {0}–{1} of {2} users" xml:space="preserve">
+    <value>顯示第 {0}–{1} 位，共 {2} 位使用者</value>
+  </data>
+  <data name="Pagination" xml:space="preserve">
+    <value>分頁</value>
+  </data>
+  <data name="Page {0} of {1}" xml:space="preserve">
+    <value>第 {0} 頁，共 {1} 頁</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>上一頁</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>下一頁</value>
+  </data>
+  <data name="Unverified" xml:space="preserve">
+    <value>未驗證</value>
+  </data>
+  <data name="Your email address is already verified." xml:space="preserve">
+    <value>你的電子郵件地址已驗證。</value>
+  </data>
+  <data name="We couldn't send the verification email. Please try again later." xml:space="preserve">
+    <value>無法寄送驗證郵件，請稍後再試。</value>
+  </data>
 </root>

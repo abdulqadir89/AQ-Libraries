@@ -48,22 +48,25 @@ public class VerifyEmailSentModel : PageModel
         _localizer = localizer;
     }
 
-    public async Task<IActionResult> OnGetAsync(string? email)
-    {
-        if (string.IsNullOrEmpty(email))
-        {
-            return RedirectToPage("/Auth/Login");
-        }
+    // No email supplied (e.g. reached from the login page): ask for it instead of showing "we sent a link".
+    public bool PromptForEmail => string.IsNullOrWhiteSpace(Email);
 
-        Email = email;
+    public string? PrefillEmail { get; set; }
+
+    public IActionResult OnGet(string? email, string? prefill)
+    {
+        Email = email ?? string.Empty;
+        PrefillEmail = prefill;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrEmpty(Email))
+        if (string.IsNullOrWhiteSpace(Email))
         {
-            return RedirectToPage("/Auth/Login");
+            Email = string.Empty;
+            ModelState.AddModelError(nameof(Email), _localizer["Please enter your email address."]);
+            return Page();
         }
 
         var cookie = Request.Cookies[RateLimitCookieName];

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.UI.Extensions;
 using AQ.Identity.UI.Resources;
 using OpenIddict.Server.AspNetCore;
 
@@ -82,6 +83,8 @@ public class LoginModel : PageModel
 
         if (result.Succeeded)
         {
+            await _signInManager.UserManager.RecordLoginAsync(await _signInManager.UserManager.FindByEmailAsync(Email));
+
             if (!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))
             {
                 return Redirect(ReturnUrl);

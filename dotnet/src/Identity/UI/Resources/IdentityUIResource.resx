@@ -1008,4 +1008,46 @@
   <data name="Create Administrator Account" xml:space="preserve">
     <value>Create Administrator Account</value>
   </data>
+  <data name="Please enter your email address." xml:space="preserve">
+    <value>Please enter your email address.</value>
+  </data>
+  <data name="Resend verification email" xml:space="preserve">
+    <value>Resend verification email</value>
+  </data>
+  <data name="Enter your email and we'll send you a new verification link." xml:space="preserve">
+    <value>Enter your email and we'll send you a new verification link.</value>
+  </data>
+  <data name="Send verification link" xml:space="preserve">
+    <value>Send verification link</value>
+  </data>
+  <data name="Didn't get a verification email?" xml:space="preserve">
+    <value>Didn't get a verification email?</value>
+  </data>
+  <data name="Resend" xml:space="preserve">
+    <value>Resend</value>
+  </data>
+  <data name="Showing {0}–{1} of {2} users" xml:space="preserve">
+    <value>Showing {0}–{1} of {2} users</value>
+  </data>
+  <data name="Pagination" xml:space="preserve">
+    <value>Pagination</value>
+  </data>
+  <data name="Page {0} of {1}" xml:space="preserve">
+    <value>Page {0} of {1}</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Unverified" xml:space="preserve">
+    <value>Unverified</value>
+  </data>
+  <data name="Your email address is already verified." xml:space="preserve">
+    <value>Your email address is already verified.</value>
+  </data>
+  <data name="We couldn't send the verification email. Please try again later." xml:space="preserve">
+    <value>We couldn't send the verification email. Please try again later.</value>
+  </data>
 </root>

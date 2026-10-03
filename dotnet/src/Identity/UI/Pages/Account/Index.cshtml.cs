@@ -1,10 +1,17 @@
 using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using AQ.Identity.UI.Resources;
+using AQ.Utilities.Email;
 using OpenIddict.Abstractions;
 
 namespace AQ.Identity.UI.Pages.Account;
@@ -14,7 +21,12 @@ public class AccountIndexModel(
     UserManager<ApplicationUser> userManager,
     IIdentityDbContext context,
     IOpenIddictTokenManager tokenManager,
-    IOpenIddictAuthorizationManager authorizationManager) : PageModel
+    IOpenIddictAuthorizationManager authorizationManager,
+    IEmailService emailService,
+    IEmailTemplateService emailTemplateService,
+    IOptions<AqIdentityOptions> options,
+    IStringLocalizer<IdentityUIResource> localizer,
+    ILogger<AccountIndexModel> logger) : PageModel
 {
     public ApplicationUser CurrentUser { get; set; } = default!;
     public bool TwoFactorEnabled { get; set; }
@@ -22,6 +34,60 @@ public class AccountIndexModel(
     public int ConnectedAppCount { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
     public bool HasManageAccess { get; set; }
+
+    private const string RateLimitCookieName = "verify_sent_at";
+    private const int RateLimitSeconds = 60;
+
+    public async Task<IActionResult> OnPostSendVerificationAsync()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null) return RedirectToPage("/Auth/Login");
+
+        if (user.EmailConfirmed)
+        {
+            TempData["AccountSuccess"] = localizer["Your email address is already verified."].Value;
+            return RedirectToPage();
+        }
+
+        var cookie = Request.Cookies[RateLimitCookieName];
+        if (long.TryParse(cookie, out var lastSentTicks))
+        {
+            var secondsElapsed = (DateTime.UtcNow - new DateTime(lastSentTicks, DateTimeKind.Utc)).TotalSeconds;
+            if (secondsElapsed < RateLimitSeconds)
+            {
+                TempData["AccountError"] = localizer["Please wait {0} second(s) before requesting another link.", Math.Ceiling(RateLimitSeconds - secondsElapsed)].Value;
+                return RedirectToPage();
+            }
+        }
+
+        try
+        {
+            var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            var issuer = options.Value.Issuer ?? "http://localhost:5001";
+            var verificationUrl = $"{issuer}/auth/verify-email?userId={Uri.EscapeDataString(user.Id.ToString())}&code={Uri.EscapeDataString(token)}";
+
+            await emailService.SendAsync(emailTemplateService.BuildVerificationEmail(user.Email!, verificationUrl, options.Value.AppName));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send verification email for user {UserId}", user.Id);
+            TempData["AccountError"] = localizer["We couldn't send the verification email. Please try again later."].Value;
+            return RedirectToPage();
+        }
+
+        Response.Cookies.Append(
+            RateLimitCookieName,
+            DateTime.UtcNow.Ticks.ToString(),
+            new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddSeconds(RateLimitSeconds + 1)
+            });
+
+        TempData["AccountSuccess"] = localizer["We sent a verification link to {0}. Check your inbox and spam folder.", user.Email!].Value;
+        return RedirectToPage();
+    }
 
     public async Task<IActionResult> OnGetAsync()
     {

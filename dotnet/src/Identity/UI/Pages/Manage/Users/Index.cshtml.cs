@@ -18,6 +18,13 @@ public class UsersIndexModel(
 {
     public List<UserRow> Users { get; set; } = [];
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
+
+    public const int PageSize = 20;
+    public int TotalCount { get; private set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    public int FirstItem => TotalCount == 0 ? 0 : (PageNumber - 1) * PageSize + 1;
+    public int LastItem => Math.Min(PageNumber * PageSize, TotalCount);
 
     public async Task OnGetAsync()
     {
@@ -37,7 +44,7 @@ public class UsersIndexModel(
             if (holdsAdminClaim && await AdminClaimGuard.WouldRemoveLastAdminAsync(context, userId, HttpContext.RequestAborted))
             {
                 TempData["Error"] = "Cannot deactivate the last administrator.";
-                return RedirectToPage(new { Search });
+                return RedirectToPage(new { Search, PageNumber });
             }
         }
 
@@ -50,7 +57,7 @@ public class UsersIndexModel(
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"User '{user.Email}' has been {(user.IsActive ? "activated" : "deactivated")}.";
-        return RedirectToPage(new { Search });
+        return RedirectToPage(new { Search, PageNumber });
     }
 
     public async Task<IActionResult> OnPostInvalidateSessionsAsync(Guid userId)
@@ -70,7 +77,7 @@ public class UsersIndexModel(
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"All sessions for '{user.Email}' have been invalidated.";
-        return RedirectToPage(new { Search });
+        return RedirectToPage(new { Search, PageNumber });
     }
 
     private async Task LoadUsersAsync()
@@ -85,14 +92,21 @@ public class UsersIndexModel(
                 u.FullName.ToLower().Contains(lower));
         }
 
+        TotalCount = await query.CountAsync(HttpContext.RequestAborted);
+        PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
+
         Users = await query
             .OrderBy(u => u.FullName)
+            .ThenBy(u => u.Id)
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
             .Select(u => new UserRow
             {
                 Id = u.Id,
                 Email = u.Email ?? string.Empty,
                 FullName = u.FullName,
                 IsActive = u.IsActive,
+                EmailConfirmed = u.EmailConfirmed,
                 CreatedAt = u.CreatedAt,
                 LastLoginAt = u.LastLoginAt
             })
@@ -106,6 +120,7 @@ public class UserRow
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public bool EmailConfirmed { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
 }

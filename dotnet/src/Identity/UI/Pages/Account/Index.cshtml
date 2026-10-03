@@ -72,7 +72,9 @@
             }
             else
             {
-                <a href="/auth/verify-email-sent?email=@Uri.EscapeDataString(Model.CurrentUser.Email ?? "")" class="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline">@L["Verify"]</a>
+                <form method="post" asp-page-handler="SendVerification">
+                    <button type="submit" class="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline">@L["Verify"]</button>
+                </form>
             }
         </div>
 
