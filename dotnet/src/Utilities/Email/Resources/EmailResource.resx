@@ -157,4 +157,10 @@ If this was you, no action is needed. If you don't recognize this change, reset 
   <data name="SecurityAlert.NotYou" xml:space="preserve">
     <value>If this was you, no action is needed. If you don't recognize this change, reset your password immediately and review your account's security settings.</value>
   </data>
+  <data name="Layout.Reason" xml:space="preserve">
+    <value>You are receiving this email because of a request involving your email address.</value>
+  </data>
+  <data name="Layout.Help" xml:space="preserve">
+    <value>Need help? Contact us at {0}.</value>
+  </data>
 </root>

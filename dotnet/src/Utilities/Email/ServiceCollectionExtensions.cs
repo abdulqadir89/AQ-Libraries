@@ -17,6 +17,10 @@ public static class ServiceCollectionExtensions
     /// local catcher such as Mailpit). <see cref="ConsoleEmailService"/> is only used in
     /// Development when no host is configured.
     /// </para>
+    /// <para>
+    /// Email appearance (logo, colours, footer) is read from the optional <c>Branding</c>
+    /// sub-section — see <see cref="EmailBrandingOptions"/>. Without it, a neutral look is used.
+    /// </para>
     /// </summary>
     public static IServiceCollection AddAqEmail(
         this IServiceCollection services,
@@ -24,6 +28,7 @@ public static class ServiceCollectionExtensions
         IHostEnvironment env)
     {
         services.Configure<EmailOptions>(emailConfigSection);
+        services.Configure<EmailBrandingOptions>(emailConfigSection.GetSection("Branding"));
 
         var smtpConfigured = !string.IsNullOrWhiteSpace(emailConfigSection["Host"]);
 

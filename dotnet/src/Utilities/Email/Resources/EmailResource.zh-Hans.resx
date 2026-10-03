@@ -155,4 +155,10 @@
   <data name="SecurityAlert.NotYou" xml:space="preserve">
     <value>如果这是你本人的操作，则不需要采取任何行动。如果你并不认得这项变更，请立即重置密码，并检查账号的安全设置。</value>
   </data>
+  <data name="Layout.Reason" xml:space="preserve">
+    <value>你收到这封邮件，是因为有人提供了你的电子邮件地址。</value>
+  </data>
+  <data name="Layout.Help" xml:space="preserve">
+    <value>需要协助？请联络 {0}。</value>
+  </data>
 </root>
