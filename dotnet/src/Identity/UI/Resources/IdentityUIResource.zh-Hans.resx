@@ -1050,4 +1050,13 @@
   <data name="We couldn't send the verification email. Please try again later." xml:space="preserve">
     <value>无法发送验证邮件，请稍后再试。</value>
   </data>
+  <data name="Back to {0}" xml:space="preserve">
+    <value>返回 {0}</value>
+  </data>
+  <data name="Your name is managed in your {0} profile." xml:space="preserve">
+    <value>你的姓名在 {0} 个人资料中管理。</value>
+  </data>
+  <data name="Edit name" xml:space="preserve">
+    <value>编辑姓名</value>
+  </data>
 </root>

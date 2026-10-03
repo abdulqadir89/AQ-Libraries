@@ -13,4 +13,13 @@
   <data name="Users" xml:space="preserve">
     <value>用戶</value>
   </data>
+  <data name="Back to {0}" xml:space="preserve">
+    <value>返回 {0}</value>
+  </data>
+  <data name="Your name is managed in your {0} profile." xml:space="preserve">
+    <value>你嘅姓名係喺 {0} 個人資料入面管理。</value>
+  </data>
+  <data name="Edit name" xml:space="preserve">
+    <value>編輯姓名</value>
+  </data>
 </root>

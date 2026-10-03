@@ -1050,4 +1050,13 @@
   <data name="We couldn't send the verification email. Please try again later." xml:space="preserve">
     <value>We couldn't send the verification email. Please try again later.</value>
   </data>
+  <data name="Back to {0}" xml:space="preserve">
+    <value>Back to {0}</value>
+  </data>
+  <data name="Your name is managed in your {0} profile." xml:space="preserve">
+    <value>Your name is managed in your {0} profile.</value>
+  </data>
+  <data name="Edit name" xml:space="preserve">
+    <value>Edit name</value>
+  </data>
 </root>
