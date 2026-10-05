@@ -4,6 +4,7 @@ using AQ.Utilities.Results;
 using AQ.Utilities.Results.Extensions;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.AuditLog;
 
@@ -22,6 +23,8 @@ public class GetAuditLogEndpoint(IIdentityDbContext context)
     {
         Get("/manage/audit-log");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(GetAuditLogRequest req, CancellationToken ct)

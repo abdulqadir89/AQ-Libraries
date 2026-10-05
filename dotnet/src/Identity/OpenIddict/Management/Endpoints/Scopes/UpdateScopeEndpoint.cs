@@ -3,6 +3,7 @@ using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using OpenIddict.Abstractions;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
@@ -13,6 +14,8 @@ public class UpdateScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentity
     {
         Put("/manage/scopes/{Id}");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(UpdateIdentityScopeRequest req, CancellationToken ct)

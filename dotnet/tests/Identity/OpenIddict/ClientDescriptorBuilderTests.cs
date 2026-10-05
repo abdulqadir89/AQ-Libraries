@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 using FluentAssertions;
@@ -91,5 +92,39 @@ public class ClientDescriptorBuilderTests
         var descriptor = ClientDescriptorBuilder.Build(config);
 
         descriptor.ClientId.Should().Be("good-client");
+    }
+
+    [Theory]
+    [InlineData("https://web.example.com/api/auth/backchannel-logout")]
+    [InlineData("http://host.docker.internal:3000/api/auth/backchannel-logout")]
+    public void ValidateBackchannelLogoutUri_WithAllowedUri_ReturnsNull(string uri)
+    {
+        ClientDescriptorBuilder.ValidateBackchannelLogoutUri(uri).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("http://web.example.com/logout")]
+    [InlineData("https://web.example.com/logout#frag")]
+    [InlineData("msauth.com.els.mobile://logout")]
+    [InlineData("/relative/logout")]
+    public void ValidateBackchannelLogoutUri_WithDisallowedUri_ReturnsError(string uri)
+    {
+        ClientDescriptorBuilder.ValidateBackchannelLogoutUri(uri).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Build_WithBackchannelLogoutUri_StoresTheClientMetadata()
+    {
+        var descriptor = ClientDescriptorBuilder.Build(new IdentityClientConfig
+        {
+            ClientId = "web",
+            DisplayName = "Web",
+            BackchannelLogoutUri = "https://web.example.com/api/auth/backchannel-logout",
+            BackchannelLogoutSessionRequired = true,
+        });
+
+        var (uri, sessionRequired) = AQ.Identity.OpenIddict.Sessions.BackchannelLogout.ReadClientSettings(descriptor.Properties.ToImmutableDictionary());
+        uri.Should().Be("https://web.example.com/api/auth/backchannel-logout");
+        sessionRequired.Should().BeTrue();
     }
 }

@@ -3,8 +3,8 @@ using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using OpenIddict.Abstractions;
-using static OpenIddict.Abstractions.OpenIddictConstants;
+using AQ.Identity.OpenIddict.Sessions;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -15,7 +15,7 @@ public class DeleteUserSessionsRequest
 
 public class DeleteUserSessionsEndpoint(
     IIdentityDbContext context,
-    IOpenIddictTokenManager tokenManager,
+    SessionRevocationService sessionRevocation,
     UserManager<ApplicationUser> userManager)
     : Endpoint<DeleteUserSessionsRequest>
 {
@@ -23,6 +23,8 @@ public class DeleteUserSessionsEndpoint(
     {
         Delete("/manage/users/{Id}/sessions");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(DeleteUserSessionsRequest req, CancellationToken ct)
@@ -36,20 +38,8 @@ public class DeleteUserSessionsEndpoint(
             return;
         }
 
-        // Revoke all refresh tokens
-        var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), ct);
-        await foreach (var token in tokens)
-        {
-            var type = await tokenManager.GetTypeAsync(token, ct);
-            if (type != TokenTypeHints.RefreshToken) continue;
-
-            var status = await tokenManager.GetStatusAsync(token, ct);
-            if (status != Statuses.Revoked)
-            {
-                var tokenId = await tokenManager.GetIdAsync(token, ct);
-                await tokenManager.RevokeAsync(tokenId, null, null, null, ct);
-            }
-        }
+        // End every app session and token, and notify clients over back-channel logout
+        await sessionRevocation.RevokeAllAsync(user.Id.ToString(), ct);
 
         // Rotate SecurityStamp so any in-flight access tokens are also rejected
         await userManager.UpdateSecurityStampAsync(user);

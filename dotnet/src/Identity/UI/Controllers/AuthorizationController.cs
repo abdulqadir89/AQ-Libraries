@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Sessions;
 using System.Security.Claims;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using Microsoft.AspNetCore;
@@ -16,7 +17,9 @@ public class AuthorizationController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IOpenIddictApplicationManager applicationManager,
-    IOpenIddictAuthorizationManager authorizationManager) : Controller
+    IOpenIddictAuthorizationManager authorizationManager,
+    IOpenIddictScopeManager scopeManager,
+    SessionRevocationService sessionRevocation) : Controller
 {
     [HttpPost("~/connect/token")]
     public async Task<IActionResult> Exchange()
@@ -55,6 +58,9 @@ public class AuthorizationController(
                 nameType: Claims.Name,
                 roleType: Claims.Role);
 
+            // Re-derived from the current scope configuration, so sessions that predate a
+            // scope's resources (or a change to them) pick up the right audience on refresh
+            identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
             identity.SetDestinations(GetDestinations);
 
             return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -72,6 +78,7 @@ public class AuthorizationController(
 
             identity.SetClaim(Claims.Subject, await applicationManager.GetClientIdAsync(application));
             identity.SetScopes(request.GetScopes());
+            identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
             identity.SetDestinations(_ => [Destinations.AccessToken]);
 
             return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -150,9 +157,13 @@ public class AuthorizationController(
         identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
                 .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
                 .SetClaim(Claims.Name, user.FullName)
-                .SetClaim(Claims.EmailVerified, user.EmailConfirmed ? "true" : "false");
+                .SetClaim(Claims.EmailVerified, user.EmailConfirmed ? "true" : "false")
+                .SetClaim(BrowserSession.SessionIdClaim, result.Principal.FindFirst(BrowserSession.SessionIdClaim)?.Value);
 
         identity.SetScopes(request.GetScopes());
+        // The granted scopes' resources become the access token's audiences, so the token is
+        // only accepted by the APIs those scopes are for
+        identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
         identity.SetDestinations(GetDestinations);
 
         return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -164,6 +175,13 @@ public class AuthorizationController(
     {
         var request = HttpContext.GetOpenIddictServerRequest();
 
+        // End the app sessions as well as the IdP cookie: without this, every app's refresh
+        // token kept working after sign-out. OpenIddict has already validated id_token_hint;
+        // authenticating its scheme here returns the hint's principal.
+        var browser = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        var idTokenHint = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        await sessionRevocation.RevokeForSignOutAsync(browser.Principal, idTokenHint.Principal, HttpContext.RequestAborted);
+
         await signInManager.SignOutAsync();
 
         var redirectUri = request?.PostLogoutRedirectUri ?? "/";
@@ -171,6 +189,9 @@ public class AuthorizationController(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
             properties: new AuthenticationProperties { RedirectUri = redirectUri });
     }
+
+    private async Task<List<string>> ListResourcesAsync(IEnumerable<string> scopes) =>
+        await scopeManager.ListResourcesAsync([.. scopes], HttpContext.RequestAborted).ToListAsync(HttpContext.RequestAborted);
 
     private static IEnumerable<string> GetDestinations(Claim claim)
     {
@@ -192,6 +213,12 @@ public class AuthorizationController(
                 yield return Destinations.AccessToken;
                 if (claim.Subject!.HasScope(Scopes.Email))
                     yield return Destinations.IdentityToken;
+                yield break;
+
+            // OIDC session id: ties a client's tokens to the IdP browser session they came from
+            case BrowserSession.SessionIdClaim:
+                yield return Destinations.AccessToken;
+                yield return Destinations.IdentityToken;
                 yield break;
 
             case Claims.Role:

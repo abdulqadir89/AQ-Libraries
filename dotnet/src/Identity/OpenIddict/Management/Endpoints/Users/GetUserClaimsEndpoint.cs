@@ -2,6 +2,7 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -16,6 +17,8 @@ public class GetUserClaimsEndpoint(IIdentityDbContext context) : Endpoint<GetUse
     {
         Get("/manage/users/{UserId}/claims");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(GetUserClaimsRequest req, CancellationToken ct)

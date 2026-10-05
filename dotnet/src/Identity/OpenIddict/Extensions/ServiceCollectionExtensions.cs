@@ -10,6 +10,7 @@ using AQ.Identity.OpenIddict.Health;
 using AQ.Identity.OpenIddict.KeyManagement;
 using AQ.Identity.OpenIddict.Middleware;
 using AQ.Identity.OpenIddict.Seeding;
+using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -68,6 +69,7 @@ public static class ServiceCollectionExtensions
                 o.Email = options.Email;
                 o.Google = options.Google;
                 o.AdminUser = options.AdminUser;
+                o.Audiences = options.Audiences;
             })
             .ValidateOnStart();
 
@@ -76,7 +78,16 @@ public static class ServiceCollectionExtensions
             .AddDefaultTokenProviders()
             .AddClaimsPrincipalFactory<StoredClaimsPrincipalFactory<TContext>>();
 
-        services.ConfigureApplicationCookie(o => o.LoginPath = "/auth/login");
+        services.ConfigureApplicationCookie(o =>
+        {
+            o.LoginPath = "/auth/login";
+            o.Events.OnSigningIn = BrowserSession.OnSigningInAsync;
+        });
+        services.Configure<SecurityStampValidatorOptions>(o => o.OnRefreshingPrincipal = BrowserSession.OnRefreshingPrincipal);
+        services.AddScoped<SessionRevocationService>();
+        services.AddScoped<BackchannelLogoutNotifier>();
+        // Short timeout: sign-out waits for these calls, and a slow client must not hold it up
+        services.AddHttpClient(BackchannelLogoutNotifier.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(5));
 
         services.Configure<IdentityOptions>(identityOptions =>
         {
@@ -141,6 +152,18 @@ public static class ServiceCollectionExtensions
                 serverOptions.SetTokenEndpointUris("/connect/token");
                 serverOptions.SetUserInfoEndpointUris("/connect/userinfo");
                 serverOptions.SetEndSessionEndpointUris("/connect/logout");
+                // Lets clients revoke their own refresh token on sign-out (RFC 7009); handled
+                // entirely by OpenIddict, no passthrough controller.
+                serverOptions.SetRevocationEndpointUris("/connect/revocation");
+
+                // Advertise back-channel logout (OIDC Back-Channel Logout 1.0 sec 2.1); see BackchannelLogoutNotifier
+                serverOptions.AddEventHandler<OpenIddictServerEvents.HandleConfigurationRequestContext>(builder =>
+                    builder.UseInlineHandler(context =>
+                    {
+                        context.Metadata[BackchannelLogout.SupportedMetadata] = true;
+                        context.Metadata[BackchannelLogout.SessionSupportedMetadata] = true;
+                        return default;
+                    }));
 
                 serverOptions.UseAspNetCore()
                     .DisableTransportSecurityRequirement()
@@ -152,6 +175,10 @@ public static class ServiceCollectionExtensions
             {
                 validationOptions.UseLocalServer();
                 validationOptions.UseAspNetCore();
+
+                // Only accept access tokens issued for this IdP's own APIs (aud from scope resources)
+                if (options.Audiences.Count > 0)
+                    validationOptions.AddAudiences([.. options.Audiences]);
 
                 // Reject tokens for inactive users or invalidated SecurityStamp
                 validationOptions.AddEventHandler<OpenIddictValidationEvents.ValidateTokenContext>(builder =>

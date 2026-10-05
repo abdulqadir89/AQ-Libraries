@@ -2,6 +2,7 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using OpenIddict.Abstractions;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
@@ -17,6 +18,8 @@ public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentity
     {
         Delete("/manage/scopes/{Id}");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(DeleteScopeRequest req, CancellationToken ct)

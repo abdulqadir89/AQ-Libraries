@@ -26,6 +26,8 @@ public class CreateClientModel(
     [BindProperty] public List<string> SelectedScopes { get; set; } = [];
     [BindProperty] public string RedirectUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
+    [BindProperty] public string? BackchannelLogoutUri { get; set; }
+    [BindProperty] public bool BackchannelLogoutSessionRequired { get; set; }
     [BindProperty] public string ServiceAccountClaimsRaw { get; set; } = string.Empty;
 
     public List<ScopeOption> AvailableScopes { get; set; } = [];
@@ -69,6 +71,15 @@ public class CreateClientModel(
             return Page();
         }
 
+        var backchannelError = string.IsNullOrWhiteSpace(BackchannelLogoutUri)
+            ? null
+            : ClientDescriptorBuilder.ValidateBackchannelLogoutUri(BackchannelLogoutUri);
+        if (backchannelError != null)
+        {
+            ModelState.AddModelError(nameof(BackchannelLogoutUri), backchannelError);
+            return Page();
+        }
+
         var descriptor = ClientDescriptorBuilder.Build(config);
         await applicationManager.CreateAsync(descriptor, HttpContext.RequestAborted);
 
@@ -104,6 +115,8 @@ public class CreateClientModel(
             Scopes = SelectedScopes,
             RedirectUris = redirectUris,
             PostLogoutRedirectUris = postLogoutUris,
+            BackchannelLogoutUri = BackchannelLogoutUri,
+            BackchannelLogoutSessionRequired = BackchannelLogoutSessionRequired,
             ServiceAccountClaims = serviceAccountClaims
         };
     }
