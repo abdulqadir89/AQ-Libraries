@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using OpenIddict.Abstractions;
 using AQ.Identity.OpenIddict.Management.Endpoints.Users;
+using AQ.Identity.OpenIddict.Sessions;
 
 namespace AQ.Identity.UI.Pages.Account;
 
@@ -17,8 +17,7 @@ public class DeleteAccountModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IIdentityDbContext context,
-    IOpenIddictTokenManager tokenManager,
-    IOpenIddictAuthorizationManager authorizationManager,
+    SessionRevocationService sessionRevocation,
     IEnumerable<IUserDataLifecycleHook> lifecycleHooks,
     IStringLocalizer<IdentityUIResource> localizer) : PageModel
 {
@@ -82,12 +81,7 @@ public class DeleteAccountModel(
             await hook.OnBeforeUserDeletedAsync(user.Id, HttpContext.RequestAborted);
         }
 
-        await authorizationManager.RevokeBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-        var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-        await foreach (var token in tokens)
-        {
-            await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
-        }
+        await sessionRevocation.RevokeAllAsync(user.Id.ToString(), HttpContext.RequestAborted);
 
         var claims = context.StoredClaims.Where(c => c.UserId == user.Id);
         context.StoredClaims.RemoveRange(claims);

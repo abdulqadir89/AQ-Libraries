@@ -3,6 +3,7 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
+using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -26,6 +27,8 @@ public class EditClientModel(
     [BindProperty] public List<string> SelectedScopes { get; set; } = [];
     [BindProperty] public string RedirectUrisRaw { get; set; } = string.Empty;
     [BindProperty] public string PostLogoutUrisRaw { get; set; } = string.Empty;
+    [BindProperty] public string? BackchannelLogoutUri { get; set; }
+    [BindProperty] public bool BackchannelLogoutSessionRequired { get; set; }
     [BindProperty] public string ServiceAccountClaimsRaw { get; set; } = string.Empty;
 
     public List<ScopeOption> AvailableScopes { get; set; } = [];
@@ -65,6 +68,9 @@ public class EditClientModel(
         RedirectUrisRaw = string.Join(Environment.NewLine, redirectUris);
         PostLogoutUrisRaw = string.Join(Environment.NewLine, postLogoutUris);
 
+        var properties = await applicationManager.GetPropertiesAsync(existing, HttpContext.RequestAborted);
+        (BackchannelLogoutUri, BackchannelLogoutSessionRequired) = BackchannelLogout.ReadClientSettings(properties);
+
         return Page();
     }
 
@@ -89,6 +95,15 @@ public class EditClientModel(
             return Page();
         }
 
+        var backchannelError = string.IsNullOrWhiteSpace(BackchannelLogoutUri)
+            ? null
+            : ClientDescriptorBuilder.ValidateBackchannelLogoutUri(BackchannelLogoutUri);
+        if (backchannelError != null)
+        {
+            ModelState.AddModelError(nameof(BackchannelLogoutUri), backchannelError);
+            return Page();
+        }
+
         var config = new IdentityClientConfig
         {
             ClientId = ClientId,
@@ -100,6 +115,8 @@ public class EditClientModel(
             Scopes = SelectedScopes,
             RedirectUris = redirectUris,
             PostLogoutRedirectUris = ParseLines(PostLogoutUrisRaw),
+            BackchannelLogoutUri = BackchannelLogoutUri,
+            BackchannelLogoutSessionRequired = BackchannelLogoutSessionRequired,
             ServiceAccountClaims = ParseKeyValues(ServiceAccountClaimsRaw)
         };
 

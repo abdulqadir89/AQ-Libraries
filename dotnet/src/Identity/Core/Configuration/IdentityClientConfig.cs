@@ -19,6 +19,19 @@ public class IdentityClientConfig
 
     public List<string> RedirectUris { get; set; } = [];
     public List<string> PostLogoutRedirectUris { get; set; } = [];
+
+    /// <summary>
+    /// OIDC Back-Channel Logout 1.0 <c>backchannel_logout_uri</c>: the IdP POSTs a signed
+    /// logout token here when one of this client's sessions ends. Null = not notified.
+    /// </summary>
+    public string? BackchannelLogoutUri { get; set; }
+
+    /// <summary>
+    /// OIDC Back-Channel Logout 1.0 <c>backchannel_logout_session_required</c>: the client
+    /// needs the <c>sid</c> claim in logout tokens to find the session to end.
+    /// </summary>
+    public bool BackchannelLogoutSessionRequired { get; set; }
+
     public List<string> Scopes { get; set; } = [];
     /// <summary>
     /// OAuth grant type: "authorization_code" (default) or "client_credentials" (service-to-service).

@@ -15,4 +15,11 @@ public class AqIdentityOptions
     public EmailOptions Email { get; set; } = new();
     public GoogleOptions? Google { get; set; }
     public AdminUserOptions? AdminUser { get; set; }
+
+    /// <summary>
+    /// Audiences the IdP's own bearer-protected endpoints accept (OpenIddict validation
+    /// AddAudiences). Must match the resources of the scopes that grant access to them.
+    /// Empty = audience not checked.
+    /// </summary>
+    public List<string> Audiences { get; set; } = [];
 }

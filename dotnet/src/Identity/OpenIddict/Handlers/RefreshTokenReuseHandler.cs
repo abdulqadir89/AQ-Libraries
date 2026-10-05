@@ -1,5 +1,6 @@
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
@@ -23,7 +24,7 @@ namespace AQ.Identity.OpenIddict.Handlers;
 /// </summary>
 public class RefreshTokenReuseHandler(
     IOpenIddictTokenManager tokenManager,
-    IOpenIddictAuthorizationManager authorizationManager,
+    SessionRevocationService sessionRevocation,
     IIdentityDbContext context,
     ILogger<RefreshTokenReuseHandler> logger)
     : IOpenIddictServerHandler<OpenIddictServerEvents.ProcessAuthenticationContext>
@@ -44,14 +45,13 @@ public class RefreshTokenReuseHandler(
         if (status != Statuses.Redeemed) return;
 
         var authorizationId = await tokenManager.GetAuthorizationIdAsync(token, ctx.CancellationToken);
-        if (!string.IsNullOrEmpty(authorizationId))
+        var subject = await tokenManager.GetSubjectAsync(token, ctx.CancellationToken);
+        if (!string.IsNullOrEmpty(authorizationId) && !string.IsNullOrEmpty(subject))
         {
-            var authorization = await authorizationManager.FindByIdAsync(authorizationId, ctx.CancellationToken);
-            if (authorization != null)
-                await authorizationManager.TryRevokeAsync(authorization, ctx.CancellationToken);
+            // Also notifies the client over back-channel logout
+            await sessionRevocation.RevokeAuthorizationAsync(subject, authorizationId, ctx.CancellationToken);
         }
 
-        var subject = await tokenManager.GetSubjectAsync(token, ctx.CancellationToken);
         var userId = Guid.TryParse(subject, out var parsed) ? parsed : (Guid?)null;
 
         logger.LogWarning(

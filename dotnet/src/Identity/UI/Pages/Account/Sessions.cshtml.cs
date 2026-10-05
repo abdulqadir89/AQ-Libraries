@@ -1,4 +1,5 @@
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Sessions;
 using AQ.Identity.UI.Resources;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -17,7 +18,8 @@ public class SessionsModel(
     IOpenIddictTokenManager tokenManager,
     IOpenIddictAuthorizationManager authorizationManager,
     IOpenIddictApplicationManager applicationManager,
-    IStringLocalizer<IdentityUIResource> localizer) : PageModel
+    IStringLocalizer<IdentityUIResource> localizer,
+    SessionRevocationService sessionRevocation) : PageModel
 {
     public List<SessionRow> Sessions { get; set; } = [];
 
@@ -97,13 +99,7 @@ public class SessionsModel(
         var user = await userManager.GetUserAsync(User);
         if (user == null) return RedirectToPage("/Auth/Login");
 
-        var authorization = await authorizationManager.FindByIdAsync(authorizationId, HttpContext.RequestAborted);
-        if (authorization != null)
-        {
-            var subject = await authorizationManager.GetSubjectAsync(authorization, HttpContext.RequestAborted);
-            if (subject == user.Id.ToString())
-                await RevokeAuthorizationAndTokensAsync(authorizationId, user.Id.ToString());
-        }
+        await sessionRevocation.RevokeAuthorizationAsync(user.Id.ToString(), authorizationId, HttpContext.RequestAborted);
 
         TempData["AccountSuccess"] = localizer["Session has been revoked."].Value;
         return RedirectToPage();
@@ -117,34 +113,12 @@ public class SessionsModel(
         // Rotate security stamp so all existing tokens fail validation
         await userManager.UpdateSecurityStampAsync(user);
 
-        await authorizationManager.RevokeBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-
-        var tokens = tokenManager.FindBySubjectAsync(user.Id.ToString(), HttpContext.RequestAborted);
-        await foreach (var token in tokens)
-            await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
+        await sessionRevocation.RevokeAllAsync(user.Id.ToString(), HttpContext.RequestAborted);
 
         // Sign out current session and redirect to login
         await signInManager.SignOutAsync();
 
         return RedirectToPage("/Auth/Login");
-    }
-
-    private async Task RevokeAuthorizationAndTokensAsync(string authorizationId, string subject)
-    {
-        var authorization = await authorizationManager.FindByIdAsync(authorizationId, HttpContext.RequestAborted);
-        if (authorization != null)
-            await authorizationManager.TryRevokeAsync(authorization, HttpContext.RequestAborted);
-
-        // Belt-and-braces: also revoke every token linked to this authorization
-        // directly, rather than relying solely on the authorization's revoked status
-        // being honored at validation time.
-        var tokens = tokenManager.FindBySubjectAsync(subject, HttpContext.RequestAborted);
-        await foreach (var token in tokens)
-        {
-            var tokenAuthId = await tokenManager.GetAuthorizationIdAsync(token, HttpContext.RequestAborted);
-            if (tokenAuthId == authorizationId)
-                await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
-        }
     }
 }
 

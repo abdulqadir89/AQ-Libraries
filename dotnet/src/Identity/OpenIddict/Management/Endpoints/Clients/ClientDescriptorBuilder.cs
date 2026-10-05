@@ -1,4 +1,6 @@
+using System.Text.Json;
 using AQ.Identity.Core.Configuration;
+using AQ.Identity.OpenIddict.Sessions;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -34,6 +36,26 @@ public static class ClientDescriptorBuilder
         return null;
     }
 
+    /// <summary>
+    /// OIDC Back-Channel Logout 1.0 sec 2.2: an absolute http(s) URL without a fragment. The IdP
+    /// calls it server-side, so custom app schemes don't apply; HTTP is allowed only for the same
+    /// loopback/dev hosts as redirect URIs.
+    /// </summary>
+    public static string? ValidateBackchannelLogoutUri(string raw)
+    {
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            return $"'{raw}' is not an absolute http(s) URL.";
+        }
+
+        if (!string.IsNullOrEmpty(uri.Fragment))
+        {
+            return $"'{raw}' must not contain a fragment.";
+        }
+
+        return ValidateRedirectUri(raw);
+    }
+
     public static string? ValidateRedirectUris(IEnumerable<string> uris) =>
         uris.Select(ValidateRedirectUri).FirstOrDefault(error => error != null);
 
@@ -52,6 +74,15 @@ public static class ClientDescriptorBuilder
             if (error != null)
             {
                 throw new ArgumentException($"Invalid URI for client '{config.ClientId}': {error}");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.BackchannelLogoutUri))
+        {
+            var error = ValidateBackchannelLogoutUri(config.BackchannelLogoutUri);
+            if (error != null)
+            {
+                throw new ArgumentException($"Invalid back-channel logout URI for client '{config.ClientId}': {error}");
             }
         }
 
@@ -85,6 +116,12 @@ public static class ClientDescriptorBuilder
         foreach (var logoutUri in config.PostLogoutRedirectUris)
         {
             descriptor.PostLogoutRedirectUris.Add(new Uri(logoutUri, UriKind.Absolute));
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.BackchannelLogoutUri))
+        {
+            descriptor.Properties[BackchannelLogout.UriProperty] = JsonSerializer.SerializeToElement(config.BackchannelLogoutUri);
+            descriptor.Properties[BackchannelLogout.SessionRequiredProperty] = JsonSerializer.SerializeToElement(config.BackchannelLogoutSessionRequired);
         }
 
         foreach (var scope in config.Scopes)

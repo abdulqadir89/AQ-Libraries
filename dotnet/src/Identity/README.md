@@ -23,6 +23,30 @@ tenant-resolution middleware — a materially larger change. Don't build this sp
 only if a second, genuinely separate tenant needs to share one IdP deployment rather than running
 its own.
 
+## Sessions and sign-out
+
+An app session is one permanent `OpenIddictAuthorization` (created per authorization-code login by
+`ClaimsEnrichmentHandler`) plus its tokens. Each IdP sign-in gets a browser session id (`sid`,
+`OpenIddict/Sessions/BrowserSession.cs`): kept in the Identity cookie, copied into access/id tokens
+by `/connect/authorize`, and stored in the authorization's `Properties`. `/connect/logout` and
+`/auth/logout` call `SessionRevocationService.RevokeForSignOutAsync`, which revokes every app session
+with the cookie's `sid` (plus the one named by `id_token_hint`) — single sign-out for that browser,
+other devices untouched. The Sessions page, account deletion, the admin revoke API and refresh-token
+reuse detection use the same service. Clients can also revoke their own refresh token at
+`/connect/revocation`.
+
+**Back-channel logout** (OIDC Back-Channel Logout 1.0, `Sessions/BackchannelLogout.cs`): OpenIddict 7
+has no native support (planned for 8.0, openiddict-core#2175), so it is implemented to the spec on
+top of OpenIddict's own signing credentials. A client opts in with `BackchannelLogoutUri` (+
+`BackchannelLogoutSessionRequired`) in `IdentityClientConfig` or the Manage Clients UI; whenever one
+of its sessions is revoked, the IdP POSTs a `logout+jwt` logout token (`iss`, `aud`=client_id, `sub`,
+`sid`, `events`, `jti`) with a 5s timeout. Discovery advertises `backchannel_logout_supported` and
+`backchannel_logout_session_supported`.
+
+**Audiences**: `/connect/authorize` and `/connect/token` set `SetResources(scopeManager.ListResourcesAsync(scopes))`,
+so an access token's `aud` is the resources of its scopes (the app seeds them per scope). APIs must
+validate `aud`; the IdP's own bearer endpoints accept `AqIdentityOptions.Audiences`.
+
 ## Localization
 
 `UI` ships localized login/register/MFA/account/apps pages (not `Pages/Manage/**`, which stays

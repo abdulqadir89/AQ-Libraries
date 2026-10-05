@@ -1,9 +1,9 @@
 using AQ.Identity.Core.Abstractions;
+using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
-using System.Collections.Immutable;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -86,13 +86,24 @@ public class ClaimsEnrichmentHandler(
             if (application != null)
             {
                 var applicationId = await applicationManager.GetIdAsync(application, ctx.CancellationToken);
-                var authorization = await authorizationManager.CreateAsync(
-                    principal: principal,
-                    subject: userId.ToString(),
-                    client: applicationId!,
-                    type: OpenIddictConstants.AuthorizationTypes.Permanent,
-                    scopes: grantedScopes.ToImmutableArray(),
-                    cancellationToken: ctx.CancellationToken);
+                var descriptor = new OpenIddictAuthorizationDescriptor
+                {
+                    ApplicationId = applicationId,
+                    CreationDate = DateTimeOffset.UtcNow,
+                    Principal = principal,
+                    Status = OpenIddictConstants.Statuses.Valid,
+                    Subject = userId.ToString(),
+                    Type = OpenIddictConstants.AuthorizationTypes.Permanent,
+                };
+                descriptor.Scopes.UnionWith(grantedScopes);
+
+                // Tie this app session to the IdP browser session it came from, so signing
+                // out of that browser session ends it too (SessionRevocationService).
+                var sessionId = principal.GetClaim(BrowserSession.SessionIdClaim);
+                if (!string.IsNullOrEmpty(sessionId))
+                    descriptor.Properties[BrowserSession.SessionIdClaim] = JsonSerializer.SerializeToElement(sessionId);
+
+                var authorization = await authorizationManager.CreateAsync(descriptor, ctx.CancellationToken);
 
                 var authorizationId = await authorizationManager.GetIdAsync(authorization, ctx.CancellationToken);
 
