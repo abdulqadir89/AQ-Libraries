@@ -2,6 +2,7 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -17,6 +18,8 @@ public class DeleteUserClaimTypeEndpoint(IIdentityDbContext context) : Endpoint<
     {
         Delete("/manage/users/{UserId}/claims/{ClaimType}");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(DeleteUserClaimTypeRequest req, CancellationToken ct)

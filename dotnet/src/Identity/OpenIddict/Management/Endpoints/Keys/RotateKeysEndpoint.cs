@@ -2,6 +2,7 @@ using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.KeyManagement;
 using FastEndpoints;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Keys;
 
@@ -12,6 +13,8 @@ public class RotateKeysEndpoint(SigningKeyManager signingKeyManager, IIdentityDb
     {
         Post("/manage/keys/rotate");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

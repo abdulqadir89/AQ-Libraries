@@ -47,6 +47,11 @@ of its sessions is revoked, the IdP POSTs a `logout+jwt` logout token (`iss`, `a
 so an access token's `aud` is the resources of its scopes (the app seeds them per scope). APIs must
 validate `aud`; the IdP's own bearer endpoints accept `AqIdentityOptions.Audiences`.
 
+**Management API** (`OpenIddict/Management/Endpoints`, under the host's FastEndpoints prefix, e.g.
+`/api/manage/*`): machine-to-machine, so every endpoint sets `AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)`
+— bearer tokens with the `manage_api` claim; no token is a 401, never a login redirect. The
+Razor admin UI under `/manage/*` stays cookie-based with the same `ManageApi` policy.
+
 ## Localization
 
 `UI` ships localized login/register/MFA/account/apps pages (not `Pages/Manage/**`, which stays

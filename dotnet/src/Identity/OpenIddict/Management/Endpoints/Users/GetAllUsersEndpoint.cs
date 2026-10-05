@@ -4,6 +4,7 @@ using AQ.Utilities.Results;
 using AQ.Utilities.Results.Extensions;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -18,6 +19,8 @@ public class GetAllUsersEndpoint(IIdentityDbContext context) : Endpoint<GetAllUs
     {
         Get("/manage/users");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(GetAllUsersRequest req, CancellationToken ct)

@@ -2,6 +2,7 @@ using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 
@@ -12,6 +13,8 @@ public class GetAllClientsEndpoint(IOpenIddictApplicationManager applicationMana
     {
         Get("/manage/clients");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -4,6 +4,7 @@ using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
 using OpenIddict.Abstractions;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 
@@ -21,6 +22,8 @@ public class ResetClientSecretEndpoint(
     {
         Post("/manage/clients/{ClientId}/reset-secret");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

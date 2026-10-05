@@ -4,6 +4,7 @@ using FastEndpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using AQ.Identity.OpenIddict.Sessions;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Users;
 
@@ -22,6 +23,8 @@ public class DeleteUserSessionsEndpoint(
     {
         Delete("/manage/users/{Id}/sessions");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(DeleteUserSessionsRequest req, CancellationToken ct)

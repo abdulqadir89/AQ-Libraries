@@ -2,6 +2,7 @@ using AQ.Identity.OpenIddict.Management.Dto;
 using FastEndpoints;
 using OpenIddict.Abstractions;
 using System.Text.Json;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AQ.Identity.OpenIddict.Management.Endpoints.Scopes;
 
@@ -11,6 +12,8 @@ public class GetAllScopesEndpoint(IOpenIddictScopeManager scopeManager) : Endpoi
     {
         Get("/manage/scopes");
         Policies("ManageApi");
+        // Machine API: bearer tokens (OpenIddict validation), never the browser cookie
+        AuthSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
     }
 
     public override async Task HandleAsync(CancellationToken ct)
