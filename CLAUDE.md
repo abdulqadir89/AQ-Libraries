@@ -84,8 +84,10 @@ The library suite is organized around DDD principles:
    - Depends on AQ.Utilities.Results and AQ.Utilities.Sort
    - Provides patterns for separating read/write operations
 
-4. **AQ.Extensions** - Utility extension methods
-   - Integrates with Microsoft.Extensions.Logging for consistency
+4. **AQ.EntityFramework** - EF Core integration (versioning service, save-pipeline interceptor, hierarchy service, verification mapping)
+   - `AQ.EntityFramework.SqlServer` / `AQ.EntityFramework.PostgreSql` hold the provider-specific search dialects
+
+   **AQ.Generators** - Roslyn incremental source generator (netstandard2.0, referenced as an analyzer) that emits snapshot/version data writers, `{Class}Snapshot`/`{Class}Version` classes and `AQGeneratedRegistrations`
 
 5. **AQ.Events*** - Event-driven architecture support
    - **AQ.Events.Domain** - Domain event interfaces and types
@@ -101,6 +103,7 @@ The `Utilities` folder contains cross-cutting libraries:
 - **AQ.Utilities.Search** - Search query utilities
 - **AQ.Utilities.Sort** - Sorting/ordering utilities
 - **AQ.Utilities.Results** - Result pattern for error handling (used by CQRS)
+- **AQ.Utilities** also hosts `Merging` (`IMergeable`, `MergeOperations`), `Verification` (`VerificationState`, `[Verifiable]`), `Snapshots` (`[Snapshottable]`/`[Snapshot]`, `EntitySnapshot`, `SnapshotRegistry`), `Versioning` (`[Versionable]`/`[Versioned]`, `EntityVersion<TUser>`, `VersionRegistry`) and `EntityData` (`EntityDataRegistry`)
 
 ### State Machine System
 

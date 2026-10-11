@@ -12,7 +12,10 @@ dotnet/
     Entities/                # AQ.Entities       — Base Entity<TId> aggregate root
     ValueObjects/            # AQ.ValueObjects   — Immutable value object primitives
     CQRS/                    # AQ.CQRS           — Command/Query patterns
-    Extensions/              # AQ.Extensions     — Utility extension methods
+    Generators/              # AQ.Generators     — Roslyn source generator (analyzer; netstandard2.0)
+    EntityFramework/         # AQ.EntityFramework — Versioning service, save-pipeline interceptor, hierarchy service
+      SqlServer/Search/      # AQ.EntityFramework.SqlServer  — SQL Server search dialect (Fuzzy/Phonetic/FullText)
+      PostgreSql/Search/     # AQ.EntityFramework.PostgreSql — PostgreSQL search dialect (Fuzzy/Phonetic/FullText)
     Events/
       Domain/                # AQ.Events.Domain       — Domain event interfaces
       Integration/           # AQ.Events.Integration  — Integration event handling
@@ -24,15 +27,20 @@ dotnet/
     Utilities/
       Filter/                # AQ.Utilities.Filter        — Query filtering
       Search/                # AQ.Utilities.Search        — Search core (provider-agnostic; see Search/README.md)
-      SqlServer/Search/      # AQ.Utilities.SqlServer     — SQL Server search dialect (Fuzzy/Phonetic/FullText)
-      PostgreSql/Search/     # AQ.Utilities.PostgreSql    — PostgreSQL search dialect (Fuzzy/Phonetic/FullText)
       Sort/                  # AQ.Utilities.Sort          — Sorting/ordering
       Results/               # AQ.Utilities.Results       — Result pattern
       Email/                 # AQ.Utilities.Email         — Email sending + templating (localized, see below)
+      Merging/               # IMergeable, MergeOperations, MergeableQueryExtensions
+      Verification/          # VerificationState, [Verifiable], IVerifiable
+      Snapshots/             # [Snapshottable]/[Snapshot], EntitySnapshot, SnapshotRegistry
+      Versioning/            # [Versionable]/[Versioned], EntityVersion<TUser>, VersionRegistry
+      EntityData/            # EntityDataRegistry (generated data writers)
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
   tests/
     StateMachine/Services/   # AQ.StateMachine.Services.Tests
     Utilities/               # AQ.Utilities.Tests — covers core + both search providers
+    Generators/              # AQ.Generators.Tests — generator output and diagnostics
+    EntityFramework/         # AQ.EntityFramework.Tests — versioning and save pipeline (SQLite in-memory)
 ```
 
 ## Commands
