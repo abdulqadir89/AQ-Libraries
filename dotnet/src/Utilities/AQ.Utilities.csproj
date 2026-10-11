@@ -10,9 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Entities\AQ.Entities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="SqlServer\**\*.cs" />
     <Compile Remove="PostgreSql\**\*.cs" />
     <Compile Remove="Email\**\*.cs" />
   </ItemGroup>
 
 </Project>
+
