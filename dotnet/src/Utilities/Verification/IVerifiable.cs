@@ -1,6 +1,6 @@
 using AQ.Utilities.Verification;
 
-namespace AQ.Abstractions;
+namespace AQ.Utilities.Verification;
 
 public interface IVerifiable
 {

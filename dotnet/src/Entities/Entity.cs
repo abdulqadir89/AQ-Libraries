@@ -1,4 +1,3 @@
-using AQ.Abstractions;
 using AQ.Events.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
 

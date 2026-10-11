@@ -1,4 +1,4 @@
-namespace AQ.Abstractions;
+namespace AQ.Utilities.Verification;
 
 public class VerificationEntry
 {

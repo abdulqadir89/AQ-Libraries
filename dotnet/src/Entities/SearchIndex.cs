@@ -1,5 +1,4 @@
-﻿using AQ.Abstractions;
-
+﻿
 namespace AQ.Entities;
 
 public class SearchIndex : IEntity

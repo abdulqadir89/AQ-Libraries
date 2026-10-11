@@ -1,4 +1,4 @@
-using AQ.Abstractions;
+using AQ.Entities;
 using AQ.Utilities.Verification;
 using FluentAssertions;
 using Xunit;

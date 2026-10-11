@@ -1,4 +1,4 @@
-using AQ.Abstractions;
+using AQ.Entities;
 using AQ.Utilities.Merging;
 using FluentAssertions;
 using Xunit;

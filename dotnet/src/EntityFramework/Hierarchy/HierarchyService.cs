@@ -1,4 +1,4 @@
-using AQ.Abstractions;
+using AQ.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AQ.EntityFramework.Hierarchy;

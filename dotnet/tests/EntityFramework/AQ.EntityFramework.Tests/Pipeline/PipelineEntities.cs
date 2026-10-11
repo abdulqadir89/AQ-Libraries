@@ -1,4 +1,3 @@
-using AQ.Abstractions;
 using AQ.Entities;
 using AQ.Events.Domain;
 using AQ.Utilities.References;

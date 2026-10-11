@@ -1,4 +1,4 @@
-using AQ.Abstractions;
+using AQ.Entities;
 using AQ.EntityFramework.Extensions;
 using AQ.Utilities.Verification;
 using Microsoft.EntityFrameworkCore;

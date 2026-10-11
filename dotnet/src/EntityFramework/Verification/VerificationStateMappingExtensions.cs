@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using System.Text.Json;
-using AQ.Abstractions;
+using AQ.Entities;
 using AQ.Utilities.Verification;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

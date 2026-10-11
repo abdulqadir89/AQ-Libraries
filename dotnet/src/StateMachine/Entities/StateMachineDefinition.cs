@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using AQ.Abstractions;
 using AQ.Entities;
 
 namespace AQ.StateMachine.Entities;

@@ -1,4 +1,4 @@
-namespace AQ.Abstractions;
+namespace AQ.Entities;
 
 public interface ITimestamped
 {

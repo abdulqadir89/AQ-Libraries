@@ -1,3 +1,3 @@
-namespace AQ.Abstractions;
+namespace AQ.Entities;
 
 public interface IHasAttachments : IEntity;
