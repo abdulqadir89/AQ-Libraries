@@ -1,5 +1,5 @@
 using AQ.Utilities.Search;
-using AQ.Utilities.Search.SqlServer;
+using AQ.EntityFramework.Search.SqlServer;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

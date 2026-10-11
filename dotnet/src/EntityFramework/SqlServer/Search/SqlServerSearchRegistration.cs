@@ -1,6 +1,7 @@
+using AQ.Utilities.Search;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AQ.Utilities.Search.SqlServer;
+namespace AQ.EntityFramework.Search.SqlServer;
 
 public static class SqlServerSearchRegistration
 {

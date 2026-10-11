@@ -1,8 +1,9 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using AQ.Utilities.Search;
 using Microsoft.EntityFrameworkCore;
 
-namespace AQ.Utilities.Search.SqlServer;
+namespace AQ.EntityFramework.Search.SqlServer;
 
 /// <summary>
 /// Translates Fuzzy/Phonetic/FullText search conditions into SQL Server built-in

@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="SqlServer\**\*.cs" />
+    <Compile Remove="PostgreSql\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Entities\AQ.Entities.csproj" />
     <ProjectReference Include="..\Events\Outbox\AQ.Events.Outbox.csproj" />
     <ProjectReference Include="..\Utilities\AQ.Utilities.csproj" />

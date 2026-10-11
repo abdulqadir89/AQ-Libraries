@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace AQ.Utilities.Search.SqlServer;
+namespace AQ.EntityFramework.Search.SqlServer;
 
 /// <summary>
 /// Registers the SQL Server built-in functions used by <see cref="SqlServerSearchDialect"/>

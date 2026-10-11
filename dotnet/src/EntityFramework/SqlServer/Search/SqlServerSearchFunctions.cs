@@ -1,4 +1,4 @@
-namespace AQ.Utilities.Search.SqlServer;
+namespace AQ.EntityFramework.Search.SqlServer;
 
 /// <summary>
 /// CLR stubs mapped to built-in SQL Server T-SQL functions via

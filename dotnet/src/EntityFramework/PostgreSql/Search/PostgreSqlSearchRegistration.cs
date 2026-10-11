@@ -1,6 +1,7 @@
+using AQ.Utilities.Search;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AQ.Utilities.Search.PostgreSql;
+namespace AQ.EntityFramework.Search.PostgreSql;
 
 public static class PostgreSqlSearchRegistration
 {

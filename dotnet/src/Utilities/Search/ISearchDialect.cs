@@ -20,7 +20,7 @@ public interface ISearchDialect
 
 /// <summary>
 /// Ambient dialect registration. Set once at startup by a provider package
-/// (AQ.Utilities.SqlServer / AQ.Utilities.PostgreSql).
+/// (AQ.EntityFramework.SqlServer / AQ.EntityFramework.PostgreSql).
 /// </summary>
 public static class SearchDialect
 {

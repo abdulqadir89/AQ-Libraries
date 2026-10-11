@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace AQ.Utilities.Search.PostgreSql;
+namespace AQ.EntityFramework.Search.PostgreSql;
 
 /// <summary>
 /// Registers the PostgreSQL extensions required by <see cref="PostgreSqlSearchDialect"/>.

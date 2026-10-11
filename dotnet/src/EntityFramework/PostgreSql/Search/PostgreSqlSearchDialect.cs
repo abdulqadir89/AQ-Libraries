@@ -1,9 +1,10 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using AQ.Utilities.Search;
 using Microsoft.EntityFrameworkCore;
 using NpgsqlTypes;
 
-namespace AQ.Utilities.Search.PostgreSql;
+namespace AQ.EntityFramework.Search.PostgreSql;
 
 /// <summary>
 /// Translates Fuzzy/Phonetic/FullText search conditions into PostgreSQL functions
