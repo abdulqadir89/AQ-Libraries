@@ -44,6 +44,11 @@ namespace AQ.Generators
             context.RegisterSourceOutput(input, static (spc, model) => Execute(spc, model));
         }
 
+        private static string HintName(ClassModel model)
+        {
+            return model.FullName.Replace("global::", string.Empty).Replace('<', '_').Replace('>', '_');
+        }
+
         private static void Execute(SourceProductionContext context, GenerationInput input)
         {
             foreach (var diagnostic in input.SnapshotMembers.SelectMany(m => m.Diagnostics)
@@ -60,6 +65,11 @@ namespace AQ.Generators
             }
 
             context.AddSource("AQGeneratedRegistrations.g.cs", SourceText.From(Emitter.EmitRegistrations(input), Encoding.UTF8));
+
+            foreach (var model in input.Versionable.Where(c => c.UserType is not null))
+            {
+                context.AddSource(HintName(model) + ".Version.g.cs", SourceText.From(Emitter.EmitVersionClass(model), Encoding.UTF8));
+            }
         }
     }
 }
