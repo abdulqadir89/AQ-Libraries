@@ -1,4 +1,6 @@
-namespace AQ.Entities;
+using AQ.Entities;
+
+namespace AQ.Utilities.Snapshots;
 
 public abstract class EntitySnapshot : Entity
 {

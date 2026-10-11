@@ -86,6 +86,10 @@ namespace AQ.Generators
             {
                 statements.Add("d[\"" + key + "\"] = " + access + op + "ToString();");
             }
+            else if (!enumAsNumber && IsEnumerableOfEnum(type))
+            {
+                statements.Add("d[\"" + key + "\"] = " + access + " == null ? null : global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(" + access + ", static x => x.ToString()));");
+            }
             else if (underlying.TypeKind == TypeKind.Enum && !enumAsNumber)
             {
                 statements.Add("d[\"" + key + "\"] = " + access + op + "ToString();");
@@ -158,6 +162,23 @@ namespace AQ.Generators
                 "AQGEN003",
                 "[" + attributeName.Replace("Attribute", string.Empty) + "] " + option + " member '" + memberName + "' does not exist on type '" + type.ToDisplayString() + "' (property '" + property.Name + "').",
                 reference);
+        }
+
+        private static bool IsEnumerableOfEnum(ITypeSymbol type)
+        {
+            if (type.SpecialType == SpecialType.System_String)
+            {
+                return false;
+            }
+
+            if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+            {
+                return named.TypeArguments[0].TypeKind == TypeKind.Enum;
+            }
+
+            return type.AllInterfaces.Any(i =>
+                i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+                && i.TypeArguments[0].TypeKind == TypeKind.Enum);
         }
 
         private static bool HasMember(ITypeSymbol type, string name)

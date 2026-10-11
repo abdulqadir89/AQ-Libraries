@@ -66,6 +66,11 @@ namespace AQ.Generators
 
             context.AddSource("AQGeneratedRegistrations.g.cs", SourceText.From(Emitter.EmitRegistrations(input), Encoding.UTF8));
 
+            foreach (var model in input.Snapshottable)
+            {
+                context.AddSource(HintName(model) + ".Snapshot.g.cs", SourceText.From(Emitter.EmitSnapshotClass(model), Encoding.UTF8));
+            }
+
             foreach (var model in input.Versionable.Where(c => c.UserType is not null))
             {
                 context.AddSource(HintName(model) + ".Version.g.cs", SourceText.From(Emitter.EmitVersionClass(model), Encoding.UTF8));
