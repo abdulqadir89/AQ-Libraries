@@ -1,8 +1,8 @@
-﻿using AQ.Abstractions;
+using AQ.Abstractions;
 
-namespace AQ.Extensions;
+namespace AQ.Utilities.Merging;
 
-public static class MergeableExtensions
+public static class MergeableQueryExtensions
 {
     /// <summary>
     /// Get all entities including merged ones that refer to this primary entity.
