@@ -25,7 +25,7 @@ internal static class LifecycleStep
                 entry.Entity.OnRemove();
             }
 
-            if (entry.Entity is IHasActiveFlag effectiveEntity)
+            if (entry.State is EntityState.Added or EntityState.Modified && entry.Entity is IHasActiveFlag effectiveEntity)
             {
                 effectiveEntity.EvaluateIsActive();
             }

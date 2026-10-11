@@ -23,6 +23,9 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         AQGeneratedRegistrations.EnsureRegistered();
         modelBuilder.Entity<Ticket>(builder =>
         {
+            builder.Ignore(t => t.EvaluationCount);
+            builder.Ignore(t => t.AddCalls);
+            builder.Ignore(t => t.UpdateCalls);
             builder.OwnsOne(t => t.Price);
             builder.HasVerificationState(t => t.Verification);
         });

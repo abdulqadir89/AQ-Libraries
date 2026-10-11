@@ -122,6 +122,7 @@ public class SavePipelineTests : IDisposable
         ticket.Verification.Add(Guid.NewGuid());
         await context.SaveChangesAsync();
 
+        ticket.SetNotes("owner is modified through a non-verifiable property");
         ticket.Price!.Amount = 2;
         await context.SaveChangesAsync();
 
@@ -196,7 +197,7 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
-    public async Task Lifecycle_CallsOnUpdateAndEvaluatesActiveFlagOnAllTrackedEntities()
+    public async Task Lifecycle_CallsOnUpdateAndEvaluatesActiveFlagOnlyOnAddedAndModifiedEntities()
     {
         using var context = CreateContext();
         var changed = Ticket.Create("Changed");
@@ -210,7 +211,8 @@ public class SavePipelineTests : IDisposable
 
         changed.UpdateCalls.Should().Be(1);
         untouched.UpdateCalls.Should().Be(0);
-        untouched.EvaluationCount.Should().Be(evaluationsBefore + 1);
+        untouched.EvaluationCount.Should().Be(evaluationsBefore);
+        changed.EvaluationCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
