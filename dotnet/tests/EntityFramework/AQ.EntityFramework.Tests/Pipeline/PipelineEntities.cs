@@ -36,9 +36,7 @@ public class Ticket : Entity<TestUser>, IVerifiable, IHasActiveFlag
     public int UpdateCalls { get; private set; }
     public bool RaiseOnAdd { get; set; }
 
-    public int VerificationCount { get; private set; }
-    public List<VerificationEntry> CurrentVerifications { get; private set; } = [];
-    IReadOnlyList<VerificationEntry> IVerifiable.CurrentVerifications => CurrentVerifications;
+    public VerificationState Verification { get; private set; } = new();
 
     public static Ticket Create(string title, string notes = "", string reference = "") =>
         new() { Title = title, Notes = notes, Reference = reference };
@@ -63,18 +61,4 @@ public class Ticket : Entity<TestUser>, IVerifiable, IHasActiveFlag
     }
 
     public override void OnUpdate() => UpdateCalls++;
-
-    public void ResetVerification()
-    {
-        VerificationCount = 0;
-        CurrentVerifications = [];
-    }
-
-    public void AddVerification(Guid verifiedByUserId)
-    {
-        VerificationCount++;
-        CurrentVerifications.Add(new VerificationEntry { VerifiedByUserId = verifiedByUserId, VerifiedAt = DateTimeOffset.UtcNow });
-    }
-
-    public bool HasBeenVerifiedBy(Guid userId) => CurrentVerifications.Any(v => v.VerifiedByUserId == userId);
 }

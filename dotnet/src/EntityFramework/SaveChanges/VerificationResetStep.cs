@@ -22,7 +22,7 @@ internal static class VerificationResetStep
 
             if (changed)
             {
-                ((IVerifiable)entry.Entity).ResetVerification();
+                ((IVerifiable)entry.Entity).Verification.Reset();
             }
         }
     }

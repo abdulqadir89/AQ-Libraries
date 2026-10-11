@@ -72,18 +72,43 @@ public class SavePipelineTests : IDisposable
         var ticket = Ticket.Create("Verified");
         context.Add(ticket);
         await context.SaveChangesAsync();
-        ticket.AddVerification(Guid.NewGuid());
+        ticket.Verification.Add(Guid.NewGuid());
         await context.SaveChangesAsync();
-        ticket.VerificationCount.Should().Be(1);
+        ticket.Verification.Count.Should().Be(1);
 
         ticket.SetNotes("not verifiable");
         await context.SaveChangesAsync();
-        ticket.VerificationCount.Should().Be(1);
+        ticket.Verification.Count.Should().Be(1);
 
         ticket.Rename("verifiable change");
         await context.SaveChangesAsync();
-        ticket.VerificationCount.Should().Be(0);
-        ticket.CurrentVerifications.Should().BeEmpty();
+        ticket.Verification.Count.Should().Be(0);
+        ticket.Verification.Entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task VerificationState_PersistsCountAndEntries_AndTouchesOwnerAudit()
+    {
+        var verifier = Guid.NewGuid();
+        Guid ticketId;
+        using (var context = CreateContext())
+        {
+            var ticket = Ticket.Create("Persisted");
+            context.Add(ticket);
+            await context.SaveChangesAsync();
+            ticketId = ticket.Id;
+            ticket.Verification.Add(verifier);
+            await context.SaveChangesAsync();
+            ticket.Revision.Should().Be(1);
+            ticket.UpdatedById.Should().Be(_userId);
+        }
+
+        using var reloaded = _database.CreateContext(All, _userId);
+        var loaded = await reloaded.Tickets.SingleAsync(t => t.Id == ticketId);
+
+        loaded.Verification.Count.Should().Be(1);
+        loaded.Verification.HasBeenVerifiedBy(verifier).Should().BeTrue();
+        loaded.Revision.Should().Be(1);
     }
 
     [Fact]
@@ -94,13 +119,13 @@ public class SavePipelineTests : IDisposable
         ticket.SetPrice(new Price { Amount = 1, Currency = "USD" });
         context.Add(ticket);
         await context.SaveChangesAsync();
-        ticket.AddVerification(Guid.NewGuid());
+        ticket.Verification.Add(Guid.NewGuid());
         await context.SaveChangesAsync();
 
         ticket.Price!.Amount = 2;
         await context.SaveChangesAsync();
 
-        ticket.VerificationCount.Should().Be(0);
+        ticket.Verification.Count.Should().Be(0);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using AQ.EntityFramework.SaveChanges;
+using AQ.EntityFramework.Verification;
 using AQ.EntityFramework.Tests.Generated;
 using AQ.Events.Domain;
 using AQ.Events.Outbox;
@@ -22,8 +23,8 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         AQGeneratedRegistrations.EnsureRegistered();
         modelBuilder.Entity<Ticket>(builder =>
         {
-            builder.Ignore(t => t.CurrentVerifications);
             builder.OwnsOne(t => t.Price);
+            builder.HasVerificationState(t => t.Verification);
         });
     }
 }
