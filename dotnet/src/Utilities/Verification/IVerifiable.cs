@@ -1,11 +1,8 @@
-namespace AQ.Abstractions;
+using AQ.Utilities.Verification;
+
+namespace AQ.Utilities.Verification;
 
 public interface IVerifiable
 {
-    int VerificationCount { get; }
-    IReadOnlyList<VerificationEntry> CurrentVerifications { get; }
-
-    void ResetVerification();
-    void AddVerification(Guid verifiedByUserId);
-    bool HasBeenVerifiedBy(Guid userId);
+    VerificationState Verification { get; }
 }

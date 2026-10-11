@@ -303,7 +303,7 @@ public static class SearchExtensions
     private static ISearchDialect RequireDialect(SearchCondition condition) =>
         SearchDialect.Current ?? throw new NotSupportedException(
             $"SearchOperator.{condition.Operator} requires a provider dialect. " +
-            "Reference AQ.Utilities.SqlServer or AQ.Utilities.PostgreSql and register it at startup.");
+            "Reference AQ.EntityFramework.SqlServer or AQ.EntityFramework.PostgreSql and register it at startup.");
 
     private static Expression? BuildPropertyExpression(ParameterExpression parameter, string propertyPath)
     {

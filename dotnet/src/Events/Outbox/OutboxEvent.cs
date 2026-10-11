@@ -1,4 +1,4 @@
-using AQ.Abstractions;
+using AQ.Entities;
 
 namespace AQ.Events.Outbox;
 

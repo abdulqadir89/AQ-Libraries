@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AQ.Abstractions;
 using AQ.Entities;
 
 namespace AQ.StateMachine.Entities;

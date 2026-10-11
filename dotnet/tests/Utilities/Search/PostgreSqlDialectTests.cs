@@ -1,5 +1,5 @@
 using AQ.Utilities.Search;
-using AQ.Utilities.Search.PostgreSql;
+using AQ.EntityFramework.Search.PostgreSql;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

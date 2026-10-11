@@ -1,6 +1,3 @@
-namespace AQ.Abstractions;
+namespace AQ.Entities;
 
-public interface IHasAttachments
-{
-    public string EntityType => GetType().Name;
-}
+public interface IHasAttachments : IEntity;
