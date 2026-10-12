@@ -1,4 +1,5 @@
 using System.Collections;
+using AQ.Utilities.Review;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -13,8 +14,15 @@ internal static class OwnedChangeTouchStep
     {
         var all = context.ChangeTracker.Entries().ToList();
 
+        if (!all.Any(e => e.Metadata.IsOwned() && IsPending(e)))
+        {
+            return;
+        }
+
         var entries = all
-            .Where(e => e.State == EntityState.Unchanged && e.Metadata.FindProperty("Revision") is not null)
+            .Where(e => e.State == EntityState.Unchanged
+                && e.Metadata.FindProperty("Revision") is not null
+                && e.Metadata.GetNavigations().Any(n => n.ForeignKey.IsOwnership && !n.IsOnDependent))
             .ToList();
 
         if (entries.Count == 0)
@@ -99,6 +107,12 @@ internal static class OwnedChangeTouchStep
         return false;
     }
 
+    // A notification bookmark is system bookkeeping, not an edit: it must not bump the owner's revision, audit or snapshots.
     private static bool IsPending(EntityEntry entry) =>
-        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted;
+        entry.State is EntityState.Added or EntityState.Deleted
+        || (entry.State == EntityState.Modified && !IsNotificationOnly(entry));
+
+    private static bool IsNotificationOnly(EntityEntry entry) =>
+        entry.Entity is ReviewState
+        && entry.Properties.Where(p => p.IsModified).All(p => p.Metadata.Name == nameof(ReviewState.LastNotifiedAt));
 }
