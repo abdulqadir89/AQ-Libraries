@@ -6,11 +6,13 @@ public sealed class VerificationState
 {
     public int Count { get; private set; }
     public List<VerificationEntry> Entries { get; private set; } = [];
+    public DateTimeOffset? LastResetAt { get; private set; }
 
     public void Reset()
     {
         Count = 0;
         Entries = [];
+        LastResetAt = DateTimeOffset.UtcNow;
     }
 
     public void Add(Guid verifiedByUserId)

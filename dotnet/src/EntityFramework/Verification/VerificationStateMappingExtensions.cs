@@ -13,6 +13,7 @@ public static class VerificationStateMappingExtensions
 {
     public const string CountColumnName = "VerificationCount";
     public const string EntriesColumnName = "CurrentVerifications";
+    public const string LastResetAtColumnName = "LastVerificationResetAt";
 
     private static readonly ValueConverter<List<VerificationEntry>, string> EntriesConverter = new(
         entries => JsonSerializer.Serialize(entries, (JsonSerializerOptions?)null),
@@ -33,6 +34,7 @@ public static class VerificationStateMappingExtensions
         builder.OwnsOne(property, owned =>
         {
             owned.Property(p => p.Count).HasColumnName(CountColumnName);
+            owned.Property(p => p.LastResetAt).HasColumnName(LastResetAtColumnName);
             owned.Property(p => p.Entries)
                 .HasColumnName(EntriesColumnName)
                 .HasConversion(EntriesConverter, EntriesComparer)
