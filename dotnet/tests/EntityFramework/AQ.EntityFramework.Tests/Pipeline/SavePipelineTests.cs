@@ -216,6 +216,22 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task ClearingOwnedReference_BumpsOwnerRevision()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Cleared");
+        ticket.SetPrice(new Price { Amount = 1, Currency = "USD" });
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        var revision = ticket.Revision;
+
+        ticket.SetPrice(null);
+        await context.SaveChangesAsync();
+
+        ticket.Revision.Should().Be(revision + 1);
+    }
+
+    [Fact]
     public async Task MarkReviewed_WithVerifiableEditInSameSave_StaysCurrentAndKeepsReviewerVerification()
     {
         var reviewer = Guid.NewGuid();
