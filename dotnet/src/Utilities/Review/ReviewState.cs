@@ -19,6 +19,8 @@ public sealed class ReviewState
         LastNotifiedAt = null;
     }
 
+    public void Restamp() => LastReviewedAt = DateTimeOffset.UtcNow;
+
     public void SetNextReviewDue(DateTimeOffset? nextReviewDue)
     {
         NextReviewDue = nextReviewDue;

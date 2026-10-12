@@ -200,6 +200,39 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task OwnedValueObjectOnlyChange_BumpsOwnerRevisionAndAudit()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Owned only");
+        ticket.SetPrice(new Price { Amount = 1, Currency = "USD" });
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        var revision = ticket.Revision;
+
+        ticket.Price!.Amount = 2;
+        await context.SaveChangesAsync();
+
+        ticket.Revision.Should().Be(revision + 1);
+    }
+
+    [Fact]
+    public async Task MarkReviewed_WithVerifiableEditInSameSave_StaysCurrentAndKeepsReviewerVerification()
+    {
+        var reviewer = Guid.NewGuid();
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Same save");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+
+        ticket.Rename("edited and reviewed");
+        ticket.MarkReviewed(reviewer, null);
+        await context.SaveChangesAsync();
+
+        ticket.IsReviewCurrent().Should().BeTrue();
+        ticket.Verification.HasBeenVerifiedBy(reviewer).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Snapshots_CreatedAfterAuditStepWithVersionEqualToRevision()
     {
         using var context = CreateContext();
