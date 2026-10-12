@@ -12,10 +12,11 @@ public sealed class ReviewState
 
     public void MarkReviewed(Guid reviewedByUserId, DateTimeOffset? nextReviewDue, Guid? activityId = null)
     {
-        LastReviewedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+        LastReviewedAt = now;
         LastReviewedById = reviewedByUserId;
         LastReviewActivityId = activityId;
-        NextReviewDue = nextReviewDue;
+        NextReviewDue = nextReviewDue ?? (NextReviewDue > now ? NextReviewDue : null);
         LastNotifiedAt = null;
     }
 
@@ -23,6 +24,9 @@ public sealed class ReviewState
 
     public void SetNextReviewDue(DateTimeOffset? nextReviewDue)
     {
+        if (NextReviewDue == nextReviewDue)
+            return;
+
         NextReviewDue = nextReviewDue;
         LastNotifiedAt = null;
     }

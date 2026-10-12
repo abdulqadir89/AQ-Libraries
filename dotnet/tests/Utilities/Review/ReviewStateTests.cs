@@ -85,6 +85,34 @@ public class ReviewStateTests
     }
 
     [Fact]
+    public void SetNextReviewDue_WithUnchangedDate_KeepsNotifiedMarker()
+    {
+        var state = new ReviewState();
+        var due = DateTimeOffset.UtcNow.AddMinutes(-5);
+        state.SetNextReviewDue(due);
+        state.RecordNotified();
+
+        state.SetNextReviewDue(due);
+
+        state.LastNotifiedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void MarkReviewed_WithNullNextDue_KeepsFutureScheduleAndClearsPastOne()
+    {
+        var future = DateTimeOffset.UtcNow.AddDays(30);
+        var scheduled = new ReviewState();
+        scheduled.SetNextReviewDue(future);
+        scheduled.MarkReviewed(Guid.NewGuid(), null);
+        scheduled.NextReviewDue.Should().Be(future);
+
+        var overdue = new ReviewState();
+        overdue.SetNextReviewDue(DateTimeOffset.UtcNow.AddDays(-1));
+        overdue.MarkReviewed(Guid.NewGuid(), null);
+        overdue.NextReviewDue.Should().BeNull();
+    }
+
+    [Fact]
     public void IsCurrent_FalseWhenVerificationWasResetAfterReview()
     {
         var state = new ReviewState();
