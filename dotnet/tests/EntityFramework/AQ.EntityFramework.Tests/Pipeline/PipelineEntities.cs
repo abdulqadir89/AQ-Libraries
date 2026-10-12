@@ -1,6 +1,7 @@
 using AQ.Entities;
 using AQ.Events.Domain;
 using AQ.Utilities.References;
+using AQ.Utilities.Review;
 using AQ.Utilities.Snapshots;
 using AQ.Utilities.Verification;
 
@@ -20,7 +21,7 @@ public class Price
 }
 
 [Snapshottable(IncludeId = true)]
-public class Ticket : Entity<TestUser>, IVerifiable, IHasActiveFlag
+public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
 {
     private Ticket() { }
 
@@ -36,6 +37,7 @@ public class Ticket : Entity<TestUser>, IVerifiable, IHasActiveFlag
     public bool RaiseOnAdd { get; set; }
 
     public VerificationState Verification { get; private set; } = new();
+    public ReviewState Review { get; private set; } = new();
 
     public static Ticket Create(string title, string notes = "", string reference = "") =>
         new() { Title = title, Notes = notes, Reference = reference };

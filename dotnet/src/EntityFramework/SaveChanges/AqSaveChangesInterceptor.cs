@@ -29,9 +29,9 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options) : Sa
 
         var userId = (context as ICurrentUserProvider)?.CurrentUserId;
 
-        if (options.VerificationReset)
+        if (options.VerificationReset || options.Review)
         {
-            VerificationTouchStep.Run(context);
+            VerificationTouchStep.Run(context, options.VerificationReset, options.Review);
         }
 
         if (options.Lifecycle)

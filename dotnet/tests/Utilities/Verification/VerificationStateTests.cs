@@ -14,6 +14,19 @@ public class VerificationStateTests
 
         state.Count.Should().Be(0);
         state.Entries.Should().BeEmpty();
+        state.LastResetAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Reset_RecordsLastResetAt()
+    {
+        var state = new VerificationState();
+        var before = DateTimeOffset.UtcNow;
+
+        state.Reset();
+
+        state.LastResetAt.Should().NotBeNull();
+        state.LastResetAt!.Value.Should().BeOnOrAfter(before);
     }
 
     [Fact]

@@ -32,6 +32,7 @@ dotnet/
       Email/                 # AQ.Utilities.Email         — Email sending + templating (localized, see below)
       Merging/               # IMergeable, MergeOperations, MergeableQueryExtensions
       Verification/          # VerificationState, [Verifiable], IVerifiable
+      Review/                # ReviewState, IReviewable, MarkReviewed extension (links to IVerifiable)
       Snapshots/             # [Snapshottable]/[Snapshot], EntitySnapshot, SnapshotRegistry
       Versioning/            # [Versionable]/[Versioned], EntityVersion<TUser>, VersionRegistry
       EntityData/            # EntityDataRegistry (generated data writers)

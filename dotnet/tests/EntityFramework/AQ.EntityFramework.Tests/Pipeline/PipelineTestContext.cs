@@ -1,3 +1,4 @@
+using AQ.EntityFramework.Review;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Verification;
 using AQ.EntityFramework.Tests.Generated;
@@ -28,6 +29,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
             builder.Ignore(t => t.UpdateCalls);
             builder.OwnsOne(t => t.Price);
             builder.HasVerificationState(t => t.Verification);
+            builder.HasReviewState(t => t.Review);
         });
     }
 }
