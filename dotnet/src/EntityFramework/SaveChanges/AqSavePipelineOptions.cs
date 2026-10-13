@@ -12,6 +12,9 @@ public sealed class AqSavePipelineOptions
     public bool Snapshots { get; init; }
     public bool Outbox { get; init; }
 
+    /// <summary>Append an <c>AuditEvent</c> for every change to an <c>[Audited]</c> entity. Needs an active actor.</summary>
+    public bool AuditLog { get; init; }
+
     /// <summary>Serializer options for outbox event payloads. Defaults to <see cref="JsonSerializerOptions.Default"/> behaviour.</summary>
     public JsonSerializerOptions? OutboxJson { get; init; }
 }

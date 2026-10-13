@@ -1,4 +1,5 @@
 using AQ.Actors;
+using AQ.EntityFramework.Auditing;
 using AQ.EntityFramework.Review;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Verification;
@@ -16,6 +17,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketSnapshot> TicketSnapshots => Set<TicketSnapshot>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

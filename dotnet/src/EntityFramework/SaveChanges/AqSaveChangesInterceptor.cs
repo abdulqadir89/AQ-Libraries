@@ -72,6 +72,11 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
             SnapshotStep.Run(context);
         }
 
+        if (options.AuditLog)
+        {
+            AuditLogStep.Run(context, actor);
+        }
+
         if (options.Outbox)
         {
             OutboxStep.Run(context, actor, options.OutboxJson);
@@ -82,9 +87,14 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
 
     private bool RequiresActor(DbContext context)
     {
-        if (!options.Audit && !options.Outbox)
+        if (!options.Audit && !options.Outbox && !options.AuditLog)
         {
             return false;
+        }
+
+        if (options.AuditLog && AuditLogStep.HasAuditedChange(context))
+        {
+            return true;
         }
 
         foreach (var entry in context.ChangeTracker.Entries())

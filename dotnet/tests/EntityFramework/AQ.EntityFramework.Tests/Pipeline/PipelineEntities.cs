@@ -22,13 +22,14 @@ public class Price
     public string Currency { get; set; } = "USD";
 }
 
+[Audited]
 [Snapshottable(IncludeId = true)]
 public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
 {
     private Ticket() { }
 
     [Snapshot][Verifiable] public string Title { get; private set; } = "";
-    [Snapshot] public string Notes { get; private set; } = "";
+    [Snapshot][AuditIgnore] public string Notes { get; private set; } = "";
     [Snapshot][GeneratedReference(typeof(ShortCodeReferenceGenerator), 6, Prefix = "TCK")] public string Reference { get; private set; } = "";
     [Verifiable] public Price? Price { get; private set; }
 
