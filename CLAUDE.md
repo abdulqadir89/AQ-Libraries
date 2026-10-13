@@ -84,12 +84,17 @@ The library suite is organized around DDD principles:
    - Depends on AQ.Utilities.Results and AQ.Utilities.Sort
    - Provides patterns for separating read/write operations
 
-4. **AQ.EntityFramework** - EF Core integration (versioning service, save-pipeline interceptor, hierarchy service, verification mapping)
+4. **AQ.Actors** - "Who is doing this now": `Actor` record, `PrincipalKind { Human, Service, System }`, singleton `IActorContext` (AsyncLocal stack), `IActorScopeFactory` (DI scope + actor scope) and `ActorBackgroundService`. No project references, so every layer can use it
+   - Register with `services.AddAqActors()`. Hosted services that touch the database derive from `ActorBackgroundService` and use `RunScopedAsync`
+
+5. **AQ.EntityFramework** - EF Core integration (versioning service, save-pipeline interceptor, hierarchy service, verification mapping)
+   - The save-pipeline interceptor takes an `IActorContext`: with `Audit`/`Outbox` on, saving an `IAuditable` entity or raising domain events needs an active actor (`CreatedById`/`UpdatedById` are non-null, `OutboxEvent` records `ActorId`/`ActorKind`/`OnBehalfOfId`/`ClientId`/`CorrelationId`); a missing actor throws `MissingActorException`
+   - `ExecuteAuditedUpdateAsync` keeps audit fields honest for bulk updates
    - `AQ.EntityFramework.SqlServer` / `AQ.EntityFramework.PostgreSql` hold the provider-specific search dialects
 
    **AQ.Generators** - Roslyn incremental source generator (netstandard2.0, referenced as an analyzer) that emits snapshot/version data writers, `{Class}Snapshot`/`{Class}Version` classes and `AQGeneratedRegistrations`
 
-5. **AQ.Events*** - Event-driven architecture support
+6. **AQ.Events*** - Event-driven architecture support
    - **AQ.Events.Domain** - Domain event interfaces and types
    - **AQ.Events.Integration** - Integration event handling
    - **AQ.Events.Dispatchers** - Event dispatching infrastructure
@@ -103,7 +108,7 @@ The `Utilities` folder contains cross-cutting libraries:
 - **AQ.Utilities.Search** - Search query utilities
 - **AQ.Utilities.Sort** - Sorting/ordering utilities
 - **AQ.Utilities.Results** - Result pattern for error handling (used by CQRS)
-- **AQ.Utilities** also hosts `Merging` (`IMergeable`, `MergeOperations`), `Verification` (`VerificationState`, `[Verifiable]`), `Snapshots` (`[Snapshottable]`/`[Snapshot]`, `EntitySnapshot`, `SnapshotRegistry`), `Versioning` (`[Versionable]`/`[Versioned]`, `EntityVersion<TUser>`, `VersionRegistry`) and `EntityData` (`EntityDataRegistry`)
+- **AQ.Utilities** also hosts `Merging` (`IMergeable`, `MergeOperations`), `Verification` (`VerificationState`, `[Verifiable]`), `Snapshots` (`[Snapshottable]`/`[Snapshot]`, `EntitySnapshot`, `SnapshotRegistry`), `Versioning` (`[Versionable]`/`[Versioned]`, `EntityVersion<TPrincipal>`, `VersionRegistry`) and `EntityData` (`EntityDataRegistry`)
 
 ### State Machine System
 

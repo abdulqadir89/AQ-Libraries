@@ -9,6 +9,7 @@ dotnet/
   AQ.sln
   Directory.Packages.props   # Central NuGet version management — all versions here
   src/
+    Actors/                  # AQ.Actors         — Actor, IActorContext, IActorScopeFactory, ActorBackgroundService
     Entities/                # AQ.Entities       — Base Entity<TId> aggregate root
     ValueObjects/            # AQ.ValueObjects   — Immutable value object primitives
     CQRS/                    # AQ.CQRS           — Command/Query patterns
@@ -34,12 +35,13 @@ dotnet/
       Verification/          # VerificationState, [Verifiable], IVerifiable
       Review/                # ReviewState, IReviewable, MarkReviewed extension (links to IVerifiable)
       Snapshots/             # [Snapshottable]/[Snapshot], EntitySnapshot, SnapshotRegistry
-      Versioning/            # [Versionable]/[Versioned], EntityVersion<TUser>, VersionRegistry
+      Versioning/            # [Versionable]/[Versioned], EntityVersion<TPrincipal>, VersionRegistry
       EntityData/            # EntityDataRegistry (generated data writers)
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
   tests/
+    Actors/                  # AQ.Actors.Tests — actor context, scope factory
     StateMachine/Services/   # AQ.StateMachine.Services.Tests
-    Utilities/               # AQ.Utilities.Tests — covers core + both search providers
+XX — covers core + both search providers
     Generators/              # AQ.Generators.Tests — generator output and diagnostics
     EntityFramework/         # AQ.EntityFramework.Tests — versioning and save pipeline (SQLite in-memory)
 ```
