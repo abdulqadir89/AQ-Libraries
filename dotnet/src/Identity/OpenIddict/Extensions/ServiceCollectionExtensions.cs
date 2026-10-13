@@ -1,4 +1,5 @@
 using AQ.Identity.Core.Abstractions;
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Configuration.Validation;
 using AQ.Identity.Core.Entities;
@@ -238,7 +239,9 @@ public static class ServiceCollectionExtensions
             opts.AddPolicy("ManageApi", policy =>
                 policy
                     .RequireAuthenticatedUser()
-                    .RequireClaim("manage_api"));
+                    .RequireClaim("manage_api")
+                    // Endpoints audit as the caller after acting; reject up front a token whose actor cannot be named
+                    .RequireAssertion(ctx => AuditActors.TryGet(ctx.User) is not null));
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);

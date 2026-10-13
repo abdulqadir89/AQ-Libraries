@@ -106,7 +106,7 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
                 return true;
             }
 
-            if (options.Outbox && entry.Entity is IHasDomainEvents events && (changed || events.DomainEvents.Count > 0))
+            if (options.Outbox && entry.Entity is IHasDomainEvents events && events.DomainEvents.Count > 0)
             {
                 return true;
             }

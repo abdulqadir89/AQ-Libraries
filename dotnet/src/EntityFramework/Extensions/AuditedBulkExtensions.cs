@@ -11,6 +11,10 @@ public static class AuditedBulkExtensions
     /// Bulk update that keeps audit fields honest: appends UpdatedById, UpdatedAt and Revision + 1 to the caller's
     /// setters. Use instead of <c>ExecuteUpdateAsync</c> on auditable sets, which bypass the save pipeline.
     /// </summary>
+    /// <remarks>
+    /// Bulk statements never reach the save pipeline, so no <see cref="AQ.EntityFramework.Auditing.AuditEvent"/> is
+    /// appended. For <c>[Audited]</c> entities whose history matters, load and save the entities instead.
+    /// </remarks>
     public static Task<int> ExecuteAuditedUpdateAsync<T>(
         this IQueryable<T> source,
         IActorContext actors,

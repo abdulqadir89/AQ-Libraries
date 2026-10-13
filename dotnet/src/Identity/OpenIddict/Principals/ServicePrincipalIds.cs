@@ -36,11 +36,30 @@ public static class ServicePrincipalIds
             return existing;
         }
 
-        var descriptor = new OpenIddictApplicationDescriptor();
-        await manager.PopulateAsync(descriptor, application, ct);
-        var id = Guid.NewGuid();
-        Set(descriptor, id);
-        await manager.UpdateAsync(application, descriptor, ct);
-        return id;
+        // Serialise first-time assignment so concurrent first token requests agree on one id
+        await AssignLock.WaitAsync(ct);
+        try
+        {
+            // Another request may have assigned one while this one waited
+            var applicationId = await manager.GetIdAsync(application, ct);
+            var current = applicationId is null ? application : await manager.FindByIdAsync(applicationId, ct) ?? application;
+            if (await ReadAsync(manager, current, ct) is { } assigned)
+            {
+                return assigned;
+            }
+
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await manager.PopulateAsync(descriptor, current, ct);
+            var id = Guid.NewGuid();
+            Set(descriptor, id);
+            await manager.UpdateAsync(current, descriptor, ct);
+            return id;
+        }
+        finally
+        {
+            AssignLock.Release();
+        }
     }
+
+    private static readonly SemaphoreSlim AssignLock = new(1, 1);
 }
