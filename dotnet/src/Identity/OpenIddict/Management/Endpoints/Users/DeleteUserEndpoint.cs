@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
@@ -63,7 +64,7 @@ public class DeleteUserEndpoint(
         var claims = context.StoredClaims.Where(c => c.UserId == req.Id);
         context.StoredClaims.RemoveRange(claims);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.AccountDeleted, req.Id, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.AccountDeleted, AuditActors.Require(User), subjectUserId: req.Id));
         await context.SaveChangesAsync(ct);
 
         var result = await userManager.DeleteAsync(user);

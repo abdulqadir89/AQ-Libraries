@@ -33,6 +33,9 @@ public class ClientSeederTests
         scope.ServiceProvider.Returns(_serviceProvider);
         _serviceProvider.GetService(typeof(IOpenIddictApplicationManager)).Returns(_applicationManager);
         _serviceProvider.GetService(typeof(IOpenIddictScopeManager)).Returns(_scopeManager);
+        _applicationManager.GetPropertiesAsync(Arg.Any<object>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<System.Collections.Immutable.ImmutableDictionary<string, System.Text.Json.JsonElement>>(
+                System.Collections.Immutable.ImmutableDictionary<string, System.Text.Json.JsonElement>.Empty));
     }
 
     private ClientSeeder CreateSeeder(IReadOnlyList<IdentityClientConfig> clients)
@@ -325,5 +328,33 @@ public class ClientSeederTests
             Arg.Is<object>(v => v.ToString()!.Contains("Updated OpenIddict client")),
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public async Task StartAsync_UpdatingServiceClient_KeepsExistingPrincipalId()
+    {
+        var existingId = Guid.NewGuid();
+        var existing = new object();
+        _applicationManager.FindByClientIdAsync("svc", CancellationToken.None).Returns(existing);
+        _scopeManager.FindByNameAsync(Arg.Any<string>(), CancellationToken.None).Returns(new object());
+        _applicationManager.GetPropertiesAsync(existing, Arg.Any<CancellationToken>()).Returns(
+            new ValueTask<System.Collections.Immutable.ImmutableDictionary<string, System.Text.Json.JsonElement>>(
+                System.Collections.Immutable.ImmutableDictionary<string, System.Text.Json.JsonElement>.Empty
+                    .Add("principal_id", System.Text.Json.JsonSerializer.SerializeToElement(existingId.ToString()))));
+        var seeder = CreateSeeder([new IdentityClientConfig
+        {
+            ClientId = "svc",
+            DisplayName = "Service",
+            Type = "confidential",
+            ClientSecret = "secret",
+            GrantType = "client_credentials",
+        }]);
+
+        await seeder.StartAsync(CancellationToken.None);
+
+        await _applicationManager.Received(1).UpdateAsync(
+            existing,
+            Arg.Is<OpenIddictApplicationDescriptor>(d => d.Properties["principal_id"].GetString() == existingId.ToString()),
+            CancellationToken.None);
     }
 }

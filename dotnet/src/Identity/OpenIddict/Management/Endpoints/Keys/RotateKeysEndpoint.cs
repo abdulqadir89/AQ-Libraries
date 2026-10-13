@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.KeyManagement;
@@ -21,7 +22,7 @@ public class RotateKeysEndpoint(SigningKeyManager signingKeyManager, IIdentityDb
     {
         signingKeyManager.RotateNow();
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.KeyRotated, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.KeyRotated, AuditActors.Require(User)));
         await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);

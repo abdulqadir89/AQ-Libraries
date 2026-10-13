@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -53,7 +54,9 @@ public class ConfirmEmailChangeModel(
 
         IsConfirmed = true;
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.EmailChanged, user.Id, null, null));
+        context.AuditLog.Add(AuditActors.TryGet(User) is { } actor
+            ? AuditEntry.Log(AuditEntry.Actions.EmailChanged, actor, subjectUserId: user.Id)
+            : AuditEntry.LogAnonymous(AuditEntry.Actions.EmailChanged, user.Id));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         if (!string.IsNullOrEmpty(oldEmail))

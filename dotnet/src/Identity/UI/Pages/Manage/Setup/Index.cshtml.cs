@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Extensions.Seeding;
@@ -68,7 +69,7 @@ public class SetupAdminModel(
         context.StoredClaims.Add(UserClaim.Create(user.Id, "manage_api", "true"));
 
         // Audit
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.AdminUserCreated, user.Id, null, null));
+        context.AuditLog.Add(AuditEntry.LogAnonymous(AuditEntry.Actions.AdminUserCreated, user.Id));
 
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 

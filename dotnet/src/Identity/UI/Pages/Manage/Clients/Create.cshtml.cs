@@ -1,4 +1,6 @@
+using AQ.Identity.Core.Auditing;
 using System.Security.Cryptography;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -64,6 +66,13 @@ public class CreateClientModel(
         var generatedSecret = Type == "confidential" ? RandomNumberGenerator.GetHexString(64) : null;
 
         var config = BuildConfig(generatedSecret);
+        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(config.ServiceAccountClaims.Keys);
+        if (claimError != null)
+        {
+            ModelState.AddModelError(nameof(ServiceAccountClaimsRaw), claimError);
+            return Page();
+        }
+
         var validationError = ValidateRedirectUris(config.RedirectUris);
         if (validationError != null)
         {
@@ -83,7 +92,7 @@ public class CreateClientModel(
         var descriptor = ClientDescriptorBuilder.Build(config);
         await applicationManager.CreateAsync(descriptor, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientCreated, null, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientCreated, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         if (generatedSecret != null)

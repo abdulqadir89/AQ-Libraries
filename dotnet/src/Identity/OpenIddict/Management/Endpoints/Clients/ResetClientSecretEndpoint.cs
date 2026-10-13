@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using System.Security.Cryptography;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
@@ -52,11 +53,7 @@ public class ResetClientSecretEndpoint(
 
         await applicationManager.UpdateAsync(existing, descriptor, ct);
 
-        var auditEntry = AuditEntry.Log(
-            AuditEntry.Actions.ClientSecretReset,
-            userId: null,
-            ip: null,
-            ua: null);
+        var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientSecretReset, AuditActors.Require(User));
         context.AuditLog.Add(auditEntry);
         await context.SaveChangesAsync(ct);
 

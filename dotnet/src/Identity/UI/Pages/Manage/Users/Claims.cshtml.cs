@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Endpoints.Users;
@@ -52,7 +53,7 @@ public class ClaimsModel(
 
         var claim = UserClaim.Create(Id, claimType, claimValue);
         context.StoredClaims.Add(claim);
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimAdded, Id, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimAdded, AuditActors.Require(User), subjectUserId: Id));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         Success = $"Claim '{claimType}' added.";
@@ -74,7 +75,7 @@ public class ClaimsModel(
         }
 
         context.StoredClaims.Remove(claim);
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimRemoved, Id, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimRemoved, AuditActors.Require(User), subjectUserId: Id));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         Success = $"Claim '{claim.Type}' removed.";

@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
@@ -59,7 +60,7 @@ public class SetUserActiveEndpoint(
         }
 
         var action = req.IsActive ? AuditEntry.Actions.UserActivated : AuditEntry.Actions.UserDeactivated;
-        var auditEntry = AuditEntry.Log(action, user.Id, null, null);
+        var auditEntry = AuditEntry.Log(action, AuditActors.Require(User), subjectUserId: user.Id);
         context.AuditLog.Add(auditEntry);
         await context.SaveChangesAsync(ct);
 

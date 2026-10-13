@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Actors\AQ.Actors.csproj" />
     <ProjectReference Include="..\..\Utilities\Email\AQ.Utilities.Email.csproj" />
   </ItemGroup>
 

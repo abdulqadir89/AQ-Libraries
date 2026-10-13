@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
@@ -32,11 +33,7 @@ public class DeleteClientEndpoint(
 
         await applicationManager.DeleteAsync(existing, ct);
 
-        var auditEntry = AuditEntry.Log(
-            AuditEntry.Actions.ClientDeleted,
-            userId: null,
-            ip: null,
-            ua: null);
+        var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientDeleted, AuditActors.Require(User));
         context.AuditLog.Add(auditEntry);
         await context.SaveChangesAsync(ct);
 

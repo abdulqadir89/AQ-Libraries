@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
@@ -34,7 +35,7 @@ public class CreateScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentity
 
         var id = await scopeManager.GetIdAsync(scope, ct) ?? string.Empty;
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, AuditActors.Require(User)));
         await context.SaveChangesAsync(ct);
 
         await Send.CreatedAtAsync<GetAllScopesEndpoint>(null, new IdentityScopeDto

@@ -1,5 +1,7 @@
+using AQ.Identity.Core.Auditing;
 using System.Linq;
 using System.Security.Cryptography;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
@@ -36,6 +38,12 @@ public class CreateClientEndpoint(
             ThrowError(redirectUriError);
         }
 
+        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(req.ServiceAccountClaims.Keys);
+        if (claimError != null)
+        {
+            ThrowError(claimError);
+        }
+
         // Check for duplicate
         var existing = await applicationManager.FindByClientIdAsync(req.ClientId, ct);
         if (existing != null)
@@ -55,11 +63,7 @@ public class CreateClientEndpoint(
         var descriptor = ClientDescriptorBuilder.Build(req);
         await applicationManager.CreateAsync(descriptor, ct);
 
-        var auditEntry = AuditEntry.Log(
-            AuditEntry.Actions.ClientCreated,
-            userId: null,
-            ip: null,
-            ua: null);
+        var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientCreated, AuditActors.Require(User));
         context.AuditLog.Add(auditEntry);
         await context.SaveChangesAsync(ct);
 

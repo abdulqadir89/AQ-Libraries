@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Endpoints.Users;
@@ -51,9 +52,7 @@ public class UsersIndexModel(
         user.IsActive = !user.IsActive;
         await userManager.UpdateAsync(user);
 
-        context.AuditLog.Add(AuditEntry.Log(
-            user.IsActive ? AuditEntry.Actions.UserActivated : AuditEntry.Actions.UserDeactivated,
-            userId, null, null));
+        context.AuditLog.Add(AuditEntry.Log(user.IsActive ? AuditEntry.Actions.UserActivated : AuditEntry.Actions.UserDeactivated, AuditActors.Require(User), subjectUserId: userId));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"User '{user.Email}' has been {(user.IsActive ? "activated" : "deactivated")}.";
@@ -73,7 +72,7 @@ public class UsersIndexModel(
         await foreach (var token in tokens)
             await tokenManager.TryRevokeAsync(token, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserSessionsRevoked, userId, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserSessionsRevoked, AuditActors.Require(User), subjectUserId: userId));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"All sessions for '{user.Email}' have been invalidated.";

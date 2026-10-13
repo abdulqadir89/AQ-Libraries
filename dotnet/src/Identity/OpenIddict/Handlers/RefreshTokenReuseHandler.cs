@@ -58,11 +58,7 @@ public class RefreshTokenReuseHandler(
             "Refresh token reuse detected for subject {Subject} — authorization {AuthorizationId} revoked.",
             subject, authorizationId);
 
-        context.AuditLog.Add(AuditEntry.Log(
-            AuditEntry.Actions.RefreshTokenReuseDetected,
-            userId: userId,
-            ip: null,
-            ua: null));
+        context.AuditLog.Add(AuditEntry.LogAnonymous(AuditEntry.Actions.RefreshTokenReuseDetected, userId));
         await context.SaveChangesAsync(ctx.CancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using AQ.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -88,7 +89,7 @@ public class SecurityModel : PageModel
         var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 8);
         TempData["BackupCodes"] = string.Join(",", recoveryCodes ?? []);
 
-        _context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.BackupCodesRegenerated, user.Id, null, null));
+        _context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.BackupCodesRegenerated, new Actor(user.Id, PrincipalKind.Human), subjectUserId: user.Id));
         await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         // eventDescription reaches the email builder untranslated by design (Phase 7 scope —
