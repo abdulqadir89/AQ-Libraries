@@ -136,7 +136,7 @@ namespace AQ.Generators
                 {
                     diagnostics.Add(DiagnosticInfo.Create(
                         "AQGEN002",
-                        "Class '" + symbol.Name + "' is marked [Versionable] but does not implement IAuditable<TUser>.",
+                        "Class '" + symbol.Name + "' is marked [Versionable] but does not implement IAuditable<TPrincipal>.",
                         reference));
                 }
                 else

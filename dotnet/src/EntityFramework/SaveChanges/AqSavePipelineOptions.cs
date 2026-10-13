@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace AQ.EntityFramework.SaveChanges;
 
 public sealed class AqSavePipelineOptions
@@ -9,4 +11,7 @@ public sealed class AqSavePipelineOptions
     public bool Audit { get; init; }
     public bool Snapshots { get; init; }
     public bool Outbox { get; init; }
+
+    /// <summary>Serializer options for outbox event payloads. Defaults to <see cref="JsonSerializerOptions.Default"/> behaviour.</summary>
+    public JsonSerializerOptions? OutboxJson { get; init; }
 }

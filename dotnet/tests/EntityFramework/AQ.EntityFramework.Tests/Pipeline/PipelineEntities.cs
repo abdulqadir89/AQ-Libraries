@@ -11,7 +11,9 @@ public sealed class TicketRaised(Guid aggregateId) : IDomainEvent
 {
     public DateTimeOffset OccurredOn { get; set; } = DateTimeOffset.UtcNow;
     public Guid AggregateId { get; set; } = aggregateId;
-    public Guid? UserId { get; set; }
+    public Guid? ActorId { get; set; }
+    public Guid? OnBehalfOfId { get; set; }
+    public string? CorrelationId { get; set; }
 }
 
 public class Price

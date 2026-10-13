@@ -1,4 +1,4 @@
-﻿namespace AQ.Events.Domain;
+namespace AQ.Events.Domain;
 
 /// <summary>
 /// Marker interface for domain events.
@@ -17,8 +17,17 @@ public interface IDomainEvent
     Guid AggregateId { get; }
 
     /// <summary>
-    /// The identifier of the user who caused this event, if applicable.
-    /// This can be set by the application when raising the event.
+    /// The principal that caused this event. Set by the save pipeline, never by callers.
     /// </summary>
-    Guid? UserId { get; set; }
+    Guid? ActorId { get; set; }
+
+    /// <summary>
+    /// The principal the actor was acting for, when delegated. Set by the save pipeline.
+    /// </summary>
+    Guid? OnBehalfOfId { get; set; }
+
+    /// <summary>
+    /// Trace id tying this event to the request or job that raised it. Set by the save pipeline.
+    /// </summary>
+    string? CorrelationId { get; set; }
 }

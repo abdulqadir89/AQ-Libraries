@@ -123,13 +123,13 @@ public class StateMachineTrigger : Entity
     public override string ToString() => $"{Name} ({Type})";
 }
 
-public class AuditableStateMachineTrigger<TUser> : StateMachineTrigger, IAuditable<TUser>
-    where TUser : class
+public class AuditableStateMachineTrigger<TPrincipal> : StateMachineTrigger, IAuditable<TPrincipal>
+    where TPrincipal : class
 {
-    public Guid? CreatedById { get; private set; }
-    public Guid? UpdatedById { get; private set; }
-    public TUser? CreatedBy { get; private set; }
-    public TUser? UpdatedBy { get; private set; }
+    public Guid CreatedById { get; private set; }
+    public Guid UpdatedById { get; private set; }
+    public TPrincipal? CreatedBy { get; private set; }
+    public TPrincipal? UpdatedBy { get; private set; }
 
     private AuditableStateMachineTrigger() : base() { }
 
@@ -143,7 +143,7 @@ public class AuditableStateMachineTrigger<TUser> : StateMachineTrigger, IAuditab
         string? triggerMetadataJson)
         : base(definition, name, description, type, isRecordsOnly, eventType, triggerMetadataJson) { }
 
-    public static new AuditableStateMachineTrigger<TUser> Create(
+    public static new AuditableStateMachineTrigger<TPrincipal> Create(
         StateMachineDefinition definition,
         string name,
         string? description = null,
@@ -156,14 +156,23 @@ public class AuditableStateMachineTrigger<TUser> : StateMachineTrigger, IAuditab
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Trigger name cannot be null or empty.", nameof(name));
 
-        return new AuditableStateMachineTrigger<TUser>(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType, triggerMetadataJson);
+        return new AuditableStateMachineTrigger<TPrincipal>(definition, name.Trim(), description?.Trim(), type, isRecordsOnly, eventType, triggerMetadataJson);
     }
 
-    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
-
-    public void SetUpdatedBy(Guid? userId)
+    public void SetCreatedBy(Guid principalId)
     {
-        UpdatedById = userId;
+        if (CreatedById != Guid.Empty)
+        {
+            return;
+        }
+
+        CreatedById = principalId;
+        UpdatedById = principalId;
+    }
+
+    public void SetUpdatedBy(Guid principalId)
+    {
+        UpdatedById = principalId;
         SetUpdatedTimestamp();
     }
 }

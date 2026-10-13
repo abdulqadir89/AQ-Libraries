@@ -1,9 +1,17 @@
+using AQ.Actors;
+using AQ.Entities;
+using AQ.Events.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace AQ.EntityFramework.SaveChanges;
 
-public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options) : SaveChangesInterceptor
+/// <summary>
+/// Runs the save pipeline. When audit or outbox is enabled and the save touches an auditable entity or raises
+/// domain events, an actor must be active: a missing actor throws <see cref="MissingActorException"/> instead of
+/// storing null attribution.
+/// </summary>
+public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IActorContext actors) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
@@ -27,11 +35,16 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options) : Sa
             return;
         }
 
-        var userId = (context as ICurrentUserProvider)?.CurrentUserId;
-
         if (options.Audit || options.Lifecycle || options.Snapshots || options.VerificationReset || options.Review)
         {
             OwnedChangeTouchStep.Run(context);
+        }
+
+        // Resolved after the touch step, which turns owned-only changes into owner updates.
+        actors.TryGet(out var actor);
+        if (actor is null && RequiresActor(context))
+        {
+            throw new MissingActorException();
         }
 
         if (options.Lifecycle)
@@ -51,7 +64,7 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options) : Sa
 
         if (options.Audit)
         {
-            AuditStep.Run(context, userId);
+            AuditStep.Run(context, actor);
         }
 
         if (options.Snapshots)
@@ -61,9 +74,34 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options) : Sa
 
         if (options.Outbox)
         {
-            OutboxStep.Run(context, userId);
+            OutboxStep.Run(context, actor, options.OutboxJson);
         }
 
         context.ChangeTracker.DetectChanges();
+    }
+
+    private bool RequiresActor(DbContext context)
+    {
+        if (!options.Audit && !options.Outbox)
+        {
+            return false;
+        }
+
+        foreach (var entry in context.ChangeTracker.Entries())
+        {
+            var changed = entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted;
+
+            if (options.Audit && changed && entry.Entity is IAuditable)
+            {
+                return true;
+            }
+
+            if (options.Outbox && entry.Entity is IHasDomainEvents events && (changed || events.DomainEvents.Count > 0))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

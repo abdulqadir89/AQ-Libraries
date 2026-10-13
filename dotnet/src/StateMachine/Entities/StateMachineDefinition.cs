@@ -503,25 +503,34 @@ public class StateMachineDefinition<TEntity> : StateMachineDefinition where TEnt
     }
 }
 
-public abstract class AuditableStateMachineDefinition<TEntity, TUser> : StateMachineDefinition<TEntity>, IAuditable<TUser>
+public abstract class AuditableStateMachineDefinition<TEntity, TPrincipal> : StateMachineDefinition<TEntity>, IAuditable<TPrincipal>
     where TEntity : IEntity
-    where TUser : class
+    where TPrincipal : class
 {
-    public Guid? CreatedById { get; private set; }
-    public Guid? UpdatedById { get; private set; }
-    public TUser? CreatedBy { get; private set; }
-    public TUser? UpdatedBy { get; private set; }
+    public Guid CreatedById { get; private set; }
+    public Guid UpdatedById { get; private set; }
+    public TPrincipal? CreatedBy { get; private set; }
+    public TPrincipal? UpdatedBy { get; private set; }
 
     protected AuditableStateMachineDefinition() : base() { }
 
     protected AuditableStateMachineDefinition(TEntity entity, int version = 1)
         : base(entity, version) { }
 
-    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
-
-    public void SetUpdatedBy(Guid? userId)
+    public void SetCreatedBy(Guid principalId)
     {
-        UpdatedById = userId;
+        if (CreatedById != Guid.Empty)
+        {
+            return;
+        }
+
+        CreatedById = principalId;
+        UpdatedById = principalId;
+    }
+
+    public void SetUpdatedBy(Guid principalId)
+    {
+        UpdatedById = principalId;
         SetUpdatedTimestamp();
     }
 }

@@ -1,3 +1,4 @@
+using AQ.Actors;
 using AQ.Entities;
 
 namespace AQ.Events.Outbox;
@@ -74,6 +75,31 @@ public class OutboxEvent : IEntity
     public DateTimeOffset? NextProcessingAttempt { get; private set; }
 
     /// <summary>
+    /// Gets the principal that caused the event.
+    /// </summary>
+    public Guid ActorId { get; private set; }
+
+    /// <summary>
+    /// Gets the kind of principal that caused the event.
+    /// </summary>
+    public PrincipalKind ActorKind { get; private set; }
+
+    /// <summary>
+    /// Gets the principal the actor was acting for, when delegated.
+    /// </summary>
+    public Guid? OnBehalfOfId { get; private set; }
+
+    /// <summary>
+    /// Gets the OAuth client id of the actor, when it came from a token.
+    /// </summary>
+    public string? ClientId { get; private set; }
+
+    /// <summary>
+    /// Gets the trace id of the request or job that raised the event.
+    /// </summary>
+    public string? CorrelationId { get; private set; }
+
+    /// <summary>
     /// Private constructor for EF Core.
     /// </summary>
     private OutboxEvent() { }
@@ -85,15 +111,27 @@ public class OutboxEvent : IEntity
     /// <param name="eventType">The type of the event.</param>
     /// <param name="eventData">The serialized event data.</param>
     /// <param name="occurredOn">When the event occurred.</param>
-    public OutboxEvent(OutboxEventCategory category, string eventType, string eventData, DateTimeOffset occurredOn)
+    /// <param name="actor">The actor that caused the event.</param>
+    public OutboxEvent(OutboxEventCategory category, string eventType, string eventData, DateTimeOffset occurredOn, Actor actor)
     {
+        ArgumentNullException.ThrowIfNull(actor);
         Category = category;
         EventType = eventType;
         EventData = eventData;
         OccurredOn = occurredOn;
+        ActorId = actor.PrincipalId;
+        ActorKind = actor.Kind;
+        OnBehalfOfId = actor.OnBehalfOfId;
+        ClientId = actor.ClientId;
+        CorrelationId = actor.CorrelationId;
         IsProcessed = false;
         ProcessingAttempts = 0;
     }
+
+    /// <summary>
+    /// The actor that caused the event, as recorded when it was raised.
+    /// </summary>
+    public Actor ToActor() => new(ActorId, ActorKind, OnBehalfOfId, ClientId, CorrelationId);
 
     /// <summary>
     /// Marks the event as successfully processed.

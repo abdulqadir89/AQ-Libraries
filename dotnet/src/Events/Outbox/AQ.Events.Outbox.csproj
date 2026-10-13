@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Actors\AQ.Actors.csproj" />
     <ProjectReference Include="..\..\Entities\AQ.Entities.csproj" />
     <ProjectReference Include="..\Domain\AQ.Events.Domain.csproj" />
     <ProjectReference Include="..\Integration\AQ.Events.Integration.csproj" />

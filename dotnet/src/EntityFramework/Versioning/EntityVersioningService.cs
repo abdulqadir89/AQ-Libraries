@@ -7,8 +7,8 @@ namespace AQ.EntityFramework.Versioning;
 
 public sealed class EntityVersioningService
 {
-    public Task<EntityVersion<TUser>> CreateFromCurrentAsync<TUser>(DbContext db, object entity, string? label, CancellationToken cancellationToken = default)
-        where TUser : class
+    public Task<EntityVersion<TPrincipal>> CreateFromCurrentAsync<TPrincipal>(DbContext db, object entity, string? label, CancellationToken cancellationToken = default)
+        where TPrincipal : class
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(entity);
@@ -18,42 +18,42 @@ public sealed class EntityVersioningService
             ? identified.Id
             : throw new InvalidOperationException($"{entity.GetType().Name} does not implement IEntity.");
         var data = EntityDataRegistry<VersionedAttribute>.Serialize(entity);
-        return CreateAsync<TUser>(db, descriptor, entityId, label, data, null, cancellationToken);
+        return CreateAsync<TPrincipal>(db, descriptor, entityId, label, data, null, cancellationToken);
     }
 
-    public Task<EntityVersion<TUser>> CreateFromVersionAsync<TUser>(DbContext db, EntityVersion<TUser> source, string? label, CancellationToken cancellationToken = default)
-        where TUser : class
+    public Task<EntityVersion<TPrincipal>> CreateFromVersionAsync<TPrincipal>(DbContext db, EntityVersion<TPrincipal> source, string? label, CancellationToken cancellationToken = default)
+        where TPrincipal : class
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(source);
         var descriptor = VersionRegistry.TryGet(source.GetType())
             ?? throw new InvalidOperationException($"{source.GetType().Name} is not a registered version type.");
-        return CreateAsync<TUser>(db, descriptor, source.GetEntityId(), label, source.Data, source.VersionNumber, cancellationToken);
+        return CreateAsync<TPrincipal>(db, descriptor, source.GetEntityId(), label, source.Data, source.VersionNumber, cancellationToken);
     }
 
-    public IQueryable<EntityVersion<TUser>> Query<TUser>(DbContext db, string entityTypeName, Guid entityId) where TUser : class
+    public IQueryable<EntityVersion<TPrincipal>> Query<TPrincipal>(DbContext db, string entityTypeName, Guid entityId) where TPrincipal : class
     {
         ArgumentNullException.ThrowIfNull(db);
         var descriptor = VersionRegistry.TryGet(entityTypeName)
             ?? throw new InvalidOperationException($"{entityTypeName} is not versionable.");
-        return (IQueryable<EntityVersion<TUser>>)descriptor.Query(new DbContextQueryableSource(db), entityId);
+        return (IQueryable<EntityVersion<TPrincipal>>)descriptor.Query(new DbContextQueryableSource(db), entityId);
     }
 
-    private static async Task<EntityVersion<TUser>> CreateAsync<TUser>(
+    private static async Task<EntityVersion<TPrincipal>> CreateAsync<TPrincipal>(
         DbContext db,
         VersionDescriptor descriptor,
         Guid entityId,
         string? label,
         string data,
         int? sourceVersionNumber,
-        CancellationToken cancellationToken) where TUser : class
+        CancellationToken cancellationToken) where TPrincipal : class
     {
         var source = new DbContextQueryableSource(db);
         for (var attempt = 0; ; attempt++)
         {
-            var existing = (IQueryable<EntityVersion<TUser>>)descriptor.Query(source, entityId);
+            var existing = (IQueryable<EntityVersion<TPrincipal>>)descriptor.Query(source, entityId);
             var next = (await existing.MaxAsync(v => (int?)v.VersionNumber, cancellationToken) ?? 0) + 1;
-            var version = (EntityVersion<TUser>)descriptor.Factory(entityId, next, label, data, sourceVersionNumber);
+            var version = (EntityVersion<TPrincipal>)descriptor.Factory(entityId, next, label, data, sourceVersionNumber);
             db.Add(version);
             try
             {
