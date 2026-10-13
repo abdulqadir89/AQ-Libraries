@@ -90,6 +90,7 @@ The library suite is organized around DDD principles:
 5. **AQ.EntityFramework** - EF Core integration (versioning service, save-pipeline interceptor, hierarchy service, verification mapping)
    - The save-pipeline interceptor takes an `IActorContext`: with `Audit`/`Outbox` on, saving an `IAuditable` entity or raising domain events needs an active actor (`CreatedById`/`UpdatedById` are non-null, `OutboxEvent` records `ActorId`/`ActorKind`/`OnBehalfOfId`/`ClientId`/`CorrelationId`); a missing actor throws `MissingActorException`
    - `ExecuteAuditedUpdateAsync` keeps audit fields honest for bulk updates
+   - `AqSavePipelineOptions.AuditLog` appends an append-only `AuditEvent` (old/new values, actor) for every change to an `[Audited]` entity; `[AuditIgnore]` keeps a property out
    - `AQ.EntityFramework.SqlServer` / `AQ.EntityFramework.PostgreSql` hold the provider-specific search dialects
 
    **AQ.Generators** - Roslyn incremental source generator (netstandard2.0, referenced as an analyzer) that emits snapshot/version data writers, `{Class}Snapshot`/`{Class}Version` classes and `AQGeneratedRegistrations`
