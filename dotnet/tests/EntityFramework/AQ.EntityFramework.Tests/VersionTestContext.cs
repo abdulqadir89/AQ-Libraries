@@ -1,3 +1,5 @@
+using AQ.Actors;
+using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Tests.Generated;
 using AQ.EntityFramework.Versioning;
 using AQ.Events.Domain;
@@ -27,17 +29,24 @@ public sealed class VersionTestContext(DbContextOptions<VersionTestContext> opti
 
 public sealed class VersionTestDatabase : IDisposable
 {
+    public static readonly Guid UserId = Guid.NewGuid();
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private readonly TestActorContext _actors = new() { Actor = new Actor(UserId, PrincipalKind.Human) };
 
     public VersionTestDatabase()
     {
         _connection.Open();
         using var context = CreateContext();
         context.Database.EnsureCreated();
+        context.Users.Add(new TestUser { Id = UserId });
+        context.SaveChanges();
     }
 
     public VersionTestContext CreateContext() =>
-        new(new DbContextOptionsBuilder<VersionTestContext>().UseSqlite(_connection).Options);
+        new(new DbContextOptionsBuilder<VersionTestContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new AqSaveChangesInterceptor(new AqSavePipelineOptions { Audit = true }, _actors))
+            .Options);
 
     public void Dispose() => _connection.Dispose();
 }

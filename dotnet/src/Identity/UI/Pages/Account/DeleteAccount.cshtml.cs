@@ -1,3 +1,4 @@
+using AQ.Actors;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.UI.Resources;
@@ -86,10 +87,10 @@ public class DeleteAccountModel(
         var claims = context.StoredClaims.Where(c => c.UserId == user.Id);
         context.StoredClaims.RemoveRange(claims);
 
-        // Logged before the user row is deleted — AuditEntry.UserId is nullable specifically
+        // Logged before the user row is deleted — AuditEntry.SubjectUserId has no foreign key specifically
         // so this entry (and any earlier ones for this user) survive the delete without an
         // FK violation.
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.AccountDeleted, user.Id, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.AccountDeleted, new Actor(user.Id, PrincipalKind.Human), subjectUserId: user.Id));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         await signInManager.SignOutAsync();

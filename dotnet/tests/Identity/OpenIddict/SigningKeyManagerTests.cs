@@ -98,7 +98,7 @@ public class SigningKeyManagerTests : IDisposable
     [Fact]
     public async Task AddAuditEntryAsync_AddsEntryAndSaves()
     {
-        var auditEntry = new AuditEntry { Action = "test-action" };
+        var auditEntry = AuditEntry.LogAnonymous("test-action", subjectUserId: null);
 
         await _manager.AddAuditEntryAsync(auditEntry, CancellationToken.None);
 

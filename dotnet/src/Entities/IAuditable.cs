@@ -9,14 +9,14 @@ public interface ITimestamped
 
 public interface IAuditable : ITimestamped
 {
-    Guid? CreatedById { get; }
-    Guid? UpdatedById { get; }
-    void SetCreatedBy(Guid? userId);
-    void SetUpdatedBy(Guid? userId);
+    Guid CreatedById { get; }
+    Guid UpdatedById { get; }
+    void SetCreatedBy(Guid principalId);
+    void SetUpdatedBy(Guid principalId);
 }
 
-public interface IAuditable<TUser> : IAuditable
+public interface IAuditable<TPrincipal> : IAuditable
 {
-    TUser? CreatedBy { get; }
-    TUser? UpdatedBy { get; }
+    TPrincipal? CreatedBy { get; }
+    TPrincipal? UpdatedBy { get; }
 }

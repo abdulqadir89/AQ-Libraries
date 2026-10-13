@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
@@ -34,7 +35,7 @@ public class UpdateScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentity
 
         var claimTypes = req.ClaimTypes.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, AuditActors.Require(User)));
         await context.SaveChangesAsync(ct);
 
         await Send.OkAsync(new IdentityScopeDto

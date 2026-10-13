@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
@@ -33,7 +34,7 @@ public class DeleteScopeEndpoint(IOpenIddictScopeManager scopeManager, IIdentity
 
         await scopeManager.DeleteAsync(scope, ct);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, AuditActors.Require(User)));
         await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);

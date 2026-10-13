@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.KeyManagement;
@@ -71,11 +72,7 @@ public sealed class KeyRotationWorker : BackgroundService
             if (!newerKeyExists)
             {
                 var newKey = await keyManager.GenerateAndPersistKeyAsync(cancellationToken);
-                var auditEntry = new AuditEntry(
-                    AuditEntry.Actions.KeyRotated,
-                    userId: null,
-                    ip: null,
-                    ua: null);
+                var auditEntry = AuditEntry.Log(AuditEntry.Actions.KeyRotated, IdentitySystemActors.KeyRotation);
                 await keyManager.AddAuditEntryAsync(
                     auditEntry,
                     cancellationToken);

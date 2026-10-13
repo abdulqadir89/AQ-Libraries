@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Dto;
@@ -52,7 +53,7 @@ public class UpsertUserClaimsEndpoint(IIdentityDbContext context) : Endpoint<Ups
             .ToList();
         context.StoredClaims.AddRange(newClaims);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimAdded, userId: req.UserId, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserClaimAdded, AuditActors.Require(User), subjectUserId: req.UserId));
         await context.SaveChangesAsync(ct);
 
         var response = newClaims

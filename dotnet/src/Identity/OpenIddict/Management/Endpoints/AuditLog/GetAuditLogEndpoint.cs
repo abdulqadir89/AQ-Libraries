@@ -10,7 +10,10 @@ namespace AQ.Identity.OpenIddict.Management.Endpoints.AuditLog;
 
 public class GetAuditLogRequest : BaseManageRequest
 {
-    [QueryParam] public Guid? UserId { get; set; }
+    /// <summary>Filters to actions applied to this user.</summary>
+    [QueryParam] public Guid? SubjectUserId { get; set; }
+    /// <summary>Filters to actions performed by this principal.</summary>
+    [QueryParam] public Guid? ActorId { get; set; }
     [QueryParam] public string? Action { get; set; }
     [QueryParam] public DateTimeOffset? From { get; set; }
     [QueryParam] public DateTimeOffset? To { get; set; }
@@ -31,9 +34,14 @@ public class GetAuditLogEndpoint(IIdentityDbContext context)
     {
         var query = context.AuditLog.AsNoTracking();
 
-        if (req.UserId.HasValue)
+        if (req.SubjectUserId.HasValue)
         {
-            query = query.Where(a => a.UserId == req.UserId.Value);
+            query = query.Where(a => a.SubjectUserId == req.SubjectUserId.Value);
+        }
+
+        if (req.ActorId.HasValue)
+        {
+            query = query.Where(a => a.ActorId == req.ActorId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(req.Action))
@@ -54,7 +62,10 @@ public class GetAuditLogEndpoint(IIdentityDbContext context)
         var dtoQuery = query.Select(a => new AuditEntryDto
         {
             Id = a.Id,
-            UserId = a.UserId,
+            ActorKind = a.ActorKind,
+            ActorId = a.ActorId,
+            SubjectUserId = a.SubjectUserId,
+            ClientId = a.ClientId,
             Action = a.Action,
             IpAddress = a.IpAddress,
             UserAgent = a.UserAgent,

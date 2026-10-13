@@ -1,7 +1,10 @@
+using AQ.Identity.Core.Auditing;
 using System.Linq;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Principals;
 using FastEndpoints;
 using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
@@ -32,6 +35,12 @@ public class UpdateClientEndpoint(
             ThrowError(redirectUriError);
         }
 
+        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(req.ServiceAccountClaims.Keys);
+        if (claimError != null)
+        {
+            ThrowError(claimError);
+        }
+
         // Find existing client
         var existing = await applicationManager.FindByClientIdAsync(clientId, ct);
         if (existing == null)
@@ -46,14 +55,10 @@ public class UpdateClientEndpoint(
             ThrowError("ClientId in body must match ClientId in URL");
         }
 
-        var descriptor = ClientDescriptorBuilder.Build(req);
+        var descriptor = ClientDescriptorBuilder.Build(req, await ServicePrincipalIds.ReadAsync(applicationManager, existing, ct));
         await applicationManager.UpdateAsync(existing, descriptor, ct);
 
-        var auditEntry = AuditEntry.Log(
-            AuditEntry.Actions.ClientUpdated,
-            userId: null,
-            ip: null,
-            ua: null);
+        var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientUpdated, AuditActors.Require(User));
         context.AuditLog.Add(auditEntry);
         await context.SaveChangesAsync(ct);
 

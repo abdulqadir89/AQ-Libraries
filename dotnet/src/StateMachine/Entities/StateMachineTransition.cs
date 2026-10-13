@@ -281,13 +281,13 @@ public class StateMachineTransition : Entity
     #endregion
 }
 
-public class AuditableStateMachineTransition<TUser> : StateMachineTransition, IAuditable<TUser>
-    where TUser : class
+public class AuditableStateMachineTransition<TPrincipal> : StateMachineTransition, IAuditable<TPrincipal>
+    where TPrincipal : class
 {
-    public Guid? CreatedById { get; private set; }
-    public Guid? UpdatedById { get; private set; }
-    public TUser? CreatedBy { get; private set; }
-    public TUser? UpdatedBy { get; private set; }
+    public Guid CreatedById { get; private set; }
+    public Guid UpdatedById { get; private set; }
+    public TPrincipal? CreatedBy { get; private set; }
+    public TPrincipal? UpdatedBy { get; private set; }
 
     private AuditableStateMachineTransition() : base() { }
 
@@ -301,7 +301,7 @@ public class AuditableStateMachineTransition<TUser> : StateMachineTransition, IA
         IEnumerable<string>? publishEventTypes)
         : base(definition, fromState, toState, trigger, description, requirements, publishEventTypes) { }
 
-    public static new AuditableStateMachineTransition<TUser> Create(
+    public static new AuditableStateMachineTransition<TPrincipal> Create(
         StateMachineDefinition definition,
         StateMachineState? fromState,
         StateMachineState? toState,
@@ -313,15 +313,24 @@ public class AuditableStateMachineTransition<TUser> : StateMachineTransition, IA
         if (definition is null) throw new ArgumentNullException(nameof(definition));
         if (trigger == null) throw new ArgumentNullException(nameof(trigger));
 
-        return new AuditableStateMachineTransition<TUser>(
+        return new AuditableStateMachineTransition<TPrincipal>(
             definition, fromState, toState, trigger, description?.Trim(), requirements, publishEventTypes);
     }
 
-    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
-
-    public void SetUpdatedBy(Guid? userId)
+    public void SetCreatedBy(Guid principalId)
     {
-        UpdatedById = userId;
+        if (CreatedById != Guid.Empty)
+        {
+            return;
+        }
+
+        CreatedById = principalId;
+        UpdatedById = principalId;
+    }
+
+    public void SetUpdatedBy(Guid principalId)
+    {
+        UpdatedById = principalId;
         SetUpdatedTimestamp();
     }
 }

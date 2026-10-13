@@ -1,5 +1,6 @@
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
+using AQ.Identity.OpenIddict.Principals;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -85,7 +86,9 @@ public class ClientSeeder : IHostedService
 
     private async Task UpdateClientAsync(object existingClient, IdentityClientConfig config, IOpenIddictApplicationManager applicationManager, CancellationToken cancellationToken)
     {
-        var descriptor = ClientDescriptorBuilder.Build(config);
+        // Keep the client's principal id; a client created before principal ids existed gets one here.
+        var principalId = await ServicePrincipalIds.ReadAsync(applicationManager, existingClient, cancellationToken);
+        var descriptor = ClientDescriptorBuilder.Build(config, principalId);
         await applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
     }
 }

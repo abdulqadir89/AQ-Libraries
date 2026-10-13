@@ -52,6 +52,13 @@ validate `aud`; the IdP's own bearer endpoints accept `AqIdentityOptions.Audienc
 — bearer tokens with the `manage_api` claim; no token is a 401, never a login redirect. The
 Razor admin UI under `/manage/*` stays cookie-based with the same `ManageApi` policy.
 
+## Service principals and the audit log
+
+**Service identity.** Every `client_credentials` client gets a stable GUID in its OpenIddict application property `principal_id`, generated when the client is created (config seeding, the admin UI or `POST /manage/clients`). It is kept across updates and secret resets; a client that has none gets one on the next seed (or the first token request). Tokens issued to the client carry `sub = principal_id`, `principal_type=service` and `client_id`. Person tokens carry `principal_type=human`. Resource servers use these to attribute writes to a principal.
+
+**Reserved claims.** A client's `ServiceAccountClaims` may only add permission-style claims. `sub`, `principal_type`, `client_id` and `els_internal_user_id` are rejected (seeding throws, the admin pages and management endpoints return an error), because they define who the caller is.
+
+**Audit log.** `AuditEntry` records the actor separately from the subject: `ActorKind` (`Anonymous | Human | Service | System`), `ActorId` (null only when anonymous), `SubjectUserId` (the user acted on), `ClientId`, `Action`, `IpAddress`, `UserAgent`, `OccurredAt`. Create entries with `AuditEntry.Log(action, actor, subjectUserId)` or `AuditEntry.LogAnonymous(action, subjectUserId)`; `AuditActors.Require(User)` resolves the signed-in admin or service for a request. `GET /manage/audit-log` filters by `SubjectUserId` and `ActorId`. The key rotation worker logs as the `KeyRotation` system actor. The consuming app maps the new columns and migrates (the old `UserId` becomes `SubjectUserId`).
 ## Localization
 
 `UI` ships localized login/register/MFA/account/apps pages (not `Pages/Manage/**`, which stays

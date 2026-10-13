@@ -1,3 +1,4 @@
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,10 @@ public class ClaimsEnrichmentHandler(
         var principal = ctx.AccessTokenPrincipal;
         if (principal is null) return;
 
+        // Service tokens are fully built by the token endpoint (sub = principal id, principal_type=service);
+        // there is no user to enrich.
+        if (ctx.Request?.GrantType == OpenIddictConstants.GrantTypes.ClientCredentials) return;
+
         var subClaim = principal.FindFirst(ClaimTypes.NameIdentifier) ?? principal.FindFirst("sub");
         if (subClaim is null || !Guid.TryParse(subClaim.Value, out var userId)) return;
 
@@ -50,6 +55,7 @@ public class ClaimsEnrichmentHandler(
         }
 
         principal.SetClaim("stamp", user.SecurityStamp);
+        principal.SetClaim(PrincipalClaims.Type, PrincipalClaims.Human);
 
         // Attach every token minted for this sign-in to one durable "session" — a
         // permanent OpenIddictAuthorization — instead of the ad-hoc one OpenIddict's

@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using FastEndpoints;
@@ -44,11 +45,7 @@ public class DeleteUserSessionsEndpoint(
         // Rotate SecurityStamp so any in-flight access tokens are also rejected
         await userManager.UpdateSecurityStampAsync(user);
 
-        context.AuditLog.Add(AuditEntry.Log(
-            AuditEntry.Actions.UserSessionsRevoked,
-            user.Id,
-            null,
-            null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserSessionsRevoked, AuditActors.Require(User), subjectUserId: user.Id));
         await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);

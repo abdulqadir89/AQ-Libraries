@@ -1,3 +1,5 @@
+using AQ.Actors;
+using AQ.EntityFramework.Extensions;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Tests.Support;
 using AQ.Events.Outbox;
@@ -354,17 +356,117 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_WithoutCurrentUserProvider_UsesNullUser()
+    public async Task Pipeline_WithoutActor_ThrowsMissingActorException()
     {
         using var context = _database.CreateContext(new AqSavePipelineOptions { Audit = true }, userId: null);
-        var ticket = Ticket.Create("Anonymous");
+        context.Add(Ticket.Create("Anonymous"));
+
+        var act = () => context.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<MissingActorException>();
+    }
+
+    [Fact]
+    public async Task Pipeline_WithoutActor_AllowsWritesThatAreNeitherAuditableNorEvented()
+    {
+        using var context = _database.CreateContext(All, userId: null);
+        context.Users.Add(new TestUser { Id = Guid.NewGuid() });
+
+        var saved = await context.SaveChangesAsync();
+
+        saved.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Pipeline_WithoutActor_ThrowsForEventsRaisedWithoutOtherChanges()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Quiet events");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        _database.Actors.Actor = null;
+        ticket.Raise();
+
+        var act = () => context.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<MissingActorException>();
+    }
+
+    [Fact]
+    public async Task Audit_StartsUpdatedByEqualToCreatedBy()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Stamped");
         context.Add(ticket);
 
         await context.SaveChangesAsync();
 
-        ticket.CreatedById.Should().BeNull();
+        ticket.CreatedById.Should().Be(_userId);
+        ticket.UpdatedById.Should().Be(_userId);
     }
 
+    [Fact]
+    public async Task Outbox_CarriesActorIncludingDelegation()
+    {
+        var onBehalfOf = Guid.NewGuid();
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Delegated");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        _database.Actors.Actor = new Actor(_userId, PrincipalKind.Service, onBehalfOf, "client-1", "trace-1");
+        ticket.Raise();
+
+        await context.SaveChangesAsync();
+
+        var stored = await context.OutboxEvents.SingleAsync();
+        stored.ActorId.Should().Be(_userId);
+        stored.ActorKind.Should().Be(PrincipalKind.Service);
+        stored.OnBehalfOfId.Should().Be(onBehalfOf);
+        stored.ClientId.Should().Be("client-1");
+        stored.CorrelationId.Should().Be("trace-1");
+        stored.ToActor().Should().Be(_database.Actors.Actor);
+    }
+
+    [Fact]
+    public async Task Outbox_UsesConfiguredJsonOptions()
+    {
+        var options = new AqSavePipelineOptions
+        {
+            Outbox = true,
+            Audit = true,
+            OutboxJson = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase },
+        };
+        using var context = CreateContext(options);
+        var ticket = Ticket.Create("Camel");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        ticket.Raise();
+
+        await context.SaveChangesAsync();
+
+        (await context.OutboxEvents.SingleAsync()).EventData.Should().Contain("\"actorId\"");
+    }
+
+    [Fact]
+    public async Task ExecuteAuditedUpdate_StampsActorTimestampAndRevision()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Bulk");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        var other = Guid.NewGuid();
+        context.Users.Add(new TestUser { Id = other });
+        await context.SaveChangesAsync();
+        _database.Actors.Actor = new Actor(other, PrincipalKind.System);
+
+        var updated = await context.Tickets.Where(t => t.Id == ticket.Id)
+            .ExecuteAuditedUpdateAsync(_database.Actors, s => s.SetProperty(t => t.Notes, "bulk"));
+
+        updated.Should().Be(1);
+        var reloaded = await _database.CreateContext(All, _userId).Tickets.AsNoTracking().SingleAsync(t => t.Id == ticket.Id);
+        reloaded.Notes.Should().Be("bulk");
+        reloaded.UpdatedById.Should().Be(other);
+    }
     [Fact]
     public async Task Outbox_StoresEventsRaisedOnEntityWithoutOtherChanges()
     {

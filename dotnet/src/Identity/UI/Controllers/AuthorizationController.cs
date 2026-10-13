@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Entities;
+using AQ.Identity.OpenIddict.Principals;
 using AQ.Identity.OpenIddict.Sessions;
 using System.Security.Claims;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -76,7 +78,12 @@ public class AuthorizationController(
                 nameType: Claims.Name,
                 roleType: Claims.Role);
 
-            identity.SetClaim(Claims.Subject, await applicationManager.GetClientIdAsync(application));
+            // sub is the client's stable principal id (a GUID), not its client_id, so resource servers can
+            // attribute writes to the service as a real principal.
+            var principalId = await ServicePrincipalIds.EnsureAsync(applicationManager, application, HttpContext.RequestAborted);
+            identity.SetClaim(Claims.Subject, principalId.ToString())
+                    .SetClaim(PrincipalClaims.Type, PrincipalClaims.Service)
+                    .SetClaim(PrincipalClaims.ClientId, await applicationManager.GetClientIdAsync(application));
             identity.SetScopes(request.GetScopes());
             identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
             identity.SetDestinations(_ => [Destinations.AccessToken]);

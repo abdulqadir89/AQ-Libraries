@@ -1,5 +1,7 @@
 using System.Text.Json;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Configuration;
+using AQ.Identity.OpenIddict.Principals;
 using AQ.Identity.OpenIddict.Sessions;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -66,8 +68,14 @@ public static class ClientDescriptorBuilder
     /// malformed URI in appsettings.json fails loudly instead of throwing deep inside
     /// OpenIddict or silently registering an unsafe redirect target.
     /// </summary>
-    public static OpenIddictApplicationDescriptor Build(IdentityClientConfig config)
+    public static OpenIddictApplicationDescriptor Build(IdentityClientConfig config, Guid? existingPrincipalId = null)
     {
+        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(config.ServiceAccountClaims.Keys);
+        if (claimError != null)
+        {
+            throw new ArgumentException($"Invalid service account claims for client '{config.ClientId}': {claimError}");
+        }
+
         foreach (var uri in config.RedirectUris.Concat(config.PostLogoutRedirectUris))
         {
             var error = ValidateRedirectUri(uri);
@@ -131,6 +139,8 @@ public static class ClientDescriptorBuilder
 
         if (string.Equals(config.GrantType, "client_credentials", StringComparison.OrdinalIgnoreCase))
         {
+            // Stable service identity (token sub): kept across updates, assigned once if the client has none.
+            ServicePrincipalIds.Set(descriptor, existingPrincipalId ?? Guid.NewGuid());
             descriptor.Permissions.Add(Permissions.GrantTypes.ClientCredentials);
             descriptor.Permissions.Add(Permissions.Endpoints.Token);
             descriptor.Permissions.Add(Permissions.Endpoints.Introspection);

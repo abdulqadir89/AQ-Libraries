@@ -2,7 +2,7 @@ using AQ.Entities;
 
 namespace AQ.Utilities.Versioning;
 
-public abstract class EntityVersion<TUser> : Entity<TUser> where TUser : class
+public abstract class EntityVersion<TPrincipal> : Entity<TPrincipal> where TPrincipal : class
 {
     public int VersionNumber { get; private set; }
     public string? Label { get; private set; }

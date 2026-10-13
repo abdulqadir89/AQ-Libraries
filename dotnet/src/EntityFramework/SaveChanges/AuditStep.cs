@@ -1,3 +1,4 @@
+using AQ.Actors;
 using AQ.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,7 +6,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class AuditStep
 {
-    public static void Run(DbContext context, Guid? currentUserId)
+    public static void Run(DbContext context, Actor? actor)
     {
         var entries = context.ChangeTracker.Entries()
             .Where(e => (e.State == EntityState.Added || e.State == EntityState.Modified) && e.Entity is ITimestamped)
@@ -15,16 +16,20 @@ internal static class AuditStep
         {
             if (entry.Entity is IAuditable auditable)
             {
+                // Lifecycle hooks may have added auditable entities after the actor check.
+                var principalId = (actor ?? throw new MissingActorException()).PrincipalId;
+
                 if (entry.State == EntityState.Added)
                 {
-                    auditable.SetCreatedBy(currentUserId);
+                    auditable.SetCreatedBy(principalId);
                     entry.Property("CreatedAt").IsModified = true;
                     entry.Property("CreatedById").IsModified = true;
+                    entry.Property("UpdatedById").IsModified = true;
                     entry.Property("Revision").IsModified = true;
                 }
                 else
                 {
-                    auditable.SetUpdatedBy(currentUserId);
+                    auditable.SetUpdatedBy(principalId);
                     entry.Property("UpdatedAt").IsModified = true;
                     entry.Property("UpdatedById").IsModified = true;
                     entry.Property("Revision").IsModified = true;

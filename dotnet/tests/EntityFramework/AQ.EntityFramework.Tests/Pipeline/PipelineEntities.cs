@@ -11,7 +11,9 @@ public sealed class TicketRaised(Guid aggregateId) : IDomainEvent
 {
     public DateTimeOffset OccurredOn { get; set; } = DateTimeOffset.UtcNow;
     public Guid AggregateId { get; set; } = aggregateId;
-    public Guid? UserId { get; set; }
+    public Guid? ActorId { get; set; }
+    public Guid? OnBehalfOfId { get; set; }
+    public string? CorrelationId { get; set; }
 }
 
 public class Price
@@ -20,14 +22,15 @@ public class Price
     public string Currency { get; set; } = "USD";
 }
 
+[Audited]
 [Snapshottable(IncludeId = true)]
 public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
 {
     private Ticket() { }
 
-    [Snapshot] [Verifiable] public string Title { get; private set; } = "";
-    [Snapshot] public string Notes { get; private set; } = "";
-    [Snapshot] [GeneratedReference(typeof(ShortCodeReferenceGenerator), 6, Prefix = "TCK")] public string Reference { get; private set; } = "";
+    [Snapshot][Verifiable] public string Title { get; private set; } = "";
+    [Snapshot][AuditIgnore] public string Notes { get; private set; } = "";
+    [Snapshot][GeneratedReference(typeof(ShortCodeReferenceGenerator), 6, Prefix = "TCK")] public string Reference { get; private set; } = "";
     [Verifiable] public Price? Price { get; private set; }
 
     public bool IsActive { get; private set; } = true;

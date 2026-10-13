@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.Core.Abstractions;
 using FastEndpoints;
@@ -40,11 +41,7 @@ public class InvalidateUserTokensEndpoint(
         // validation on the next request (ValidateTokenContext stamp check)
         await userManager.UpdateSecurityStampAsync(user);
 
-        context.AuditLog.Add(AuditEntry.Log(
-            AuditEntry.Actions.UserTokensInvalidated,
-            user.Id,
-            null,
-            null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.UserTokensInvalidated, AuditActors.Require(User), subjectUserId: user.Id));
         await context.SaveChangesAsync(ct);
 
         await Send.NoContentAsync(ct);

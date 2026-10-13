@@ -1,3 +1,4 @@
+using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -69,7 +70,7 @@ public class ScopesIndexModel(
 
         await scopeManager.CreateAsync(descriptor, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeCreated, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{NewName}' has been created.";
@@ -111,7 +112,7 @@ public class ScopesIndexModel(
 
         await scopeManager.DeleteAsync(scope, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeDeleted, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{name}' has been deleted.";
@@ -137,7 +138,7 @@ public class ScopesIndexModel(
 
         await scopeManager.UpdateAsync(scope, descriptor, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, userId: null, ip: null, ua: null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ScopeUpdated, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Scope '{name}' has been updated.";

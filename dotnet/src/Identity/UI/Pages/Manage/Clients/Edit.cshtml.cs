@@ -1,8 +1,11 @@
+using AQ.Identity.Core.Auditing;
 using System.Security.Cryptography;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.Core.Entities;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
+using AQ.Identity.OpenIddict.Principals;
 using AQ.Identity.OpenIddict.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -104,6 +107,13 @@ public class EditClientModel(
             return Page();
         }
 
+        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(ParseKeyValues(ServiceAccountClaimsRaw).Keys);
+        if (claimError != null)
+        {
+            ModelState.AddModelError(nameof(ServiceAccountClaimsRaw), claimError);
+            return Page();
+        }
+
         var config = new IdentityClientConfig
         {
             ClientId = ClientId,
@@ -120,7 +130,7 @@ public class EditClientModel(
             ServiceAccountClaims = ParseKeyValues(ServiceAccountClaimsRaw)
         };
 
-        var descriptor = ClientDescriptorBuilder.Build(config);
+        var descriptor = ClientDescriptorBuilder.Build(config, await ServicePrincipalIds.ReadAsync(applicationManager, existing, HttpContext.RequestAborted));
 
         // ClientDescriptorBuilder.Build() never sets ClientSecret when config.ClientSecret is
         // null/empty (see its config.ClientSecret guard), so a fresh descriptor here has no
@@ -138,7 +148,7 @@ public class EditClientModel(
 
         await applicationManager.UpdateAsync(existing, descriptor, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientUpdated, null, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientUpdated, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["Success"] = $"Client '{ClientId}' has been updated.";
@@ -158,7 +168,7 @@ public class EditClientModel(
 
         await applicationManager.UpdateAsync(existing, descriptor, HttpContext.RequestAborted);
 
-        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientSecretReset, null, null, null));
+        context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientSecretReset, AuditActors.Require(User)));
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["NewClientId"] = ClientId;

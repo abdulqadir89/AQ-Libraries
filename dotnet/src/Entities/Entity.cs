@@ -115,28 +115,35 @@ public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
     }
 }
 
-public abstract class Entity<TUser> : Entity, IAuditable<TUser>
-    where TUser : class
+public abstract class Entity<TPrincipal> : Entity, IAuditable<TPrincipal>
+    where TPrincipal : class
 {
-    public Guid? CreatedById { get; private set; }
-    public Guid? UpdatedById { get; private set; }
-    public TUser? CreatedBy { get; private set; }
-    public TUser? UpdatedBy { get; private set; }
+    public Guid CreatedById { get; private set; }
+    public Guid UpdatedById { get; private set; }
+    public TPrincipal? CreatedBy { get; private set; }
+    public TPrincipal? UpdatedBy { get; private set; }
 
     /// <summary>
-    /// Mark the entity as created by the given user. Does not overwrite existing CreatedById.
+    /// Mark the entity as created by the given principal. Does not overwrite an existing CreatedById.
+    /// UpdatedById starts equal to CreatedById.
     /// </summary>
-    public void SetCreatedBy(Guid? userId)
+    public void SetCreatedBy(Guid principalId)
     {
-        CreatedById ??= userId;
+        if (CreatedById != Guid.Empty)
+        {
+            return;
+        }
+
+        CreatedById = principalId;
+        UpdatedById = principalId;
     }
 
     /// <summary>
-    /// Mark the entity as updated by the given user, set UpdatedAt, and increment Revision.
+    /// Mark the entity as updated by the given principal, set UpdatedAt, and increment Revision.
     /// </summary>
-    public void SetUpdatedBy(Guid? userId)
+    public void SetUpdatedBy(Guid principalId)
     {
-        UpdatedById = userId;
+        UpdatedById = principalId;
         SetUpdatedTimestamp();
     }
 }

@@ -73,13 +73,13 @@ public class StateMachineState : Entity
     public override string ToString() => Name;
 }
 
-public class AuditableStateMachineState<TUser> : StateMachineState, IAuditable<TUser>
-    where TUser : class
+public class AuditableStateMachineState<TPrincipal> : StateMachineState, IAuditable<TPrincipal>
+    where TPrincipal : class
 {
-    public Guid? CreatedById { get; private set; }
-    public Guid? UpdatedById { get; private set; }
-    public TUser? CreatedBy { get; private set; }
-    public TUser? UpdatedBy { get; private set; }
+    public Guid CreatedById { get; private set; }
+    public Guid UpdatedById { get; private set; }
+    public TPrincipal? CreatedBy { get; private set; }
+    public TPrincipal? UpdatedBy { get; private set; }
 
     private AuditableStateMachineState() : base() { }
 
@@ -90,7 +90,7 @@ public class AuditableStateMachineState<TUser> : StateMachineState, IAuditable<T
         bool isFinal)
         : base(definition, name, description, isFinal) { }
 
-    public static new AuditableStateMachineState<TUser> Create(
+    public static new AuditableStateMachineState<TPrincipal> Create(
         StateMachineDefinition definition,
         string name,
         string? description = null,
@@ -101,14 +101,23 @@ public class AuditableStateMachineState<TUser> : StateMachineState, IAuditable<T
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("State name cannot be null or empty.", nameof(name));
 
-        return new AuditableStateMachineState<TUser>(definition, name.Trim(), description?.Trim(), isFinal);
+        return new AuditableStateMachineState<TPrincipal>(definition, name.Trim(), description?.Trim(), isFinal);
     }
 
-    public void SetCreatedBy(Guid? userId) => CreatedById ??= userId;
-
-    public void SetUpdatedBy(Guid? userId)
+    public void SetCreatedBy(Guid principalId)
     {
-        UpdatedById = userId;
+        if (CreatedById != Guid.Empty)
+        {
+            return;
+        }
+
+        CreatedById = principalId;
+        UpdatedById = principalId;
+    }
+
+    public void SetUpdatedBy(Guid principalId)
+    {
+        UpdatedById = principalId;
         SetUpdatedTimestamp();
     }
 }

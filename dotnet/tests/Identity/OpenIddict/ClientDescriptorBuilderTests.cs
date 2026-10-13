@@ -127,4 +127,62 @@ public class ClientDescriptorBuilderTests
         uri.Should().Be("https://web.example.com/api/auth/backchannel-logout");
         sessionRequired.Should().BeTrue();
     }
+
+    private static IdentityClientConfig ServiceClient(Dictionary<string, string>? claims = null) => new()
+    {
+        ClientId = "svc",
+        DisplayName = "Service",
+        Type = "confidential",
+        ClientSecret = "secret",
+        GrantType = "client_credentials",
+        ServiceAccountClaims = claims ?? [],
+    };
+
+    [Fact]
+    public void Build_ClientCredentials_AssignsPrincipalId()
+    {
+        var descriptor = ClientDescriptorBuilder.Build(ServiceClient());
+
+        descriptor.Properties.Should().ContainKey("principal_id");
+        Guid.TryParse(descriptor.Properties["principal_id"].GetString(), out var id).Should().BeTrue();
+        id.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Build_ClientCredentials_KeepsExistingPrincipalId()
+    {
+        var existing = Guid.NewGuid();
+
+        var descriptor = ClientDescriptorBuilder.Build(ServiceClient(), existing);
+
+        descriptor.Properties["principal_id"].GetString().Should().Be(existing.ToString());
+    }
+
+    [Fact]
+    public void Build_AuthorizationCodeClient_HasNoPrincipalId()
+    {
+        var descriptor = ClientDescriptorBuilder.Build(new IdentityClientConfig { ClientId = "web", DisplayName = "Web" });
+
+        descriptor.Properties.Should().NotContainKey("principal_id");
+    }
+
+    [Theory]
+    [InlineData("sub")]
+    [InlineData("principal_type")]
+    [InlineData("client_id")]
+    [InlineData("els_internal_user_id")]
+    public void Build_RejectsReservedServiceAccountClaims(string claimType)
+    {
+        var act = () => ClientDescriptorBuilder.Build(ServiceClient(new() { [claimType] = "x" }));
+
+        act.Should().Throw<ArgumentException>().WithMessage("*reserved*");
+    }
+
+    [Fact]
+    public void Build_AllowsPermissionClaims()
+    {
+        var act = () => ClientDescriptorBuilder.Build(ServiceClient(new() { ["els_system_permissions"] = "1" }));
+
+        act.Should().NotThrow();
+    }
 }
