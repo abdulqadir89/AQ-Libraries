@@ -182,32 +182,11 @@ public static class ServiceCollectionExtensions
                     validationOptions.AddAudiences([.. options.Audiences]);
 
                 // Reject tokens for inactive users or invalidated SecurityStamp
-                validationOptions.AddEventHandler<OpenIddictValidationEvents.ValidateTokenContext>(builder =>
-                    builder.UseInlineHandler(async context =>
-                    {
-                        var sub = context.Principal?.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
-                        if (sub == null || !Guid.TryParse(sub, out var userId)) return;
-
-                        var serviceProvider = context.Transaction.Properties["service_provider"] as IServiceProvider
-                            ?? services.BuildServiceProvider();
-                        using var scope = serviceProvider.CreateScope();
-                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-                        var user = await userManager.FindByIdAsync(userId.ToString());
-
-                        if (user is { IsActive: false })
-                        {
-                            context.Reject(Errors.InvalidToken, "Account is disabled.");
-                            return;
-                        }
-
-                        // Reject if SecurityStamp has changed (forced re-auth after security events)
-                        var tokenStamp = context.Principal?.FindFirst("stamp")?.Value;
-                        if (tokenStamp != null && user?.SecurityStamp != null && tokenStamp != user.SecurityStamp)
-                        {
-                            context.Reject(Errors.InvalidToken, "Token has been invalidated.");
-                        }
-                    })
-                    .SetOrder(int.MaxValue - 100));
+                validationOptions.AddEventHandler(
+                    OpenIddictValidationHandlerDescriptor.CreateBuilder<OpenIddictValidationEvents.ValidateTokenContext>()
+                        .UseScopedHandler<ActiveUserValidationHandler>()
+                        .SetOrder(int.MaxValue - 100)
+                        .Build());
             });
 
         services.AddOpenIddict()
