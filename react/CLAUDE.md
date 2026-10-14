@@ -76,4 +76,4 @@ consumer that doesn't opt in sees unchanged English behavior.
   not display strings — leave them as-is.
 - ELS web supplies actual translated strings by wiring `AQLocaleProvider` into its own
   `providers/LocaleProvider.tsx` with `buildAqMessages(t)` — see `frontend/web`'s
-  `docs/architecture/frontend.md` "Internationalization" section for that side of the wiring.
+  `CLAUDE.md` "Internationalization" section for that side of the wiring.
