@@ -44,6 +44,7 @@ public static class FilterExtensions
     /// <summary>
     /// Applies filters from a comma-separated filter string
     /// </summary>
+    // RULE FLT-5
     public static IQueryable<T> FilterFromString<T>(this IQueryable<T> query, string? filterString, LogicalOperator logicalOperator = LogicalOperator.And)
     {
         if (string.IsNullOrWhiteSpace(filterString))

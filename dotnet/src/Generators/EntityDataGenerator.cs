@@ -68,6 +68,7 @@ namespace AQ.Generators
 
             foreach (var model in input.Snapshottable)
             {
+                // RULE GEN-1
                 context.AddSource(HintName(model) + ".Snapshot.g.cs", SourceText.From(Emitter.EmitSnapshotClass(model), Encoding.UTF8));
             }
 

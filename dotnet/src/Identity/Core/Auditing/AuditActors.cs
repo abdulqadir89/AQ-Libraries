@@ -4,6 +4,7 @@ using AQ.Actors;
 namespace AQ.Identity.Core.Auditing;
 
 /// <summary>Resolves the <see cref="Actor"/> behind a signed-in admin request (cookie page or bearer API).</summary>
+// RULE OID-9
 public static class AuditActors
 {
     public static Actor? TryGet(ClaimsPrincipal user)

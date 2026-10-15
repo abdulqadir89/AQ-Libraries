@@ -26,6 +26,7 @@ public class SqlServerSearchDialect : ISearchDialect
 
     private static readonly Expression EfFunctions = Expression.Constant(EF.Functions);
 
+    // RULE SRC-4
     public Expression BuildFuzzyPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -44,6 +45,7 @@ public class SqlServerSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-4
     public Expression BuildPhoneticPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -56,6 +58,7 @@ public class SqlServerSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-4
     public Expression BuildFullTextPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -71,6 +74,7 @@ public class SqlServerSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-3
     private static Expression GuardStringNull(Expression property, Expression comparison)
     {
         var notNull = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));

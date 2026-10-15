@@ -112,6 +112,7 @@ public class OutboxEvent : IEntity
     /// <param name="eventData">The serialized event data.</param>
     /// <param name="occurredOn">When the event occurred.</param>
     /// <param name="actor">The actor that caused the event.</param>
+    // RULE EVT-6
     public OutboxEvent(OutboxEventCategory category, string eventType, string eventData, DateTimeOffset occurredOn, Actor actor)
     {
         ArgumentNullException.ThrowIfNull(actor);
@@ -131,11 +132,13 @@ public class OutboxEvent : IEntity
     /// <summary>
     /// The actor that caused the event, as recorded when it was raised.
     /// </summary>
+    // RULE EVT-6
     public Actor ToActor() => new(ActorId, ActorKind, OnBehalfOfId, ClientId, CorrelationId);
 
     /// <summary>
     /// Marks the event as successfully processed.
     /// </summary>
+    // RULE EVT-7
     public void MarkAsProcessed()
     {
         IsProcessed = true;
@@ -149,6 +152,7 @@ public class OutboxEvent : IEntity
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <param name="nextRetryDelay">The delay before the next retry attempt.</param>
+    // RULE EVT-7
     public void RecordFailure(string error, TimeSpan nextRetryDelay)
     {
         ProcessingAttempts++;
@@ -159,6 +163,7 @@ public class OutboxEvent : IEntity
     /// <summary>
     /// Checks if the event is ready for processing (either first attempt or retry time has passed).
     /// </summary>
+    // RULE EVT-8
     public bool IsReadyForProcessing()
     {
         if (IsProcessed)
@@ -171,6 +176,7 @@ public class OutboxEvent : IEntity
     /// Checks if the event has exceeded the maximum retry attempts.
     /// </summary>
     /// <param name="maxRetryAttempts">Maximum number of retry attempts allowed.</param>
+    // RULE EVT-8
     public bool HasExceededMaxRetries(int maxRetryAttempts)
     {
         return ProcessingAttempts >= maxRetryAttempts;

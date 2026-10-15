@@ -35,6 +35,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             await DispatchAsync(domainEvent, cancellationToken);
     }
 
+    // RULE EVT-2
     public async Task DispatchAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
         var eventType = domainEvent.GetType();

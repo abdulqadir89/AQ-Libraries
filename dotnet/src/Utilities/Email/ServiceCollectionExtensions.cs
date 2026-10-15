@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
     /// sub-section — see <see cref="EmailBrandingOptions"/>. Without it, a neutral look is used.
     /// </para>
     /// </summary>
+    // RULE EML-3
     public static IServiceCollection AddAqEmail(
         this IServiceCollection services,
         IConfiguration emailConfigSection,

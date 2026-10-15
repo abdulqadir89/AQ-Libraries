@@ -8,6 +8,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
     [NotMapped]
     private readonly List<IDomainEvent> _domainEvents = [];
 
+    // RULE ENT-1
     public Guid Id { get; protected set; } = Guid.CreateVersion7();
     public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; private set; }
@@ -22,6 +23,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
     /// Adds a domain event to this entity.
     /// </summary>
     /// <param name="domainEvent">The domain event to add.</param>
+    // RULE ENT-5
     public void AddDomainEvent(IDomainEvent domainEvent)
     {
         ArgumentNullException.ThrowIfNull(domainEvent);
@@ -72,6 +74,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
     /// <summary>
     /// Sets UpdatedAt to now and increments Revision. Called by the DbContext on every save.
     /// </summary>
+    // RULE ENT-2
     public void SetUpdatedTimestamp()
     {
         UpdatedAt = DateTimeOffset.UtcNow;
@@ -97,6 +100,7 @@ public abstract class Entity : IEntity, IHasDomainEvents, ITimestamped
     /// Lifecycle method called when the entity is removed from the repository. Can be used to perform actions like raising domain events or checking constraints before deletion.
     /// Note: This is called every time the entity is removed from the repository, even if it's already persisted. Use with caution.
     /// </summary>
+    // RULE ENT-6
     public virtual void OnRemove()
     {
         if (!CanRemove())
@@ -127,6 +131,7 @@ public abstract class Entity<TPrincipal> : Entity, IAuditable<TPrincipal>
     /// Mark the entity as created by the given principal. Does not overwrite an existing CreatedById.
     /// UpdatedById starts equal to CreatedById.
     /// </summary>
+    // RULE ENT-3
     public void SetCreatedBy(Guid principalId)
     {
         if (CreatedById != Guid.Empty)
@@ -141,6 +146,7 @@ public abstract class Entity<TPrincipal> : Entity, IAuditable<TPrincipal>
     /// <summary>
     /// Mark the entity as updated by the given principal, set UpdatedAt, and increment Revision.
     /// </summary>
+    // RULE ENT-4
     public void SetUpdatedBy(Guid principalId)
     {
         UpdatedById = principalId;

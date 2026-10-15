@@ -9,6 +9,7 @@ namespace AQ.Identity.Core.Configuration;
 public class BrandingOptions
 {
     /// <summary>Null falls back to the text wordmark (<c>AqIdentityOptions.AppName</c>).</summary>
+    // RULE IDU-3
     public string? LogoUrl { get; set; }
 
     /// <summary>

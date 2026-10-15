@@ -43,6 +43,7 @@ public interface IDomainEventHandler<in TDomainEvent> : IDomainEventHandler
     // Bridge the non-generic interface to the strongly-typed method.
     async Task IDomainEventHandler.HandleAsync(IDomainEvent domainEvent, CancellationToken cancellationToken)
     {
+        // RULE EVT-3
         if (domainEvent is TDomainEvent typed)
             await HandleAsync(typed, cancellationToken);
     }

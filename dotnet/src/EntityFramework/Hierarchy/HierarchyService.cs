@@ -9,6 +9,7 @@ public class HierarchyService<TContext, T, TClosure>(TContext db) : IHierarchySe
     where TClosure : class, IHierarchicalEntityClosure, new()
 {
 
+    // RULE EFC-18
     public async Task UpdateClosureOnParentChangeAsync(T entity, Guid? newParentId)
     {
         if (entity.ParentId == newParentId)
@@ -132,6 +133,7 @@ public class HierarchyService<TContext, T, TClosure>(TContext db) : IHierarchySe
         closures.RemoveRange(toRemove);
     }
 
+    // RULE EFC-19
     public async Task<int> RecomputeClosureAsync(Guid? entityId = null)
     {
         var closures = db.Set<TClosure>();

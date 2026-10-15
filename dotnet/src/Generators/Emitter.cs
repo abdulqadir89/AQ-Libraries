@@ -21,6 +21,7 @@ namespace AQ.Generators
             builder.Append("            lock (Gate)\n            {\n");
             builder.Append("                if (_registered)\n                {\n                    return;\n                }\n\n");
             builder.Append("                Register();\n                _registered = true;\n            }\n        }\n\n");
+            // RULE GEN-4
             builder.Append("        [global::System.Runtime.CompilerServices.ModuleInitializer]\n");
             builder.Append("        internal static void Init() => EnsureRegistered();\n\n");
             builder.Append("        private static void Register()\n        {\n");
@@ -121,6 +122,7 @@ namespace AQ.Generators
 
         private static void AppendExtraRegistrations(StringBuilder builder, GenerationInput input)
         {
+            // RULE GEN-5
             foreach (var model in input.Snapshottable.OrderBy(c => c.FullName, System.StringComparer.Ordinal))
             {
                 builder.Append("            global::AQ.Utilities.Snapshots.SnapshotRegistry.Register(typeof(").Append(model.FullName).Append("),\n");

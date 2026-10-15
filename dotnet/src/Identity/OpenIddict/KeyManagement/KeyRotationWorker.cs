@@ -72,6 +72,7 @@ public sealed class KeyRotationWorker : BackgroundService
             if (!newerKeyExists)
             {
                 var newKey = await keyManager.GenerateAndPersistKeyAsync(cancellationToken);
+                // RULE OID-11
                 var auditEntry = AuditEntry.Log(AuditEntry.Actions.KeyRotated, IdentitySystemActors.KeyRotation);
                 await keyManager.AddAuditEntryAsync(
                     auditEntry,

@@ -10,6 +10,7 @@ public sealed class ReviewState
     public Guid? LastReviewActivityId { get; private set; }
     public DateTimeOffset? LastNotifiedAt { get; private set; }
 
+    // RULE RVW-1
     public void MarkReviewed(Guid reviewedByUserId, DateTimeOffset? nextReviewDue, Guid? activityId = null)
     {
         var now = DateTimeOffset.UtcNow;
@@ -42,9 +43,11 @@ public sealed class ReviewState
         LastNotifiedAt = null;
     }
 
+    // RULE RVW-3
     public bool IsDue(DateTimeOffset now) =>
         NextReviewDue is { } due && due <= now && (LastNotifiedAt is null || LastNotifiedAt < due);
 
+    // RULE RVW-3
     public bool IsCurrent(VerificationState? verification = null) =>
         LastReviewedAt is { } reviewedAt && (verification?.LastResetAt is not { } resetAt || reviewedAt >= resetAt);
 }

@@ -22,6 +22,7 @@ public class SecurityHeadersMiddleware
         // validation, modals, MFA setup, theming, etc). Migrating to nonces/external
         // files would meaningfully improve XSS defense-in-depth but touches every page
         // in the UI project — a larger, separate change from this fix pass.
+        // RULE IDU-3
         context.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
 

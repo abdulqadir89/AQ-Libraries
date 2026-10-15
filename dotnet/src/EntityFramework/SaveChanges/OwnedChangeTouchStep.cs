@@ -10,6 +10,7 @@ internal static class OwnedChangeTouchStep
 {
     // EF leaves an owner Unchanged when only an owned type (value object, VerificationState, ReviewState, ...) changed, so
     // lifecycle, audit and snapshot steps would skip that save. Flagging Revision re-marks the owner Modified.
+    // RULE EFC-4
     public static void Run(DbContext context)
     {
         var all = context.ChangeTracker.Entries().ToList();
@@ -112,6 +113,7 @@ internal static class OwnedChangeTouchStep
         entry.State is EntityState.Added or EntityState.Deleted
         || (entry.State == EntityState.Modified && !IsNotificationOnly(entry));
 
+    // RULE EFC-4
     private static bool IsNotificationOnly(EntityEntry entry) =>
         entry.Entity is ReviewState
         && entry.Properties.Where(p => p.IsModified).All(p => p.Metadata.Name == nameof(ReviewState.LastNotifiedAt));

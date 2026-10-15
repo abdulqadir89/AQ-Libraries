@@ -26,6 +26,7 @@ export interface AQLocaleProviderProps {
 }
 
 export function AQLocaleProvider({ locale, messages, children }: AQLocaleProviderProps) {
+  // RULE RCT-3
   const mergedMessages = useMemo(() => deepMerge(defaultMessages, messages), [messages]);
 
   const value = useMemo<AQLocaleContextValue>(
@@ -42,6 +43,7 @@ export function AQLocaleProvider({ locale, messages, children }: AQLocaleProvide
  * @AQ/react-components that don't wrap their tree in `AQLocaleProvider` are
  * unaffected.
  */
+// RULE RCT-2
 export function useAQLocale(): AQLocaleContextValue {
   const ctx = useContext(AQLocaleContext);
   if (ctx) return ctx;

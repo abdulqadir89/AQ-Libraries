@@ -30,6 +30,7 @@ public sealed class PhoneNumber : ValueObject
     /// <param name="phoneNumber">The phone number string.</param>
     /// <returns>A valid PhoneNumber instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the phone number format is invalid.</exception>
+    // RULE VOB-3
     public static PhoneNumber Create(string phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(phoneNumber))

@@ -12,6 +12,7 @@ public sealed class EntityVersioningService
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(entity);
+        // RULE EFC-16
         var descriptor = VersionRegistry.TryGet(entity.GetType())
             ?? throw new InvalidOperationException($"{entity.GetType().Name} is not versionable.");
         var entityId = entity is IEntity identified
@@ -39,6 +40,7 @@ public sealed class EntityVersioningService
         return (IQueryable<EntityVersion<TPrincipal>>)descriptor.Query(new DbContextQueryableSource(db), entityId);
     }
 
+    // RULE EFC-15
     private static async Task<EntityVersion<TPrincipal>> CreateAsync<TPrincipal>(
         DbContext db,
         VersionDescriptor descriptor,

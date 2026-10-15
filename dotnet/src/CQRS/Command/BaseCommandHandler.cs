@@ -24,6 +24,7 @@ public abstract class BaseCommandHandler<TCommand> : ICommandHandler<TCommand>
     {
         try
         {
+            // RULE CQR-1
             var validationResult = await ValidateAsync(command, cancellationToken);
             if (validationResult.IsFailure)
                 return validationResult;
@@ -34,6 +35,7 @@ public abstract class BaseCommandHandler<TCommand> : ICommandHandler<TCommand>
         {
             // Log the exception and re-throw as exceptions represent infrastructure/technical errors
             // Business validation errors should be returned as Result.Failure
+            // RULE CQR-2
             throw new InvalidOperationException($"Error handling command {typeof(TCommand).Name}", ex);
         }
     }
@@ -80,6 +82,7 @@ public abstract class BaseCommandHandler<TCommand, TResult> : ICommandHandler<TC
     {
         try
         {
+            // RULE CQR-1
             var validationResult = await ValidateAsync(command, cancellationToken);
             if (validationResult.IsFailure)
                 return Result.Failure<TResult>(validationResult.Error);
@@ -90,6 +93,7 @@ public abstract class BaseCommandHandler<TCommand, TResult> : ICommandHandler<TC
         {
             // Log the exception and re-throw as exceptions represent infrastructure/technical errors
             // Business validation errors should be returned as Result.Failure
+            // RULE CQR-2
             throw new InvalidOperationException($"Error handling command {typeof(TCommand).Name}", ex);
         }
     }

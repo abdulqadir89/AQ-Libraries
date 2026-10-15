@@ -234,6 +234,7 @@ public static class SearchableFieldExtractor
     /// </summary>
     /// <param name="property">The property to check</param>
     /// <returns>True if the property should be searchable, false otherwise</returns>
+    // RULE SRC-6
     private static bool IsSearchableProperty(PropertyInfo property)
     {
         // Skip properties with NotMapped attribute

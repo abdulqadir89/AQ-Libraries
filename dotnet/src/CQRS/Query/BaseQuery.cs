@@ -15,6 +15,7 @@ public abstract record BaseQuery<TResult> : IQuery<TResult>
 /// Base query for paginated and filtered queries that return collections
 /// </summary>
 /// <typeparam name="TResult">The type of the query result (usually PagedResult{T})</typeparam>
+// RULE CQR-6
 public abstract record BaseGetAllQuery<TResult> : BaseQuery<TResult>, ISortableRequest
 {
     /// <summary>

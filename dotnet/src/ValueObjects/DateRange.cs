@@ -35,6 +35,7 @@ public sealed class DateRange : ValueObject
     /// <param name="end">The end date of the range (null for open-ended).</param>
     /// <returns>A valid DateRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date is before the start date.</exception>
+    // RULE VOB-7
     public static DateRange Create(DateOnly? start, DateOnly? end)
     {
         if (start.HasValue && end.HasValue && end < start)

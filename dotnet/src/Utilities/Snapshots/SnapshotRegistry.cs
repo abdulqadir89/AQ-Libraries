@@ -13,6 +13,7 @@ public static class SnapshotRegistry
         Factories[entityType] = factory;
     }
 
+    // RULE VSN-2
     public static bool TryGetFactory(Type runtimeType, out Func<Guid, int, string, EntitySnapshot> factory)
     {
         ArgumentNullException.ThrowIfNull(runtimeType);

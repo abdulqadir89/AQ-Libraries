@@ -15,6 +15,7 @@ public static class AuditedBulkExtensions
     /// Bulk statements never reach the save pipeline, so no <see cref="AQ.EntityFramework.Auditing.AuditEvent"/> is
     /// appended. For <c>[Audited]</c> entities whose history matters, load and save the entities instead.
     /// </remarks>
+    // RULE EFC-14
     public static Task<int> ExecuteAuditedUpdateAsync<T>(
         this IQueryable<T> source,
         IActorContext actors,

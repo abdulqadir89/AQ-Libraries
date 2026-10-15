@@ -5,6 +5,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class LifecycleStep
 {
+    // RULE EFC-5
     public static void Run(DbContext context)
     {
         var entries = context.ChangeTracker.Entries<Entity>().ToList();

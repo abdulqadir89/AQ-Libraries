@@ -11,6 +11,7 @@ public abstract class ActorBackgroundService(IActorScopeFactory scopeFactory) : 
     /// <summary>The principal this service writes as.</summary>
     protected abstract Actor Actor { get; }
 
+    // RULE ACT-5
     protected Task RunScopedAsync(Func<IServiceProvider, CancellationToken, Task> work, CancellationToken ct)
         => scopeFactory.RunAsync(Actor, work, ct);
 

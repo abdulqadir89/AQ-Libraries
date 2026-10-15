@@ -27,6 +27,7 @@ public static class ReviewStateMappingExtensions
             owned.HasIndex(p => p.NextReviewDue);
         });
         // Every column is nullable, so without this EF materializes a null Review for a never-reviewed row.
+        // RULE EFC-20
         builder.Navigation(property).IsRequired();
         return builder;
     }

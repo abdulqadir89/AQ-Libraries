@@ -42,6 +42,7 @@ public class RefreshTokenReuseHandler(
         if (token is null) return;
 
         var status = await tokenManager.GetStatusAsync(token, ctx.CancellationToken);
+        // RULE OID-5
         if (status != Statuses.Redeemed) return;
 
         var authorizationId = await tokenManager.GetAuthorizationIdAsync(token, ctx.CancellationToken);

@@ -19,5 +19,6 @@ public abstract class SequentialReferenceGenerator : IReferenceGenerator
     /// </summary>
     /// <param name="context">Contextual information for the generation strategy.</param>
     /// <returns>The next sequence number.</returns>
+    // RULE REF-3
     protected abstract int GetNextSequenceValue(ReferenceGenerationContext context);
 }

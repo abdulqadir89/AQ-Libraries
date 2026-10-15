@@ -154,6 +154,7 @@ public abstract class StateMachineInstance : Entity
     /// If trigger is IsRecordsOnly, returns null for transition and true for isRecordsOnly.
     /// If trigger is not IsRecordsOnly and no transition is found, throws an exception.
     /// </summary>
+    // RULE SMC-4
     public (StateMachineTransition? transition, bool isRecordsOnly) ResolveTransition(StateMachineTrigger trigger)
     {
         if (trigger == null)
@@ -184,6 +185,7 @@ public abstract class StateMachineInstance : Entity
     /// Raises a domain event signalling that a transition completed.
     /// Call this from the transition service after a successful transition, before saving.
     /// </summary>
+    // RULE SMC-10
     public void RaiseTransitionedEvent(Guid definitionId, int definitionVersion, Guid toStateId)
         => AddDomainEvent(new StateMachineTransitionedEvent(Id, definitionId, definitionVersion, toStateId));
 
@@ -219,6 +221,7 @@ public abstract class StateMachineInstance : Entity
     /// Thrown when the current state ID has no entry in the definition's mapping, or the mapped
     /// target state does not exist in the new definition.
     /// </exception>
+    // RULE SMC-5
     public void MigrateToDefinition(StateMachineDefinition newDefinition)
     {
         if (newDefinition is null) throw new ArgumentNullException(nameof(newDefinition));

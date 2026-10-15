@@ -43,6 +43,7 @@ public static class DomainEventExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="assembly">The assembly to scan for handlers.</param>
     /// <returns>The service collection for chaining.</returns>
+    // RULE EVT-4
     public static IServiceCollection AddDomainEventHandlersFromAssembly(this IServiceCollection services, System.Reflection.Assembly assembly)
     {
         var handlerTypes = assembly.GetTypes()

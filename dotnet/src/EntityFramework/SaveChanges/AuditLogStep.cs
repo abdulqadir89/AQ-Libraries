@@ -34,6 +34,7 @@ internal static class AuditLogStep
 
         foreach (var entry in entries.Where(e => e.Entity is AuditEvent && e.State is EntityState.Modified or EntityState.Deleted))
         {
+            // RULE EFC-11
             throw new InvalidOperationException("The audit log is append-only: an AuditEvent cannot be modified or deleted.");
         }
 
@@ -59,6 +60,7 @@ internal static class AuditLogStep
                 _ => AuditOperation.Update,
             };
 
+            // RULE EFC-9
             context.Add(new AuditEvent(
                 entry.Metadata.ClrType.Name,
                 entityId,
@@ -78,6 +80,7 @@ internal static class AuditLogStep
         && AuditedTypes.GetOrAdd(entry.Metadata.ClrType, t => t.IsDefined(typeof(AuditedAttribute), inherit: true));
 
     // Recording history must never fail the save it describes: values System.Text.Json cannot write fall back to text
+    // RULE EFC-12
     private static object? Safe(object? value)
     {
         if (value is null)
@@ -108,6 +111,7 @@ internal static class AuditLogStep
         return changes;
     }
 
+    // RULE EFC-10
     private static void Collect(DbContext context, EntityEntry entry, string prefix, SortedDictionary<string, Dictionary<string, object?>> changes)
     {
         foreach (var property in entry.Properties)

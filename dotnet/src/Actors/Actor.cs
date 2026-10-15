@@ -21,6 +21,7 @@ public enum PrincipalKind
 /// <param name="OnBehalfOfId">Principal this work is done for, when delegated (e.g. an import job run for a user).</param>
 /// <param name="ClientId">OAuth client id, when the actor came from a token.</param>
 /// <param name="CorrelationId">Trace id tying related writes together.</param>
+// RULE ACT-1
 public sealed record Actor(
     Guid PrincipalId,
     PrincipalKind Kind,

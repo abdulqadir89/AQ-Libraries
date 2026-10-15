@@ -22,6 +22,7 @@ public static class SortExpressionParser
     /// Format: "PropertyPath,Direction" or just "PropertyPath" (defaults to ascending)
     /// Also supports "-PropertyPath" as shorthand for descending (cannot be combined with ",Direction")
     /// </summary>
+    // RULE SRT-1
     public static SortCondition ParseCondition(string sortExpression)
     {
         if (string.IsNullOrWhiteSpace(sortExpression))
@@ -51,6 +52,7 @@ public static class SortExpressionParser
                 throw new ArgumentException($"Sort expression cannot combine '-' prefix with explicit direction: {sortExpression}", nameof(sortExpression));
 
             var directionStr = parts[1].Trim();
+            // RULE SRT-2
             if (!DirectionMap.TryGetValue(directionStr, out direction))
                 throw new ArgumentException($"Unknown sort direction: {directionStr}", nameof(sortExpression));
         }

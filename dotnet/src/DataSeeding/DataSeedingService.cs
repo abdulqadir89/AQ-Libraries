@@ -209,6 +209,7 @@ public class DataSeedingService<TSeederType>
     /// <summary>
     /// Seeds only the named seeders (matched by class name, case-insensitive), resolving their dependencies first.
     /// </summary>
+    // RULE SED-4
     public async Task<Result> SeedNamedAsync(IReadOnlyList<string> names, Func<SeederProgress, Task>? onProgress = null)
     {
         var normalizedNames = names.Select(n => n.Trim().ToLowerInvariant()).ToHashSet();
@@ -419,6 +420,7 @@ public class DataSeedingService<TSeederType>
         return resolved;
     }
 
+    // RULE SED-1
     private void Visit(
         Type type,
         HashSet<Type> visited,
@@ -449,6 +451,7 @@ public class DataSeedingService<TSeederType>
                 continue;
             }
 
+            // RULE SED-2
             if (!_seederMap.ContainsKey(dep.Type))
             {
                 throw new InvalidOperationException(
@@ -460,6 +463,7 @@ public class DataSeedingService<TSeederType>
         resolved.Add(seeder);
     }
 
+    // RULE SED-3
     private HashSet<Type> GetExplicitlySkippedSeederTypes()
     {
         return _seederMap.Values

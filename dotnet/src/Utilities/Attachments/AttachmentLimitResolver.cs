@@ -3,6 +3,7 @@ using System.Reflection;
 
 namespace AQ.Utilities.Attachments;
 
+// RULE ATT-1
 public static class AttachmentLimitResolver
 {
     private static readonly ConcurrentDictionary<Type, AttachmentLimitAttribute?> LimitByType = new();

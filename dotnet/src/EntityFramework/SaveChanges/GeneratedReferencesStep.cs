@@ -5,6 +5,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class GeneratedReferencesStep
 {
+    // RULE EFC-6
     public static void Run(DbContext context)
     {
         var entries = context.ChangeTracker.Entries()

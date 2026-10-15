@@ -70,6 +70,7 @@ public sealed record Error(ErrorType Type, string Code, string Message)
     /// Converts the error type to the corresponding HTTP status code.
     /// </summary>
     /// <returns>The HTTP status code.</returns>
+    // RULE RES-3
     public int ToHttpStatusCode() => Type switch
     {
         ErrorType.NotFound => 404,

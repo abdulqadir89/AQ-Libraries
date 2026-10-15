@@ -29,6 +29,7 @@ public static class ServicePrincipalIds
     /// Returns the client's principal id, assigning and persisting one if it has none (clients created before
     /// principal ids existed). Existing settings, including the hashed secret, are carried through.
     /// </summary>
+    // RULE OID-1
     public static async Task<Guid> EnsureAsync(IOpenIddictApplicationManager manager, object application, CancellationToken ct)
     {
         if (await ReadAsync(manager, application, ct) is { } existing)

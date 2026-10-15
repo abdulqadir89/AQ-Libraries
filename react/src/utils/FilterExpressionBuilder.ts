@@ -1,6 +1,7 @@
 import type { FilterCondition, LogicalOperator, FilterGroup } from '../mantine/data-grid/DataGrid.types';
 
 export class FilterExpressionBuilder {
+  // RULE RCT-4
   static buildFilterExpression(conditions: FilterCondition[], operator: LogicalOperator = 'and'): string {
     if (conditions.length === 0) return '';
     

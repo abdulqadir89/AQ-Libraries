@@ -11,6 +11,7 @@ public abstract class EntityVersion<TPrincipal> : Entity<TPrincipal> where TPrin
 
     public abstract Guid GetEntityId();
 
+    // RULE VSN-3
     protected void Initialize(int versionNumber, string? label, string data, int? sourceVersionNumber)
     {
         ArgumentNullException.ThrowIfNull(data);

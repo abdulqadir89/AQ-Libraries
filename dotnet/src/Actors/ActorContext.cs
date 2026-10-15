@@ -7,6 +7,7 @@ public sealed class ActorContext : IActorContext
 {
     private readonly AsyncLocal<Scope?> _scope = new();
 
+    // RULE ACT-2
     public Actor Current => TryGet(out var actor) ? actor : throw new MissingActorException();
 
     public bool TryGet([NotNullWhen(true)] out Actor? actor)
@@ -15,6 +16,7 @@ public sealed class ActorContext : IActorContext
         return actor is not null;
     }
 
+    // RULE ACT-3
     public IDisposable Begin(Actor actor)
     {
         ArgumentNullException.ThrowIfNull(actor);

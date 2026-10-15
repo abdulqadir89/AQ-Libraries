@@ -27,6 +27,7 @@ public static class VerificationStateMappingExtensions
         entries => entries.Aggregate(0, (hash, entry) => HashCode.Combine(hash, entry.VerifiedByUserId, entry.VerifiedAt)),
         entries => entries.Select(entry => new VerificationEntry { VerifiedByUserId = entry.VerifiedByUserId, VerifiedAt = entry.VerifiedAt }).ToList());
 
+    // RULE EFC-20
     public static EntityTypeBuilder<TEntity> HasVerificationState<TEntity>(
         this EntityTypeBuilder<TEntity> builder,
         Expression<Func<TEntity, VerificationState>> property) where TEntity : class

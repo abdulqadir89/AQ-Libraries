@@ -13,6 +13,7 @@ namespace AQ.Identity.UI.Localization;
 /// </summary>
 public sealed class UiLocalesRequestCultureProvider : RequestCultureProvider
 {
+    // RULE IDU-1
     public override Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
         ArgumentNullException.ThrowIfNull(httpContext);

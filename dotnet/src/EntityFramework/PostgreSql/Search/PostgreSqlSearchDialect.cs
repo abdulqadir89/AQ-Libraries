@@ -45,6 +45,7 @@ public class PostgreSqlSearchDialect : ISearchDialect
 
     private const string FullTextConfig = "english";
 
+    // RULE SRC-5
     public Expression BuildFuzzyPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -60,6 +61,7 @@ public class PostgreSqlSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-5
     public Expression BuildPhoneticPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -79,6 +81,7 @@ public class PostgreSqlSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-5
     public Expression BuildFullTextPredicate(Expression property, SearchCondition condition)
     {
         if (property.Type != typeof(string))
@@ -100,6 +103,7 @@ public class PostgreSqlSearchDialect : ISearchDialect
         return GuardStringNull(property, comparison);
     }
 
+    // RULE SRC-3
     private static Expression GuardStringNull(Expression property, Expression comparison)
     {
         var notNull = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));

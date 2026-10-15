@@ -17,6 +17,7 @@ public static class VersionRegistry
         ByType[descriptor.VersionType] = descriptor;
     }
 
+    // RULE VSN-2
     public static VersionDescriptor? TryGet(Type runtimeType)
     {
         ArgumentNullException.ThrowIfNull(runtimeType);

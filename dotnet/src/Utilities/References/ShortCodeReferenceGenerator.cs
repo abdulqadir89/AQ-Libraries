@@ -12,6 +12,7 @@ public sealed class ShortCodeReferenceGenerator : IReferenceGenerator
     // Crockford base32 alphabet: excludes I, L, O, U to avoid visual ambiguity when typed by hand.
     private const string Alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
+    // RULE REF-2
     public string Generate(ReferenceGenerationContext context)
     {
         if (context.Length is not > 0)

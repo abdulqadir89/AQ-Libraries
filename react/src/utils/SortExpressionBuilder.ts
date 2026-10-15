@@ -1,6 +1,7 @@
 import type { SortCondition } from '../mantine/data-grid/DataGrid.types';
 
 export class SortExpressionBuilder {
+  // RULE RCT-4
   static buildSortExpression(conditions: SortCondition[]): string {
     if (conditions.length === 0) return '';
     

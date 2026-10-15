@@ -31,6 +31,7 @@ public static class EntityDataRegistry<TAttribute> where TAttribute : EntityData
         return data;
     }
 
+    // RULE VSN-1
     public static string Serialize(object entity) => JsonSerializer.Serialize(Build(entity), SerializerOptions);
 
     private static Action<object, IDictionary<string, object?>>[] GetChain(Type runtimeType) =>

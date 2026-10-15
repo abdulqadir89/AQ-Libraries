@@ -24,6 +24,7 @@ public sealed class HtmlContent : ValueObject
     public string Value { get; init; }
 
     // Factory method for creating a new instance from raw HTML (e.g. Tiptap editor output)
+    // RULE VOB-9
     public static HtmlContent FromHtml(string html)
     {
         return new HtmlContent(SanitizeHtml(html));

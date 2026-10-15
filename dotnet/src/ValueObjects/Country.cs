@@ -42,6 +42,7 @@ public sealed class Country : ValueObject
     /// <param name="code">The 2-letter ISO country code.</param>
     /// <returns>A Country instance if the code is valid.</returns>
     /// <exception cref="ArgumentException">Thrown when the country code is invalid.</exception>
+    // RULE VOB-5
     public static Country FromCode(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
