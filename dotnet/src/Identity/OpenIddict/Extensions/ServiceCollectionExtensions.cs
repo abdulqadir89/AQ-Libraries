@@ -88,6 +88,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SessionRevocationService>();
         services.AddScoped<BackchannelLogoutNotifier>();
         // Short timeout: sign-out waits for these calls, and a slow client must not hold it up
+        // RULE OID-6
         services.AddHttpClient(BackchannelLogoutNotifier.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(5));
 
         services.Configure<IdentityOptions>(identityOptions =>
@@ -215,6 +216,7 @@ public static class ServiceCollectionExtensions
         // cookie-authenticated Razor Pages and OpenIddict bearer token endpoints
         services.AddAuthorization(opts =>
         {
+            // RULE OID-8
             opts.AddPolicy("ManageApi", policy =>
                 policy
                     .RequireAuthenticatedUser()

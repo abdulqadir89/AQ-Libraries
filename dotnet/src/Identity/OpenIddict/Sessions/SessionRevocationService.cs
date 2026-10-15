@@ -31,6 +31,7 @@ public class SessionRevocationService(
     /// before authorizations carried a browser session id. A hint for a different user than
     /// the cookie is ignored.
     /// </summary>
+    // RULE OID-3
     public async Task RevokeForSignOutAsync(ClaimsPrincipal? browser, ClaimsPrincipal? idTokenHint, CancellationToken ct)
     {
         var ended = new List<BackchannelLogoutTarget>();
@@ -76,6 +77,7 @@ public class SessionRevocationService(
     /// exist, is already revoked or belongs to another user, so a caller can't revoke someone
     /// else's session.
     /// </summary>
+    // RULE OID-4
     public async Task<bool> RevokeAuthorizationAsync(string subject, string authorizationId, CancellationToken ct)
     {
         var ended = new List<BackchannelLogoutTarget>();
@@ -85,6 +87,7 @@ public class SessionRevocationService(
     }
 
     /// <summary>Revokes every app session and token of a user, on every device.</summary>
+    // RULE OID-4
     public async Task RevokeAllAsync(string subject, CancellationToken ct)
     {
         var ended = new List<BackchannelLogoutTarget>();

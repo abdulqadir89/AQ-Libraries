@@ -31,6 +31,7 @@ public class CollectedValue : ValueObject
         DateTimeOffsetValue = dto;
     }
 
+    // RULE VOB-10
     public static CollectedValue Create(FieldDefinition definition, object? rawValue)
     {
         if (definition == null) throw new ArgumentNullException(nameof(definition));

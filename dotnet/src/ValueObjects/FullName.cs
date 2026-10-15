@@ -24,6 +24,7 @@ public sealed class FullName : ValueObject
     /// <param name="fullName">The full name string.</param>
     /// <returns>A valid FullName instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the full name is invalid.</exception>
+    // RULE VOB-4
     public static FullName Create(string fullName)
     {
         if (string.IsNullOrWhiteSpace(fullName))

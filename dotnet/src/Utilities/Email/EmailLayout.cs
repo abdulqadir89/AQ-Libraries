@@ -25,6 +25,7 @@ internal static class EmailLayout
 {
     public static string Render(EmailLayoutContent c, EmailBrandingOptions b, IStringLocalizer<EmailResource> localizer)
     {
+        // RULE EML-2
         var appName = WebUtility.HtmlEncode(c.AppName);
         var sb = new StringBuilder();
 

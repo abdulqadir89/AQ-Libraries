@@ -35,6 +35,7 @@ public sealed class DateTimeOffsetRange : ValueObject
     /// <param name="end">The end date time of the range (null for open-ended).</param>
     /// <returns>A valid DateTimeRange instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the end date time is before the start date time.</exception>
+    // RULE VOB-7
     public static DateTimeOffsetRange Create(DateTimeOffset? start, DateTimeOffset? end)
     {
         if (start.HasValue && end.HasValue && end < start)

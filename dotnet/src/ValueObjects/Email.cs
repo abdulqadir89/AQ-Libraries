@@ -28,6 +28,7 @@ public sealed partial class Email : ValueObject
     /// <param name="email">The email address string.</param>
     /// <returns>A valid Email instance.</returns>
     /// <exception cref="ArgumentException">Thrown when the email format is invalid.</exception>
+    // RULE VOB-2
     public static Email Create(string email)
     {
         if (string.IsNullOrWhiteSpace(email))

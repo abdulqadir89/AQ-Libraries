@@ -27,6 +27,7 @@ public class CommandDispatcher(IServiceProvider serviceProvider, ILogger<Command
 
         var handler = serviceProvider.GetService(handlerType);
 
+        // RULE CQR-3
         if (handler == null)
         {
             logger.LogError("No handler found for command {CommandType}", commandType.Name);
@@ -50,6 +51,7 @@ public class CommandDispatcher(IServiceProvider serviceProvider, ILogger<Command
             logger.LogError("Handle method not found for command {CommandType}", commandType.Name);
             return Result.Failure(Error.NotFound("Handler.MethodNotFound", $"Handle method not found for command {commandType.Name}"));
         }
+        // RULE CQR-4
         catch (Exception ex)
         {
             logger.LogError(ex, "Error handling command {CommandType}", commandType.Name);
@@ -79,6 +81,7 @@ public class CommandDispatcher(IServiceProvider serviceProvider, ILogger<Command
 
         var handler = serviceProvider.GetService(handlerType);
 
+        // RULE CQR-3
         if (handler == null)
         {
             logger.LogError("No handler found for command {CommandType}", commandType.Name);
@@ -102,6 +105,7 @@ public class CommandDispatcher(IServiceProvider serviceProvider, ILogger<Command
             logger.LogError("Handle method not found for command {CommandType}", commandType.Name);
             return Result.Failure<TResult>(Error.NotFound("Handler.MethodNotFound", $"Handle method not found for command {commandType.Name}"));
         }
+        // RULE CQR-4
         catch (Exception ex)
         {
             logger.LogError(ex, "Error handling command {CommandType}", commandType.Name);

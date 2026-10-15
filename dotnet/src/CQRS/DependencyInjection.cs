@@ -16,6 +16,7 @@ public static class DependencyInjection
     /// <param name="services">The service collection.</param>
     /// <param name="assemblies">Assemblies to scan for command and query handlers.</param>
     /// <returns>The service collection for chaining.</returns>
+    // RULE CQR-5
     public static IServiceCollection AddCqrs(this IServiceCollection services, params Assembly[] assemblies)
     {
         // Register dispatchers

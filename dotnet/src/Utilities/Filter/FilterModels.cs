@@ -28,6 +28,7 @@ public class FilterCondition
     /// <summary>
     /// Indicates if the filter should be case-sensitive for string operations
     /// </summary>
+    // RULE FLT-6
     public bool CaseSensitive { get; set; } = false;
 }
 

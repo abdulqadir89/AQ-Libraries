@@ -3,6 +3,7 @@
 /// <summary>
 /// Interface for request models that support searching
 /// </summary>
+// RULE SRC-9
 public interface ISearchableRequest
 {
     /// <summary>

@@ -41,6 +41,7 @@ public static class ReferenceAttributeResolver
     /// entities/services never need to call the generator themselves.
     /// </summary>
     /// <param name="entity">The entity instance to fill in.</param>
+    // RULE REF-1
     public static void ApplyGeneratedReferences(object entity)
     {
         var decoratedProperties = DecoratedPropertiesByType.GetOrAdd(entity.GetType(), static type =>

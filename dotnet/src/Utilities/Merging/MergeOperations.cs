@@ -4,6 +4,7 @@ namespace AQ.Utilities.Merging;
 
 public static class MergeOperations
 {
+    // RULE MRG-1
     public static void Merge<T>(this T primary, IEnumerable<T> children)
         where T : IEntity, IMergeable<T>
     {
@@ -36,6 +37,7 @@ public static class MergeOperations
         }
     }
 
+    // RULE MRG-2
     public static void Unmerge<T>(this T child)
         where T : IEntity, IMergeable<T>
     {

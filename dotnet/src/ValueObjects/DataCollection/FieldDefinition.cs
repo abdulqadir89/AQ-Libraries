@@ -24,6 +24,7 @@ public class FieldDefinition : ValueObject
     public static FieldDefinition Create(string name, DataType type, bool required, IEnumerable<string>? allowedValues = null)
     {
         if ((type == DataType.SingleChoice || type == DataType.MultiChoice) && (allowedValues == null || !allowedValues.Any()))
+        // RULE VOB-10
         {
             throw new ArgumentException("Choice fields must provide allowed values.", nameof(allowedValues));
         }

@@ -7,6 +7,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class SnapshotStep
 {
+    // RULE EFC-8
     public static void Run(DbContext context)
     {
         var entries = context.ChangeTracker.Entries<Entity>()

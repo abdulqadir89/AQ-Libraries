@@ -9,6 +9,7 @@ public abstract class IntegrationEvent : IIntegrationEvent
     /// <summary>
     /// Initializes a new instance of the <see cref="IntegrationEvent"/> class.
     /// </summary>
+    // RULE EVT-5
     protected IntegrationEvent()
     {
         Id = Guid.NewGuid();

@@ -1,49 +1,43 @@
 # AQ-Libraries — .NET
 
-See root `CLAUDE.md` for architecture overview, DDD patterns, and CI/CD rules.
+See root `CLAUDE.md` for the documentation rules and CI. What each library guarantees is in [docs/LIBRARIES.md](../docs/LIBRARIES.md) — read the section of the library you are changing first.
+
+**Changing a library here means updating `docs/LIBRARIES.md` in the same piece of work**, then running `pwsh ../scripts/docs-sync.ps1 -Check`.
 
 ## Solution & Projects
 
 ```
 dotnet/
   AQ.sln
+  Directory.Build.props      # net10.0, implicit usings, nullable
   Directory.Packages.props   # Central NuGet version management — all versions here
   src/
-    Actors/                  # AQ.Actors         — Actor, IActorContext, IActorScopeFactory, ActorBackgroundService
-    Entities/                # AQ.Entities       — Base Entity<TId> aggregate root
-    ValueObjects/            # AQ.ValueObjects   — Immutable value object primitives
-    CQRS/                    # AQ.CQRS           — Command/Query patterns
-    Generators/              # AQ.Generators     — Roslyn source generator (analyzer; netstandard2.0)
-    EntityFramework/         # AQ.EntityFramework — Versioning service, save-pipeline interceptor, hierarchy service
-      SqlServer/Search/      # AQ.EntityFramework.SqlServer  — SQL Server search dialect (Fuzzy/Phonetic/FullText)
-      PostgreSql/Search/     # AQ.EntityFramework.PostgreSql — PostgreSQL search dialect (Fuzzy/Phonetic/FullText)
+    Actors/                  # AQ.Actors          — Actor, IActorContext, IActorScopeFactory, ActorBackgroundService
+    Entities/                # AQ.Entities        — Entity, Entity<TPrincipal>, HierarchicalEntity, [Audited]
     Events/
-      Domain/                # AQ.Events.Domain       — Domain event interfaces
-      Integration/           # AQ.Events.Integration  — Integration event handling
-      Dispatchers/           # AQ.Events.Dispatchers  — Dispatch infrastructure
-      Outbox/                # AQ.Events.Outbox       — Reliable outbox publishing
+      Domain/                # AQ.Events.Domain       — domain event interfaces and base record
+      Integration/           # AQ.Events.Integration  — integration events and publisher
+      Dispatchers/           # AQ.Events.Dispatchers  — in-process domain event dispatch
+      Outbox/                # AQ.Events.Outbox       — OutboxEvent and its processing contract
+    EntityFramework/         # AQ.EntityFramework — save pipeline, audit log, versioning, hierarchy service, state mappings
+      SqlServer/Search/      # AQ.EntityFramework.SqlServer  — SQL Server search dialect
+      PostgreSql/Search/     # AQ.EntityFramework.PostgreSql — PostgreSQL search dialect
+    Generators/              # AQ.Generators     — Roslyn source generator (analyzer; netstandard2.0)
+    ValueObjects/            # AQ.ValueObjects   — Email, Money, Address, ranges, HTML/markdown content, data collection
+    CQRS/                    # AQ.CQRS           — command/query handlers and dispatchers
     StateMachine/
-      Entities/              # AQ.StateMachine.Entities — Core state machine types
-      Services/              # AQ.StateMachine.Services — Transition execution
-    Utilities/
-      Filter/                # AQ.Utilities.Filter        — Query filtering
-      Search/                # AQ.Utilities.Search        — Search core (provider-agnostic; see Search/README.md)
-      Sort/                  # AQ.Utilities.Sort          — Sorting/ordering
-      Results/               # AQ.Utilities.Results       — Result pattern
-      Email/                 # AQ.Utilities.Email         — Email sending + templating (localized, see below)
-      Merging/               # IMergeable, MergeOperations, MergeableQueryExtensions
-      Verification/          # VerificationState, [Verifiable], IVerifiable
-      Review/                # ReviewState, IReviewable, MarkReviewed extension (links to IVerifiable)
-      Snapshots/             # [Snapshottable]/[Snapshot], EntitySnapshot, SnapshotRegistry
-      Versioning/            # [Versionable]/[Versioned], EntityVersion<TPrincipal>, VersionRegistry
-      EntityData/            # EntityDataRegistry (generated data writers)
+      Entities/              # AQ.StateMachine.Entities — definitions, instances, transitions, requirements
+      Services/              # AQ.StateMachine.Services — requirement evaluation
+    Utilities/               # AQ.Utilities — Results, Filter, Sort, Search, Merging, Verification, Review,
+                             #   Snapshots, Versioning, EntityData, References, Attachments (one project)
+      Email/                 # AQ.Utilities.Email — email sending + localized templates
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
-  tests/
-    Actors/                  # AQ.Actors.Tests — actor context, scope factory
-    StateMachine/Services/   # AQ.StateMachine.Services.Tests
-XX — covers core + both search providers
-    Generators/              # AQ.Generators.Tests — generator output and diagnostics
-    EntityFramework/         # AQ.EntityFramework.Tests — versioning and save pipeline (SQLite in-memory)
+    Identity/
+      Core/                  # AQ.Identity.Core       — options, entities, abstractions
+      OpenIddict/            # AQ.Identity.OpenIddict — server wiring, sessions, key management, management API
+      UI/                    # AQ.Identity.UI         — Razor class library (login, account, admin pages)
+  tests/                     # mirrors src/: one test project per library (Actors, EntityFramework, Generators,
+                             #   Identity/*, StateMachine/Services, Utilities, ValueObjects)
 ```
 
 ## Commands
@@ -66,28 +60,15 @@ dotnet pack AQ.sln --configuration Release
 
 - **Central package management**: all NuGet versions live in `Directory.Packages.props` — never set `Version=` in individual `.csproj` files.
 - **Target framework**: `net10.0`. Implicit usings + nullable reference types enabled globally.
+- **Formatting**: run `dotnet format AQ.sln` before every push; CI will reject unformatted code.
+- **Tests**: xUnit + NSubstitute (mocking) + FluentAssertions. Mirror the source structure under `tests/`; name projects `AQ.[Library].Tests`.
 - **No service abstractions for data**: handlers fetch directly from `DbContext`, not through service wrappers.
 - **Type safety**: use `typeof(T).Name` for type discovery in the requirements system — never manual type strings.
-- **Formatting**: run `dotnet format AQ.sln` before every push; CI will reject unformatted code.
-- **Tests**: xUnit + NSubstitute (mocking) + FluentAssertions. Mirror source structure under `tests/`.
+- **Rules and tags**: a guarantee a caller can rely on gets a rule in `docs/LIBRARIES.md` and a `// RULE XXX-n` comment on the enforcing line. Change the behaviour, change the rule.
+- **Provider-specific code stays out of the core**: `AQ.Utilities` has no EF provider dependency; SQL Server and PostgreSQL specifics live in the `AQ.EntityFramework.*` provider packages.
+- **Generated data writers**: snapshot and version classes come from `AQ.Generators`; do not hand-write what `[Snapshottable]` / `[Versionable]` generate.
 
-## StateMachine Requirements System
+## Email localization conventions (`Utilities/Email`)
 
-- Transitions declare requirements; handlers evaluate them before execution.
-- **Specific handlers**: `IStateMachineTransitionRequirementHandler<TRequirement>` — typed, one per requirement type.
-- **Generic handlers**: `IStateMachineTransitionHandler` — process all requirements with status tracking; multiple allowed.
-- Two-phase evaluation: specific handlers run first, then all generic handlers.
-- Requirements reference `typeof(T).Name` — no manual string constants.
-- See `src/StateMachine/Entities/README.md` for detailed usage patterns.
-
-## DataSeeding
-
-- Multiple seeder types: test data, configuration, migration.
-- Automatic dependency resolution + priority-based ordering within dependency levels.
-- See `src/DataSeeding/README.md` for usage.
-
-## Email Localization (`Utilities/Email`)
-
-- Email bodies (verification, password reset, workspace invitation, security alert) are localized via `IStringLocalizer<EmailResource>` and `Resources/EmailResource*.resx` (`.zh-Hans.resx`, `.zh-Hant.resx`, `.zh-HK.resx` — HK overrides only, falls back to `zh-Hant`). Resource keys here are descriptive ids (e.g. `Verification.Subject`, `Verification.Heading`), not English text, because bodies are long — unlike `SharedResource` in the ELS backend.
-- All four `IEmailTemplateService` methods take a trailing optional `CultureInfo? culture = null`. When omitted, `DefaultEmailTemplateService` renders in `CultureInfo.CurrentUICulture` (a `CultureScope : IDisposable` sets/restores it for the duration of the call when `culture` is supplied). The rendered HTML's `<html lang="…">` reflects the effective culture, and localized strings inserted into HTML are HTML-encoded.
-- Consuming hosts must call `AddLocalization()` themselves; this library doesn't register it implicitly.
+- Resource keys are descriptive ids (`Verification.Subject`, `Verification.Heading`), not English text, because bodies are long — unlike the app-level `SharedResource` in ELS. Regional resource files (`.zh-HK.resx`) hold only the overrides and fall back to their parent (`zh-Hant`).
+- The template service methods take a trailing optional `CultureInfo? culture = null`; the hosting app calls `AddLocalization()` itself.

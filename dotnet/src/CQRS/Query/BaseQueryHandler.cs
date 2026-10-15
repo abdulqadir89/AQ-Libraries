@@ -20,6 +20,7 @@ public abstract class BaseQueryHandler<TQuery, TResult> : IQueryHandler<TQuery, 
     {
         try
         {
+            // RULE CQR-1
             var validationResult = await ValidateAsync(query, cancellationToken);
             if (validationResult.IsFailure)
                 return Result.Failure<TResult>(validationResult.Error);
@@ -30,6 +31,7 @@ public abstract class BaseQueryHandler<TQuery, TResult> : IQueryHandler<TQuery, 
         {
             // Log the exception and re-throw as exceptions represent infrastructure/technical errors
             // Business validation errors should be returned as Result.Failure
+            // RULE CQR-2
             throw new InvalidOperationException($"Error handling query {typeof(TQuery).Name}", ex);
         }
     }

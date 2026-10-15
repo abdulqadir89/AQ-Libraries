@@ -20,10 +20,12 @@ public static class PrincipalClaims
         "sub",
         Type,
         ClientId,
+        // TODO: an ELS claim name in a shared library; make the reserved set configurable per app
         "els_internal_user_id",
     };
 
     /// <summary>Returns an error message when <paramref name="claimTypes"/> contains a reserved type, otherwise null.</summary>
+    // RULE IDC-1
     public static string? ValidateServiceAccountClaimTypes(IEnumerable<string> claimTypes)
     {
         var reserved = claimTypes.FirstOrDefault(Reserved.Contains);

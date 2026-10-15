@@ -10,6 +10,7 @@ public interface IActorScopeFactory
     Task<T> RunAsync<T>(Actor actor, Func<IServiceProvider, CancellationToken, Task<T>> work, CancellationToken ct = default);
 }
 
+// RULE ACT-4
 public sealed class ActorScopeFactory(IServiceScopeFactory scopes, IActorContext actors) : IActorScopeFactory
 {
     public async Task RunAsync(Actor actor, Func<IServiceProvider, CancellationToken, Task> work, CancellationToken ct = default)

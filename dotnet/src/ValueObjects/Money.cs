@@ -71,6 +71,7 @@ public sealed class Money : ValueObject
 
     // Parameterless constructor for EF Core
     private Money() { }
+    // RULE VOB-6
     public Money(decimal amount, string currency)
     {
         if (string.IsNullOrWhiteSpace(currency))
@@ -131,6 +132,7 @@ public sealed class Money : ValueObject
 
     public Money Add(Money other)
     {
+        // RULE VOB-6
         if (Currency != other.Currency)
             throw new InvalidOperationException($"Cannot add money with different currencies: {Currency} and {other.Currency}");
 
@@ -139,6 +141,7 @@ public sealed class Money : ValueObject
 
     public Money Subtract(Money other)
     {
+        // RULE VOB-6
         if (Currency != other.Currency)
             throw new InvalidOperationException($"Cannot subtract money with different currencies: {Currency} and {other.Currency}");
 

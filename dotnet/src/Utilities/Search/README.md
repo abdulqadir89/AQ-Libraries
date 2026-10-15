@@ -3,10 +3,10 @@
 Provider-agnostic search over `IQueryable<T>`, split into three packages:
 
 - **`AQ.Utilities`** (`AQ.Utilities.Search` namespace) — attribute-driven field extraction, Exact/Contains/StartsWith/EndsWith, group logic, weighted scoring. Zero EF-provider dependency; every predicate here is plain LINQ that any EF Core provider translates.
-- **`AQ.Utilities.SqlServer`** (`AQ.Utilities.Search.SqlServer`) — SQL Server implementation of Fuzzy/Phonetic/FullText via `DIFFERENCE`, `SOUNDEX`, `FREETEXT`.
-- **`AQ.Utilities.PostgreSql`** (`AQ.Utilities.Search.PostgreSql`) — PostgreSQL implementation of Fuzzy/Phonetic/FullText via `pg_trgm`, `fuzzystrmatch`, `tsvector`.
+- **`AQ.EntityFramework.SqlServer`** (`AQ.EntityFramework.Search.SqlServer`) — SQL Server implementation of Fuzzy/Phonetic/FullText via `DIFFERENCE`, `SOUNDEX`, `FREETEXT`.
+- **`AQ.EntityFramework.PostgreSql`** (`AQ.EntityFramework.Search.PostgreSql`) — PostgreSQL implementation of Fuzzy/Phonetic/FullText via `pg_trgm`, `fuzzystrmatch`, `tsvector`.
 
-Reference only the provider package matching your database. `Fuzzy`, `Phonetic`, and `FullText` operators throw `NotSupportedException` unless a provider is registered — there is no silent fallback.
+Reference only the provider package matching your database. What each operator guarantees is listed in [docs/LIBRARIES.md](../../../../docs/LIBRARIES.md). `Fuzzy`, `Phonetic`, and `FullText` operators throw `NotSupportedException` unless a provider is registered — there is no silent fallback.
 
 Pagination is **not** part of this library. Search returns a filtered, scored `SearchResults<T>`; page it the same way you page any other result set.
 
@@ -42,7 +42,7 @@ public class User : Entity
 SQL Server, at startup:
 
 ```csharp
-using AQ.Utilities.Search.SqlServer;
+using AQ.EntityFramework.Search.SqlServer;
 
 services.AddSqlServerSearch();
 ```
@@ -57,7 +57,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 PostgreSQL, at startup:
 
 ```csharp
-using AQ.Utilities.Search.PostgreSql;
+using AQ.EntityFramework.Search.PostgreSql;
 
 services.AddPostgreSqlSearch();
 ```
@@ -180,11 +180,3 @@ var similarity = FuzzyMatcher.SimilarityRatio("john", "jon");        // 0.75
 var soundex = FuzzyMatcher.Soundex("john");                          // "J500"
 var combined = FuzzyMatcher.CombinedFuzzyScore("john", "jon");       // weighted blend
 ```
-
-## Breaking changes from the pre-split version
-
-- **Pagination removed from search.** `PagedSearchableRequest` and `ApplySearchAndPaging` are gone. Use `SearchableRequest` (has `MaxResults` but no page number/size/sort) and page `SearchResults<T>.Results` yourself.
-- **Fuzzy/Phonetic/FullText now throw without a registered provider.** Previously `Fuzzy` silently degraded to a `Contains` prefilter, which meant it could never actually find typos. Reference `AQ.Utilities.SqlServer` or `AQ.Utilities.PostgreSql` and call `AddSqlServerSearch()`/`AddPostgreSqlSearch()` at startup.
-- **Removed decorative API that had no implementation**: `SearchRankingAlgorithm`, `SearchMatchType.BestMatch`, `EnableHighlighting`/`Highlights`, `SearchCondition.MaxEditDistance`.
-- **Bug fix**: `GetDefaultSearchableFields` (the fallback used when a type has no `[Searchable]` attributes) previously excluded every `string` property, because `string` implements `IEnumerable<char>` and was misclassified as a collection. Fixed — plain string properties are now included by default.
-- **Bug fix**: private-setter properties were excluded from default extraction based on name heuristics (`*Text`, `*Label`, `Display*`, `Full*`, `*Combined*`). Removed — only a missing setter excludes a property now.

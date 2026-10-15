@@ -27,6 +27,7 @@ public abstract class HierarchicalEntity<T> : Entity, IHierarchicalEntity where 
 
     public bool IsLeaf => !Children.Any();
 
+    // RULE ENT-7
     public async Task SetParent(T? parent, Func<T, Guid?, Task> updateClosure)
     {
         var newParentId = parent?.Id;

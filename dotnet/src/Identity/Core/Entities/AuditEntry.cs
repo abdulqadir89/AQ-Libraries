@@ -72,6 +72,7 @@ public class AuditEntry
     private AuditEntry() { }
 
     /// <summary>Records an action performed by an authenticated or platform actor.</summary>
+    // RULE IDC-2
     public static AuditEntry Log(string action, Actor actor, Guid? subjectUserId = null, string? ip = null, string? ua = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(action);
@@ -98,6 +99,7 @@ public class AuditEntry
     }
 
     /// <summary>Records an action by someone who is not signed in (failed login, first-run setup, link click).</summary>
+    // RULE IDC-2
     public static AuditEntry LogAnonymous(string action, Guid? subjectUserId, string? ip = null, string? ua = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(action);

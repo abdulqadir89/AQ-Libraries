@@ -28,6 +28,7 @@ internal static class OutboxStep
 
         foreach (var entity in entitiesWithDomainEvents)
         {
+            // RULE EFC-13
             foreach (var domainEvent in entity.DomainEvents.ToList())
             {
                 domainEvent.ActorId = actor.PrincipalId;

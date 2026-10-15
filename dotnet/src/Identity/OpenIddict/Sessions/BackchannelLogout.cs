@@ -115,6 +115,7 @@ public class BackchannelLogoutNotifier(
         return new JsonWebTokenHandler().CreateToken(descriptor);
     }
 
+    // RULE OID-6
     private async Task SendAsync(string uri, string clientId, string logoutToken, CancellationToken ct)
     {
         try

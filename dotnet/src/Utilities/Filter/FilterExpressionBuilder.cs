@@ -371,6 +371,7 @@ public static class FilterExpressionBuilder
         return result;
     }
 
+    // RULE FLT-4
     private static Expression? BuildConditionExpression(FilterCondition condition, ParameterExpression parameter)
     {
         try

@@ -372,6 +372,7 @@ public abstract class StateMachineDefinition : Entity
     /// <summary>
     /// Validates the definition for completeness and consistency.
     /// </summary>
+    // RULE SMC-2
     public IEnumerable<string> Validate()
     {
         var errors = new List<string>();
@@ -414,6 +415,7 @@ public abstract class StateMachineDefinition : Entity
     /// Sets the mapping from previous-version state IDs to this version's state IDs.
     /// Only allowed on Draft definitions.
     /// </summary>
+    // RULE SMC-3
     public void SetPreviousVersionStateMapping(IReadOnlyDictionary<Guid, Guid> mapping)
     {
         if (Status != StateMachineDefinitionStatus.Draft)
@@ -453,6 +455,7 @@ public abstract class StateMachineDefinition : Entity
         }
     }
 
+    // RULE SMC-1
     public void SetStatus(StateMachineDefinitionStatus status)
     {
         if (status == StateMachineDefinitionStatus.Published)

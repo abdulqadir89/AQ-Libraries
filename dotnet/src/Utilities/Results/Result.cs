@@ -7,6 +7,7 @@ namespace AQ.Utilities.Results;
 /// </summary>
 public class Result
 {
+    // RULE RES-1
     protected Result(bool isSuccess, Error error)
     {
         if (isSuccess && error != Error.None)
@@ -88,6 +89,7 @@ public class Result<TValue> : Result
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when accessing the value of a failed result.</exception>
     [NotNull]
+    // RULE RES-2
     public TValue Value => IsSuccess
         ? _value!
         : throw new InvalidOperationException("Cannot access the value of a failed result.");

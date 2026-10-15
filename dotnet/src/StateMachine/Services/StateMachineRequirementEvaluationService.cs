@@ -52,6 +52,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
         var requirementsList = requirements.ToList();
         var evaluationStatuses = new List<RequirementEvaluationStatus>();
 
+        // RULE SMC-6
         // Phase 1: Evaluate using specific handlers
         foreach (var requirement in requirementsList)
         {
@@ -68,6 +69,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
             {
                 // Get specific context for this requirement type
                 object? specificContext = null;
+                // RULE SMC-9
                 requirementsContext?.TryGetValue(requirementType.Name, out specificContext);
 
                 foreach (var handler in handlers)
@@ -101,6 +103,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
             evaluationStatuses.Add(status);
         }
 
+        // RULE SMC-7
         // Phase 2: Process with all generic handlers
         foreach (var genericHandler in _genericHandlers)
         {
@@ -122,6 +125,7 @@ public class StateMachineRequirementEvaluationService : IStateMachineRequirement
             }
         }
 
+        // RULE SMC-8
         var allRequirementsMet = evaluationStatuses.All(s => s.IsFulfilled || s.Requirement is StateMachineTransitionRequirement req && req.IsOptional);
         var failureReasons = evaluationStatuses
             .Where(s => !s.IsFulfilled && !string.IsNullOrEmpty(s.FailureReason))

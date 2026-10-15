@@ -16,6 +16,7 @@ public class SetModel : PageModel
 
     public IActionResult OnPost(string culture, string? returnUrl)
     {
+        // RULE IDU-2
         if (Array.IndexOf(SupportedCultures, culture) < 0)
         {
             culture = "en";

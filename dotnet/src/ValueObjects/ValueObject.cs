@@ -20,6 +20,7 @@ public abstract class ValueObject : IEquatable<ValueObject>
     public static bool operator !=(ValueObject? a, ValueObject? b) =>
         !(a == b);
 
+    // RULE VOB-1
     public virtual bool Equals(ValueObject? other) =>
         other is not null && ValuesAreEqual(other);
 

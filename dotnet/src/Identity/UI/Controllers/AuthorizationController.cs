@@ -62,6 +62,7 @@ public class AuthorizationController(
 
             // Re-derived from the current scope configuration, so sessions that predate a
             // scope's resources (or a change to them) pick up the right audience on refresh
+            // RULE OID-7
             identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
             identity.SetDestinations(GetDestinations);
 
@@ -82,9 +83,11 @@ public class AuthorizationController(
             // attribute writes to the service as a real principal.
             var principalId = await ServicePrincipalIds.EnsureAsync(applicationManager, application, HttpContext.RequestAborted);
             identity.SetClaim(Claims.Subject, principalId.ToString())
+                    // RULE OID-2
                     .SetClaim(PrincipalClaims.Type, PrincipalClaims.Service)
                     .SetClaim(PrincipalClaims.ClientId, await applicationManager.GetClientIdAsync(application));
             identity.SetScopes(request.GetScopes());
+            // RULE OID-7
             identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
             identity.SetDestinations(_ => [Destinations.AccessToken]);
 
@@ -170,6 +173,7 @@ public class AuthorizationController(
         identity.SetScopes(request.GetScopes());
         // The granted scopes' resources become the access token's audiences, so the token is
         // only accepted by the APIs those scopes are for
+        // RULE OID-7
         identity.SetResources(await ListResourcesAsync(identity.GetScopes()));
         identity.SetDestinations(GetDestinations);
 

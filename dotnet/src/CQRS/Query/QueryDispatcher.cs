@@ -29,6 +29,7 @@ public class QueryDispatcher(IServiceProvider serviceProvider, ILogger<QueryDisp
 
         var handler = serviceProvider.GetService(handlerType);
 
+        // RULE CQR-3
         if (handler == null)
         {
             logger.LogError("No handler found for query {QueryType}", queryType.Name);
@@ -52,6 +53,7 @@ public class QueryDispatcher(IServiceProvider serviceProvider, ILogger<QueryDisp
             logger.LogError("Handle method not found for query {QueryType}", queryType.Name);
             return Result.Failure<TResult>(Error.NotFound("Handler.MethodNotFound", $"Handle method not found for query {queryType.Name}"));
         }
+        // RULE CQR-4
         catch (Exception ex)
         {
             logger.LogError(ex, "Error handling query {QueryType}", queryType.Name);

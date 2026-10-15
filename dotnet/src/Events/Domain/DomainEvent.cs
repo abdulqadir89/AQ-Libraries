@@ -3,6 +3,7 @@ namespace AQ.Events.Domain;
 /// <summary>
 /// Base record for domain events with common properties.
 /// </summary>
+// RULE EVT-1
 public abstract record DomainEvent(Guid AggregateId) : IDomainEvent
 {
     public DateTimeOffset OccurredOn { get; } = DateTimeOffset.UtcNow;

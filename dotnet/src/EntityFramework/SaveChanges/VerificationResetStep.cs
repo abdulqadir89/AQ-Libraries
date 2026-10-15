@@ -9,6 +9,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class VerificationResetStep
 {
+    // RULE EFC-7
     public static void Run(DbContext context)
     {
         var entries = context.ChangeTracker.Entries()

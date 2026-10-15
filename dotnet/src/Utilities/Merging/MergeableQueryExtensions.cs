@@ -7,6 +7,7 @@ public static class MergeableQueryExtensions
     /// <summary>
     /// Get all entities including merged ones that refer to this primary entity.
     /// </summary>
+    // RULE MRG-3
     public static IQueryable<T> WithMerged<T>(this IQueryable<T> query, Guid primaryId)
         where T : IEntity, IMergeable<T>
     {

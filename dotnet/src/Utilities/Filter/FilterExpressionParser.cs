@@ -48,6 +48,7 @@ public static class FilterExpressionParser
     /// Parses a simple filter condition from comma-separated format
     /// Format: "PropertyPath,Operator,Value" or "PropertyPath,Operator,Value1,Value2" (for Between)
     /// </summary>
+    // RULE FLT-1
     public static FilterCondition ParseCondition(string filterExpression)
     {
         if (string.IsNullOrWhiteSpace(filterExpression))
@@ -61,6 +62,7 @@ public static class FilterExpressionParser
         var propertyPath = parts[0].Trim();
         var operatorStr = parts[1].Trim();
 
+        // RULE FLT-2
         if (!OperatorMap.TryGetValue(operatorStr, out var filterOperator))
             throw new ArgumentException($"Unknown operator: {operatorStr}", nameof(filterExpression));
 
@@ -132,6 +134,7 @@ public static class FilterExpressionParser
     /// Parses a complex filter expression with logical operators and parentheses
     /// Example: "(Name,eq,John && Age,gt,25) || (Department,eq,IT)"
     /// </summary>
+    // RULE FLT-3
     public static FilterSpecification ParseComplexExpression(string expression)
     {
         if (string.IsNullOrWhiteSpace(expression))

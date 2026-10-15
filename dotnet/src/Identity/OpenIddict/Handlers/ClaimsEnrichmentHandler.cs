@@ -55,6 +55,7 @@ public class ClaimsEnrichmentHandler(
         }
 
         principal.SetClaim("stamp", user.SecurityStamp);
+        // RULE OID-2
         principal.SetClaim(PrincipalClaims.Type, PrincipalClaims.Human);
 
         // Attach every token minted for this sign-in to one durable "session" — a

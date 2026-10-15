@@ -119,6 +119,7 @@ namespace AQ.Generators
                 hasMembers = current.GetMembers().OfType<IPropertySymbol>().Any(p => p.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == memberAttributeName));
             }
 
+            // RULE GEN-3
             if (!hasMembers)
             {
                 var attributeName = attribute.AttributeClass?.Name ?? "Attribute";
@@ -132,6 +133,7 @@ namespace AQ.Generators
             if (requiresAuditable)
             {
                 var auditable = symbol.AllInterfaces.FirstOrDefault(i => i.Name == "IAuditable" && i.TypeArguments.Length == 1);
+                // RULE GEN-2
                 if (auditable is null)
                 {
                     diagnostics.Add(DiagnosticInfo.Create(
@@ -156,6 +158,7 @@ namespace AQ.Generators
                 diagnostics.ToEquatableArray());
         }
 
+        // RULE GEN-3
         private static DiagnosticInfo UnknownMember(SyntaxReference? reference, string attributeName, string option, string memberName, IPropertySymbol property, ITypeSymbol type)
         {
             return DiagnosticInfo.Create(

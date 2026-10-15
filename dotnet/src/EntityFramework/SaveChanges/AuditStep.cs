@@ -6,6 +6,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class AuditStep
 {
+    // RULE EFC-3
     public static void Run(DbContext context, Actor? actor)
     {
         var entries = context.ChangeTracker.Entries()

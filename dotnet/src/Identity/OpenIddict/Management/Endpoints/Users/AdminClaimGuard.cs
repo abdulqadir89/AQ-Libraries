@@ -20,6 +20,7 @@ public static class AdminClaimGuard
     /// Returns true if removing the manage_api claim from <paramref name="userId"/> would
     /// leave zero administrators.
     /// </summary>
+    // RULE OID-10
     public static async Task<bool> WouldRemoveLastAdminAsync(
         IIdentityDbContext context,
         Guid userId,

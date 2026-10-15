@@ -9,6 +9,7 @@ namespace AQ.Utilities.References;
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class GeneratedReferenceAttribute(Type generatorType, int length) : Attribute
 {
+    // RULE REF-1
     public Type GeneratorType { get; } = generatorType.IsAssignableTo(typeof(IReferenceGenerator))
         ? generatorType
         : throw new ArgumentException($"'{generatorType.Name}' must implement {nameof(IReferenceGenerator)}.", nameof(generatorType));

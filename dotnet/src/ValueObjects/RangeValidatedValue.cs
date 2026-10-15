@@ -11,6 +11,7 @@ public sealed class RangeValidatedValue<T> : ValueObject where T : struct, IComp
 
     private RangeValidatedValue() { }
 
+    // RULE VOB-8
     private RangeValidatedValue(NumericalRange<T> range, T value)
     {
         if (!range.Contains(value))

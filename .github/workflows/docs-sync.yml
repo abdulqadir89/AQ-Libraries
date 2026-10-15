@@ -1,0 +1,20 @@
+name: Docs Sync
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  docs-sync:
+    name: docs/LIBRARIES.md matches the code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check docs
+      shell: pwsh
+      run: ./scripts/docs-sync.ps1 -Check

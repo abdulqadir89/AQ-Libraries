@@ -63,6 +63,7 @@ public static class SearchExtensions
         {
             var searchResult = ScoreEntity(entity, specification);
 
+            // RULE SRC-8
             if (searchResult.Score >= specification.MinScore)
             {
                 scoredResults.Add(searchResult);
@@ -281,6 +282,7 @@ public static class SearchExtensions
         var parameter = Expression.Parameter(typeof(T), "x");
         var property = BuildPropertyExpression(parameter, condition.PropertyPath);
 
+        // RULE SRC-7
         if (property == null)
             return null;
 
@@ -300,6 +302,7 @@ public static class SearchExtensions
         return Expression.Lambda<Func<T, bool>>(searchExpression, parameter);
     }
 
+    // RULE SRC-2
     private static ISearchDialect RequireDialect(SearchCondition condition) =>
         SearchDialect.Current ?? throw new NotSupportedException(
             $"SearchOperator.{condition.Operator} requires a provider dialect. " +
@@ -355,6 +358,7 @@ public static class SearchExtensions
         return Expression.Constant(false);
     }
 
+    // RULE SRC-1
     private static Expression BuildContainsExpression(Expression property, SearchCondition condition)
     {
         var propertyType = property.Type;

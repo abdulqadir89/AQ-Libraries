@@ -17,6 +17,7 @@ public class DefaultEmailTemplateService(
     /// build, restoring the previous value on dispose. A null culture is a no-op, so callers that
     /// don't pass one keep using the ambient request culture (e.g. the caller's Accept-Language).
     /// </summary>
+    // RULE EML-1
     private sealed class CultureScope : IDisposable
     {
         private readonly CultureInfo? _previous;

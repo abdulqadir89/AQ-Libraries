@@ -13,12 +13,14 @@ public static class SortExtensions
     /// </summary>
     public static IQueryable<T> ApplySort<T>(this IQueryable<T> query, SortSpecification? specification)
     {
+        // RULE SRT-4
         if (specification?.Conditions == null || !specification.Conditions.Any())
             return query;
 
         IOrderedQueryable<T>? orderedQuery = null;
         var isFirst = true;
 
+        // RULE SRT-3
         foreach (var condition in specification.GetOrderedConditions())
         {
             if (string.IsNullOrWhiteSpace(condition.PropertyPath))

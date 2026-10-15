@@ -28,6 +28,7 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
         return ValueTask.FromResult(result);
     }
 
+    // RULE EFC-1
     private void Run(DbContext? context)
     {
         if (context is null)
@@ -42,6 +43,7 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
 
         // Resolved after the touch step, which turns owned-only changes into owner updates.
         actors.TryGet(out var actor);
+        // RULE EFC-2
         if (actor is null && RequiresActor(context))
         {
             throw new MissingActorException();

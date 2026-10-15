@@ -52,6 +52,7 @@ public sealed class Address : ValueObject
     /// <param name="countryCode">The ISO 3166-1 alpha-2 country code.</param>
     /// <returns>A valid Address instance.</returns>
     /// <exception cref="ArgumentException">Thrown when any required field is invalid.</exception>
+    // RULE VOB-5
     public static Address Create(string? street, string? city, string? state, string? postalCode, string countryCode)
     {
         ArgumentNullException.ThrowIfNull(countryCode);

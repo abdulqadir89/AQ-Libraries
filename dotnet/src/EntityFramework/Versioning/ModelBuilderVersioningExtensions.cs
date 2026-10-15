@@ -26,6 +26,7 @@ public static class ModelBuilderVersioningExtensions
                 .WithMany()
                 .HasForeignKey(descriptor.ForeignKeyPropertyName)
                 .IsRequired();
+            // RULE EFC-17
             version.HasIndex(descriptor.ForeignKeyPropertyName, nameof(EntityVersion<TPrincipal>.VersionNumber)).IsUnique();
         }
 

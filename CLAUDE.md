@@ -1,6 +1,6 @@
 # AQ-Libraries
 
-Monorepo of reusable DDD/utility libraries for .NET, plus a React component library built on Mantine.
+Monorepo of reusable DDD/utility libraries for .NET, plus a React component library built on Mantine. Apps (DQM, ELS) consume the libraries by project reference or path alias; nothing here may know about an app.
 
 Sub-folder CLAUDE.md files contain layer-specific rules:
 
@@ -11,173 +11,96 @@ Sub-folder CLAUDE.md files contain layer-specific rules:
 
 ## Repository Overview
 
-- **dotnet/** — C# library suite (DDD building blocks, state machine, utilities, event infrastructure)
+- **dotnet/** — C# library suite (actors, entities, events, EF Core save pipeline, CQRS, state machine, utilities, identity)
   - `src/` — Library implementations
   - `tests/` — Unit tests mirroring source structure
   - `AQ.sln` — Solution file
-
 - **react/** — TypeScript React component library (`@AQ/react-components`)
   - Built on Mantine v8+ with TypeScript
-  - Source-only package (no build step); consumed via tsconfig alias in ELS web
+  - Source-only package (no build step); consumed via tsconfig alias in the consuming web app
   - Requires React 19+, Mantine 8+, TanStack Query v5+
+
+What each library does and guarantees is in [docs/LIBRARIES.md](docs/LIBRARIES.md).
+
+**Any change to a library under `dotnet/src` or `react/src` updates `docs/LIBRARIES.md` in the same piece of work** (rule text, a new rule, or a removed rule with its `// RULE` tag), then run `pwsh ./scripts/docs-sync.ps1 -Check`. Details under Documentation below.
 
 ## Quick Commands
 
 ### .NET (run from `dotnet/` directory)
 
-**Build & Lint**
 ```bash
-# Restore dependencies
 dotnet restore AQ.sln
-
-# Format code (required by CI, will fix most violations)
-dotnet format AQ.sln
-
-# Build the entire solution
+dotnet format AQ.sln                  # required by CI, will fix most violations
 dotnet build AQ.sln
-
-# Build with Release configuration
-dotnet build AQ.sln --configuration Release
-```
-
-**Testing**
-```bash
-# Run all unit tests
 dotnet test AQ.sln
-
-# Run tests in Release configuration
-dotnet test AQ.sln --configuration Release
-
-# Run specific test project
-dotnet test tests/StateMachine/Services/AQ.StateMachine.Services.Tests.csproj
-
-# Run specific test class or method
-dotnet test AQ.sln --filter "ClassName=MyClass"
 dotnet test AQ.sln --filter "FullyQualifiedName~MyNamespace.MyClass.MyMethod"
-```
-
-**Packaging**
-```bash
-# Pack all libraries
 dotnet pack AQ.sln --configuration Release
 ```
 
 ### React (run from `react/` directory)
 
-The React library currently has no build or test scripts. It's a type-definition package with Mantine components as peer dependencies.
+The React library has no build or test scripts. It is a source-only package with Mantine components as peer dependencies.
 
-## Architecture & Key Patterns
+### Docs check (run from the repository root)
 
-### Domain-Driven Design Focus
+```powershell
+pwsh ./scripts/docs-sync.ps1 -Check   # fails when docs/LIBRARIES.md and the code disagree
+pwsh ./scripts/docs-sync.ps1 -Write   # regenerates the package graph block, then checks
+```
 
-The library suite is organized around DDD principles:
+## Documentation
 
-1. **AQ.Entities** - Base `Entity<TId>` class for aggregate roots and domain entities
-   - Automatically assigned incremental IDs by default
-   - Provides common entity patterns
-   - Foundation for other domain libraries
+The code is the source of truth. Docs describe what the code does today; they never carry plans.
 
-2. **AQ.ValueObjects** - Support for value object patterns
-   - Often used with Markdig (Markdown) and HtmlSanitizer for content handling
+| Question | Where |
+|----------|-------|
+| What does each library do and promise? Rules, invariants, who depends on whom? | [docs/LIBRARIES.md](docs/LIBRARIES.md) — one file, read it first |
+| Why was it built this way / what was tried and dropped? | [docs/decisions/](docs/decisions/) — ADRs |
+| How do I work in this layer (patterns, conventions, gotchas)? | the layer's `CLAUDE.md` (`dotnet/`, `react/`) |
+| How do I use a library (syntax, examples)? | the `README.md` next to the library (Filter, Sort, Search, Results, StateMachine, DataSeeding, Identity) |
 
-3. **AQ.CQRS** - Command/Query Responsibility Segregation
-   - Depends on AQ.Utilities.Results and AQ.Utilities.Sort
-   - Provides patterns for separating read/write operations
+### Keeping LIBRARIES.md true
+- **Behaviour change in a library ⇒ update LIBRARIES.md in the same piece of work**: the rule text, or a new rule. Then run `pwsh ./scripts/docs-sync.ps1 -Check`.
+- The block between `<!-- BEGIN:surface -->` and `<!-- END:surface -->` is generated from the project files and `react/package.json` — never hand-edit it; run `-Write`.
+- Every library section heading carries a `<!-- projects: ... -->` marker naming the projects it describes. A new project must be claimed by one.
+- **Rule ids**: every guarantee in LIBRARIES.md has an id (`**ACT-3**`: three capital letters, a dash, a number, unique per file). Put `// RULE ACT-3` on the line that enforces it, in any language in the repo. Deleting a rule in code means deleting it from the doc; the script flags both directions.
+- Write rules as what a caller can rely on, not as a tour of the implementation. One rule, one behaviour.
+- **Planning lives in code only**: a `TODO` comment next to the code it concerns. No roadmap, status or "planned" text in docs.
+- A change that breaks a consumer (DQM, ELS) changes the rule, and the consuming repo's `CLAUDE.md` or docs say what it must do — note it in the PR.
 
-4. **AQ.Actors** - "Who is doing this now": `Actor` record, `PrincipalKind { Human, Service, System }`, singleton `IActorContext` (AsyncLocal stack), `IActorScopeFactory` (DI scope + actor scope) and `ActorBackgroundService`. No project references, so every layer can use it
-   - Register with `services.AddAqActors()`. Hosted services that touch the database derive from `ActorBackgroundService` and use `RunScopedAsync`
+### Decisions (ADRs)
+When you change, replace or revert an existing implementation — or the user rejects an approach you proposed — ask the user why, or infer the reason from their instruction **and confirm it with them**. Then:
+1. Write `docs/decisions/NNN-short-title.md` (next number): Context, Options considered, Decision, Why, Consequences, Status (`Accepted` / `Superseded by NNN` / `Rejected`).
+2. Leave a one-line comment at the code site: `// ADR-NNN: why X, not Y`.
+3. `docs-sync.ps1` checks every ADR reference resolves to a file.
 
-5. **AQ.EntityFramework** - EF Core integration (versioning service, save-pipeline interceptor, hierarchy service, verification mapping)
-   - The save-pipeline interceptor takes an `IActorContext`: with `Audit`/`Outbox` on, saving an `IAuditable` entity or raising domain events needs an active actor (`CreatedById`/`UpdatedById` are non-null, `OutboxEvent` records `ActorId`/`ActorKind`/`OnBehalfOfId`/`ClientId`/`CorrelationId`); a missing actor throws `MissingActorException`
-   - `ExecuteAuditedUpdateAsync` keeps audit fields honest for bulk updates
-   - `AqSavePipelineOptions.AuditLog` appends an append-only `AuditEvent` (old/new values, actor) for every change to an `[Audited]` entity; `[AuditIgnore]` keeps a property out
-   - `AQ.EntityFramework.SqlServer` / `AQ.EntityFramework.PostgreSql` hold the provider-specific search dialects
-
-   **AQ.Generators** - Roslyn incremental source generator (netstandard2.0, referenced as an analyzer) that emits snapshot/version data writers, `{Class}Snapshot`/`{Class}Version` classes and `AQGeneratedRegistrations`
-
-6. **AQ.Events*** - Event-driven architecture support
-   - **AQ.Events.Domain** - Domain event interfaces and types
-   - **AQ.Events.Integration** - Integration event handling
-   - **AQ.Events.Dispatchers** - Event dispatching infrastructure
-   - **AQ.Events.Outbox** - Outbox pattern for reliable event publishing
-
-### Utilities (organized in separate folder)
-
-The `Utilities` folder contains cross-cutting libraries:
-
-- **AQ.Utilities.Filter** - Building block for query filtering
-- **AQ.Utilities.Search** - Search query utilities
-- **AQ.Utilities.Sort** - Sorting/ordering utilities
-- **AQ.Utilities.Results** - Result pattern for error handling (used by CQRS)
-- **AQ.Utilities** also hosts `Merging` (`IMergeable`, `MergeOperations`), `Verification` (`VerificationState`, `[Verifiable]`), `Snapshots` (`[Snapshottable]`/`[Snapshot]`, `EntitySnapshot`, `SnapshotRegistry`), `Versioning` (`[Versionable]`/`[Versioned]`, `EntityVersion<TPrincipal>`, `VersionRegistry`) and `EntityData` (`EntityDataRegistry`)
-
-### State Machine System
-
-Located in `src/StateMachine/`, this is a sophisticated system for modeling complex business workflows:
-
-**Key Components:**
-- **AQ.StateMachine.Entities** - Core state machine entities and abstraction layer
-- **AQ.StateMachine.Services** - Service layer for executing state transitions
-
-**Core Concepts:**
-- **Requirements System**: Transitions can declare requirements that must be evaluated before execution
-  - **Specific Handlers**: `IStateMachineTransitionRequirementHandler<TRequirement>` - typed handlers for specific requirement types
-  - **Generic Handlers**: `IStateMachineTransitionHandler` - process all requirements with status tracking (multiple handlers supported)
-  - Requirements use `typeof(T).Name` for type discovery - no manual type strings
-  - **User Data Collection**: Requirements can specify what data entities must be collected; handlers fetch directly from database
-
-- **Entity-Based Operations**: All transitions use `StateMachineState` and `StateMachineTrigger` entities, not strings
-
-- **Two-Phase Evaluation**: Specific handlers first, then all registered generic handlers process with status
-
-- See [src/StateMachine/Entities/README.md](dotnet/src/StateMachine/Entities/README.md) for detailed usage patterns
-
-### Data Seeding
-
-**AQ.DataSeeding** provides reusable EF Core data seeding with:
-- Multiple seeder types (test data, configuration, migration)
-- Automatic dependency resolution
-- Priority-based ordering within dependency levels
-- See [src/DataSeeding/README.md](dotnet/src/DataSeeding/README.md) for usage
-
-## Dependency Management
-
-- **Central Package Management**: All NuGet versions are managed in `Directory.Packages.props`
-- **.NET Version**: Net10.0 target framework (see Directory.Packages.props)
-- **Testing**: xUnit with NSubstitute for mocking, FluentAssertions for readable assertions, Coverlet for code coverage
-- **EF Core**: Version 10.0.5 - used across data seeding and domain event libraries
-
-## Testing Conventions
-
-- Test projects located in `dotnet/tests/` mirror the source structure
-- Test project names follow pattern: `AQ.[Feature].Tests` or `AQ.[Namespace].Tests`
-- Use `dotnet test` with `--filter` parameter to run specific tests
-- Tests automatically collect code coverage data (XPlat Code Coverage format)
+### Policy
+- DO: update LIBRARIES.md with every behaviour change; add an ADR for every changed, reverted or rejected approach.
+- DON'T: create task-specific docs, implementation plans, status or completion reports (scratch work goes in the session scratchpad, not the repo).
+- DON'T: restate a fact that LIBRARIES.md, a layer `CLAUDE.md` or the code already owns — link or delete instead.
 
 ## CI/CD & Code Quality
 
-### Automated Checks (GitHub Actions)
-
 The repository enforces:
-- Code formatting via `dotnet format` (Required - will reject unformatted code)
+- Code formatting via `dotnet format` (required, unformatted code is rejected)
 - Full test suite must pass (Release configuration)
+- `docs-sync.ps1 -Check` must pass
 - Package metadata validation
 - Merge conflict detection
 - No direct merges from main/master to main/master branches
 
-### Running Locally Before Push
-
-Always run locally to catch issues before CI:
+Run before pushing:
 ```bash
 cd dotnet/
-dotnet format AQ.sln  # Fix formatting
+dotnet format AQ.sln
 dotnet build AQ.sln --configuration Release
 dotnet test AQ.sln --configuration Release
 ```
 
 ## Project Assumptions
 
-- **Implicit Usings**: Enabled in all projects - no need for explicit using statements for standard namespaces
-- **Nullable Reference Types**: Enabled - handle nullability explicitly
-- **No Service Abstractions for Data**: Handlers fetch required data directly from database via DbContext, not through services
-- **Type Safety Over Runtime Types**: Use generic constraints and reflection via `typeof(T).Name` rather than manual type string constants
+- **Implicit Usings** and **Nullable Reference Types** are enabled in all projects; handle nullability explicitly.
+- **Central package management**: versions live in `dotnet/Directory.Packages.props`, target framework is `net10.0` (set in `dotnet/Directory.Build.props`).
+- **No service abstractions for data**: handlers fetch what they need from the DbContext directly.
+- **Type safety over runtime strings**: use generic constraints and `typeof(T).Name`, not manual type-name constants.
+- **No app knowledge**: no app branding, no app table names, no app claim names in a shared library. If a library needs something app-specific, it takes it as an option or a type parameter.

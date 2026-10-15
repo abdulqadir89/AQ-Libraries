@@ -48,6 +48,7 @@ public sealed class MarkdownContent : ValueObject
 
         var rawHtml = Markdown.ToHtml(value, pipeline);
 
+        // RULE VOB-9
         return SanitizeHtml(rawHtml);
     }
 
