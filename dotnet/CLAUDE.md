@@ -2,6 +2,8 @@
 
 See root `CLAUDE.md` for the documentation rules and CI. What each library guarantees is in [docs/LIBRARIES.md](../docs/LIBRARIES.md) — read the section of the library you are changing first.
 
+**Changing a library here means updating `docs/LIBRARIES.md` in the same piece of work**, then running `pwsh ../scripts/docs-sync.ps1 -Check`.
+
 ## Solution & Projects
 
 ```

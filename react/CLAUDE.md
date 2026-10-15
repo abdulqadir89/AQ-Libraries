@@ -2,6 +2,8 @@
 
 See root `CLAUDE.md` for overall repo context and the documentation rules. What the package guarantees (rules `RCT-n`) is in [docs/LIBRARIES.md](../docs/LIBRARIES.md).
 
+**Changing the package means updating `docs/LIBRARIES.md` in the same piece of work**, then running `pwsh ../scripts/docs-sync.ps1 -Check`.
+
 ## Package Identity
 
 - **Package name**: `@AQ/react-components`

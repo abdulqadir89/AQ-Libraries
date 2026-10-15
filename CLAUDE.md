@@ -22,6 +22,8 @@ Sub-folder CLAUDE.md files contain layer-specific rules:
 
 What each library does and guarantees is in [docs/LIBRARIES.md](docs/LIBRARIES.md).
 
+**Any change to a library under `dotnet/src` or `react/src` updates `docs/LIBRARIES.md` in the same piece of work** (rule text, a new rule, or a removed rule with its `// RULE` tag), then run `pwsh ./scripts/docs-sync.ps1 -Check`. Details under Documentation below.
+
 ## Quick Commands
 
 ### .NET (run from `dotnet/` directory)
