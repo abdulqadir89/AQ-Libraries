@@ -173,7 +173,7 @@ Usage: [Filter README](../dotnet/src/Utilities/Filter/README.md).
 - **FLT-3** A complex expression combines conditions with `&&` and `||` and parentheses.
 - **FLT-4** A condition that cannot be built, because the property does not exist or the value cannot be converted, is dropped silently. If every condition is dropped the query is returned unfiltered, so callers that need strictness validate property names first.
 - **FLT-5** An empty or missing filter string returns the query unchanged.
-- **FLT-6** String comparisons ignore case unless the condition says otherwise.
+- **FLT-6** Contains, starts-with and ends-with comparisons ignore case unless the condition asks for case-sensitive matching. Equality follows the database's own collation.
 
 ### Sorting
 
@@ -203,7 +203,7 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 
 ### Verification and review
 
-- **VER-1** Verification state counts distinct verification entries with who and when. Resetting clears the entries, the count and stamps when the reset happened.
+- **VER-1** Verification state keeps a count and one entry per verification (who and when). Resetting clears both and stamps when the reset happened.
 - **VER-2** Verification can be asked "has this user verified" from the entries.
 - **RVW-1** Marking an entity reviewed stamps who and when, links the activity, sets the next due date (keeping a still-future one when none is given) and clears the notified flag.
 - **RVW-2** Reviewing an entity that is also verifiable adds the reviewer to its verification history unless they are already in it, and reports whether it did.
