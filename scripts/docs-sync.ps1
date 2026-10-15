@@ -143,7 +143,7 @@ $skip = 'node_modules|[\\/]bin[\\/]|[\\/]obj[\\/]|[\\/]dist[\\/]|[\\/]\.claude[\
 $mdFiles = @($libDoc) +
     @(Get-ChildItem $root -Recurse -Filter CLAUDE.md -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch $skip } | ForEach-Object { $_.FullName }) +
     @(Get-ChildItem $srcDir -Recurse -Filter README.md -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch $skip } | ForEach-Object { $_.FullName }) +
-    @(Get-ChildItem (Join-Path $root 'docs') -Recurse -Filter *.md -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -ne $libDoc } | ForEach-Object { $_.FullName })
+    @(Get-ChildItem (Join-Path $root 'docs') -Recurse -Filter *.md -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -ne $libDoc -and $_.FullName -notmatch '[\\/]decisions[\\/]README\.md$' } | ForEach-Object { $_.FullName })
 foreach ($f in ($mdFiles | Sort-Object -Unique)) {
     $text = Get-Content $f -Raw
     $dir = Split-Path $f

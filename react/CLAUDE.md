@@ -1,6 +1,6 @@
 # AQ-Libraries — React (@AQ/react-components)
 
-See root `CLAUDE.md` for overall repo context and dependency management rationale.
+See root `CLAUDE.md` for overall repo context and the documentation rules. What the package guarantees (rules `RCT-n`) is in [docs/LIBRARIES.md](../docs/LIBRARIES.md).
 
 ## Package Identity
 
@@ -43,6 +43,7 @@ react/src/
 - **Exports**: always re-export new components through the nearest `index.ts` barrel and up to `src/index.ts`.
 - **Test in ELS context**: changes here affect ELS web SSR. Test against ELS web before considering a change complete.
 - **No duplicate React/Mantine**: if you add a dependency that includes React or Mantine as a transitive dep, make it a peer dep instead.
+- **Rule tags**: a guarantee a caller can rely on gets a rule in `docs/LIBRARIES.md` and a `// RULE RCT-n` comment on the enforcing line. `scripts/docs-sync.ps1` fails when `package.json` gains a runtime `dependencies` entry.
 
 ## Adding a New Component
 

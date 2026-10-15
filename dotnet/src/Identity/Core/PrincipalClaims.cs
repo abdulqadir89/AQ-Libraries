@@ -20,6 +20,7 @@ public static class PrincipalClaims
         "sub",
         Type,
         ClientId,
+        // TODO: an ELS claim name in a shared library; make the reserved set configurable per app
         "els_internal_user_id",
     };
 
