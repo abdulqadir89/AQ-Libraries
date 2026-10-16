@@ -15,7 +15,7 @@ public static class ReviewStateMappingExtensions
 
     public static EntityTypeBuilder<TEntity> HasReviewState<TEntity>(
         this EntityTypeBuilder<TEntity> builder,
-        Expression<Func<TEntity, ReviewState>> property) where TEntity : class
+        Expression<Func<TEntity, ReviewState?>> property) where TEntity : class
     {
         builder.OwnsOne(property, owned =>
         {
