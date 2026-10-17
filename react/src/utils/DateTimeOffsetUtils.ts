@@ -200,6 +200,8 @@ export function formatDateTimeOffsetRangeCompact(
  * @param timezoneId - Optional IANA timezone id (e.g. "America/New_York"). Defaults to the user's local timezone.
  * @returns ISO 8601 string with timezone offset
  */
+export function toDateTimeOffsetString(date: Date, timezoneId?: string): string;
+export function toDateTimeOffsetString(date: Date | null | undefined, timezoneId?: string): string | null;
 export function toDateTimeOffsetString(date: Date | null | undefined, timezoneId?: string): string | null {
   if (!date || !(date instanceof Date)) return null;
 
@@ -229,6 +231,17 @@ export function toDateTimeOffsetString(date: Date | null | undefined, timezoneId
   const localDateStr = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
 
   return `${localDateStr}${offsetString}`;
+}
+
+/**
+ * Converts a Date to a YYYY-MM-DD string using its local year, month and day (never UTC).
+ */
+export function toDateOnlyString(date: Date): string;
+export function toDateOnlyString(date: Date | null | undefined): string | null;
+export function toDateOnlyString(date: Date | null | undefined): string | null {
+  if (!date) return null;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
 }
 
 /**
