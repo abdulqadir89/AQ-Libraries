@@ -10,3 +10,5 @@ export { DateTimeOffsetInput } from './DateTimeOffsetInput';
 export type { DateTimeOffsetInputProps } from './DateTimeOffsetInput';
 export { DateOffsetInput } from './DateOffsetInput';
 export type { DateOffsetInputProps } from './DateOffsetInput';
+export { DateDisplay } from './DateDisplay';
+export type { DateDisplayProps } from './DateDisplay';
