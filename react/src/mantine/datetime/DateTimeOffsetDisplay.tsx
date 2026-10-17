@@ -14,6 +14,12 @@ export interface DateTimeOffsetDisplayProps {
   format?: Intl.DateTimeFormatOptions;
   
   /**
+   * Show the date only (no time). Explicit `format` options still win.
+   * @default false
+   */
+  dateOnly?: boolean;
+
+  /**
    * Whether to show a tooltip with original timezone information
    * @default true
    */
@@ -32,6 +38,7 @@ export interface DateTimeOffsetDisplayProps {
 export function DateTimeOffsetDisplay({
   value,
   format,
+  dateOnly = false,
   showTooltip = true,
   textProps,
 }: DateTimeOffsetDisplayProps) {
@@ -45,7 +52,8 @@ export function DateTimeOffsetDisplay({
     return <Text {...mergedTextProps}>—</Text>;
   }
 
-  const formattedValue = formatDateTimeOffset(value, format);
+  const effectiveFormat = dateOnly ? { hour: undefined, minute: undefined, ...format } : format;
+  const formattedValue = formatDateTimeOffset(value, effectiveFormat);
 
   if (!formattedValue) {
     return <Text {...mergedTextProps}>—</Text>;
