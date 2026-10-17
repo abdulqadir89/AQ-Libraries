@@ -274,6 +274,7 @@ export function DataGrid<T extends Record<string, unknown>>({
     ? actionsWidthColumnCount * 36 + (actionsWidthColumnCount - 1) * 10 + 24
     : 0;
   const resolvedActionsWidth = actionsWidth ?? computedActionsWidth;
+  const hasActionsColumn = showActions && finalActions.length > 0;
 
   // Column visibility — defaults come from each column's `defaultHidden`, overridden by
   // whatever the user has toggled (persisted per-gridId in localStorage). Only stores
@@ -351,12 +352,19 @@ export function DataGrid<T extends Record<string, unknown>>({
     return Math.round(width);
   }, [sortable]);
 
+  // The selection checkbox is rendered inside the first visible column (not as its own
+  // column), so that column carries the checkbox width + Group gap="xs" on top of its content.
+  const CHECKBOX_GUTTER = 16 + 10;
+  const firstVisibleKey = visibleColumns[0]?.key;
+
   const baseWidthFor = useCallback((column: DataGridColumn<T>): number => {
+    const gutter = selectable && column.key === firstVisibleKey ? CHECKBOX_GUTTER : 0;
     if (column.width) {
-      return typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
+      const explicit = typeof column.width === 'number' ? column.width : parseInt(String(column.width), 10);
+      return explicit + gutter;
     }
-    return calculateDynamicWidth(column);
-  }, [calculateDynamicWidth]);
+    return calculateDynamicWidth(column) + gutter;
+  }, [calculateDynamicWidth, selectable, firstVisibleKey]);
 
   // At most one column should be marked `primary` — it alone absorbs leftover container
   // width (or shrink pressure), clamped by its own minWidth/maxWidth. Every other column
@@ -373,9 +381,8 @@ export function DataGrid<T extends Record<string, unknown>>({
     const otherColumnsWidth = visibleColumns
       .filter(c => c.key !== primary.key)
       .reduce((sum, c) => sum + (baseWidths[c.key] ?? 0), 0);
-    const actionsReserve = showActions ? resolvedActionsWidth : 0;
-    const checkboxReserve = selectable ? 40 : 0;
-    const fixedWidth = otherColumnsWidth + actionsReserve + checkboxReserve;
+    const actionsReserve = hasActionsColumn ? resolvedActionsWidth : 0;
+    const fixedWidth = otherColumnsWidth + actionsReserve;
 
     // Reserve a couple of px for the table's own border (withTableBorder/withColumnBorders)
     // which sits inside the measured container box — rounding down (never up) here
@@ -383,18 +390,22 @@ export function DataGrid<T extends Record<string, unknown>>({
     // that exactly fits never shows a phantom horizontal scrollbar.
     const BORDER_SAFETY_MARGIN = 4;
     let primaryWidth = containerWidth - fixedWidth - BORDER_SAFETY_MARGIN;
-    if (primary.minWidth != null) primaryWidth = Math.max(primaryWidth, primary.minWidth);
+    // Never shrink below what the header itself needs (title + sort/filter icons + checkbox
+    // gutter, honouring minWidth) — when the other columns already fill the container the
+    // table scrolls horizontally instead of squeezing the primary column to nothing.
+    const gutter = selectable && primary.key === firstVisibleKey ? CHECKBOX_GUTTER : 0;
+    primaryWidth = Math.max(primaryWidth, calculateDynamicWidth(primary) + gutter);
     if (primary.maxWidth != null) primaryWidth = Math.min(primaryWidth, primary.maxWidth);
 
     return { ...baseWidths, [primary.key]: Math.floor(primaryWidth) };
-  }, [visibleColumns, showActions, resolvedActionsWidth, selectable]);
+  }, [visibleColumns, hasActionsColumn, resolvedActionsWidth, calculateDynamicWidth, selectable, firstVisibleKey]);
 
   // Initialize column widths
   // Use a stable signature (key + explicit width + primary flag) to avoid recalculating
   // on every parent render when `columns` is defined inline (new reference each render).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const columnSignature = columns.map(c => `${c.key}:${c.width ?? ''}:${c.primary ? 1 : 0}`).join(',')
-    + '|' + visibleColumns.map(c => c.key).join(',');
+    + '|' + visibleColumns.map(c => c.key).join(',') + '|' + (selectable ? 1 : 0);
 
   useEffect(() => {
     const baseWidths: Record<string, number> = {};
@@ -838,7 +849,7 @@ export function DataGrid<T extends Record<string, unknown>>({
             )}
           </Table.Td>
         ))}
-        {showActions && finalActions.length > 0 && (
+        {hasActionsColumn && (
           <Table.Td
             className={styles.stickyActionsCell}
             data-striped={striped && index % 2 === 1 ? 'true' : undefined}
@@ -857,8 +868,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   // widths and stretches/redistributes columns (typically the last one) to fill the
   // container on its own, which is what caused Actions to balloon on wide screens.
   const tableWidth = visibleColumns.reduce((sum, column) => sum + (columnWidths[column.key] || (typeof column.width === 'number' ? column.width : 100)), 0)
-    + (showActions && finalActions.length > 0 ? resolvedActionsWidth : 0)
-    + (selectable ? 40 : 0);
+    + (hasActionsColumn ? resolvedActionsWidth : 0);
 
   // Mantine's ScrollArea auto-shows its scrollbar via a ResizeObserver on the content
   // box, but that observer unreliably misses overflow introduced by a manual column
@@ -1087,7 +1097,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                     />
                   </Table.Th>
                 ))}
-                {showActions && finalActions.length > 0 && (
+                {hasActionsColumn && (
                   <Table.Th
                     className={styles.stickyActionsHeader}
                     style={{ width: resolvedActionsWidth, textAlign: 'center' }}
@@ -1101,7 +1111,7 @@ export function DataGrid<T extends Record<string, unknown>>({
               {rows.length > 0 ? rows : (
                 <Table.Tr>
                   <Table.Td 
-                    colSpan={visibleColumns.length + (showActions ? 1 : 0) + (selectable ? 1 : 0)}
+                    colSpan={visibleColumns.length + (hasActionsColumn ? 1 : 0)}
                     style={{ textAlign: 'center', padding: '2rem' }}
                   >
                     <Text c="dimmed">{resolvedEmptyStateText}</Text>
