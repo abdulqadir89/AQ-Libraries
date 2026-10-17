@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 
 namespace AQ.Utilities.Search;
@@ -29,9 +30,36 @@ public static class SearchableFieldExtractor
     /// <returns>Dictionary of property paths and their search configurations</returns>
     public static Dictionary<string, SearchFieldInfo> ExtractSearchableFields(Type type, bool includeNestedProperties = true, int maxDepth = 3)
     {
-        var fields = new Dictionary<string, SearchFieldInfo>();
-        ExtractSearchableFieldsRecursive(type, string.Empty, fields, includeNestedProperties, maxDepth, 0);
-        return fields;
+        return ExtractedFieldsCache.GetOrAdd((type, includeNestedProperties, maxDepth), key =>
+        {
+            var fields = new Dictionary<string, SearchFieldInfo>();
+            ExtractSearchableFieldsRecursive(key.Type, string.Empty, fields, key.IncludeNested, key.MaxDepth, 0, null);
+
+            // RULE SRC-10
+            foreach (var derivedType in FindDerivedTypes(key.Type))
+            {
+                ExtractSearchableFieldsRecursive(derivedType, string.Empty, fields, key.IncludeNested, key.MaxDepth, 0, derivedType);
+            }
+
+            return fields;
+        });
+    }
+
+    private static readonly ConcurrentDictionary<(Type Type, bool IncludeNested, int MaxDepth), Dictionary<string, SearchFieldInfo>> ExtractedFieldsCache = new();
+
+    private static IEnumerable<Type> FindDerivedTypes(Type type)
+    {
+        Type[] assemblyTypes;
+        try
+        {
+            assemblyTypes = type.Assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            assemblyTypes = ex.Types.Where(t => t != null).ToArray()!;
+        }
+
+        return assemblyTypes.Where(t => t.IsClass && t.IsSubclassOf(type)).ToList();
     }
 
     /// <summary>
@@ -83,7 +111,8 @@ public static class SearchableFieldExtractor
 
         var conditions = searchableFields.Select(field => new SearchCondition
         {
-            PropertyPath = field.Key,
+            PropertyPath = field.Value.PropertyPath,
+            DerivedType = field.Value.DerivedType,
             SearchTerm = searchTerm,
             Operator = searchOperator,
             Weight = field.Value.Weight,
@@ -110,12 +139,17 @@ public static class SearchableFieldExtractor
         Dictionary<string, SearchFieldInfo> fields,
         bool includeNestedProperties,
         int maxDepth,
-        int currentDepth)
+        int currentDepth,
+        Type? derivedType)
     {
         if (currentDepth >= maxDepth)
             return;
 
-        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+        var flags = BindingFlags.Public | BindingFlags.Instance;
+        if (derivedType != null && currentDepth == 0)
+            flags |= BindingFlags.DeclaredOnly;
+
+        var properties = type.GetProperties(flags)
             .Where(p => p.CanRead && IsSearchableProperty(p));
 
         foreach (var property in properties)
@@ -125,6 +159,7 @@ public static class SearchableFieldExtractor
                 continue;
 
             var propertyPath = string.IsNullOrEmpty(prefix) ? property.Name : $"{prefix}.{property.Name}";
+            var keyPrefix = derivedType == null ? string.Empty : $"{derivedType.Name}:";
 
             var propertyType = property.PropertyType;
             if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
@@ -139,7 +174,7 @@ public static class SearchableFieldExtractor
                     foreach (var subPath in searchableAttribute.SubPaths)
                     {
                         var leafPath = $"{propertyPath}.{subPath}";
-                        fields[leafPath] = new SearchFieldInfo
+                        fields[keyPrefix + leafPath] = new SearchFieldInfo
                         {
                             PropertyPath = leafPath,
                             FieldName = fieldName,
@@ -149,21 +184,22 @@ public static class SearchableFieldExtractor
                             EnableExactMatch = searchableAttribute.EnableExactMatch,
                             EnablePrefixMatch = searchableAttribute.EnablePrefixMatch,
                             MinSearchLength = searchableAttribute.MinSearchLength,
-                            IgnoreCase = searchableAttribute.IgnoreCase
+                            IgnoreCase = searchableAttribute.IgnoreCase,
+                            DerivedType = derivedType
                         };
                     }
                 }
                 else if (includeNestedProperties && currentDepth < maxDepth - 1)
                 {
                     // No explicit sub-path — recurse into the complex type looking for [Searchable] children
-                    ExtractSearchableFieldsRecursive(propertyType, propertyPath, fields, includeNestedProperties, maxDepth, currentDepth + 1);
+                    ExtractSearchableFieldsRecursive(propertyType, propertyPath, fields, includeNestedProperties, maxDepth, currentDepth + 1, derivedType);
                 }
             }
             else
             {
                 // Primitive / string leaf — add as a searchable field
                 var fieldName = searchableAttribute.SearchFieldName ?? property.Name;
-                fields[propertyPath] = new SearchFieldInfo
+                fields[keyPrefix + propertyPath] = new SearchFieldInfo
                 {
                     PropertyPath = propertyPath,
                     FieldName = fieldName,
@@ -173,7 +209,27 @@ public static class SearchableFieldExtractor
                     EnableExactMatch = searchableAttribute.EnableExactMatch,
                     EnablePrefixMatch = searchableAttribute.EnablePrefixMatch,
                     MinSearchLength = searchableAttribute.MinSearchLength,
-                    IgnoreCase = searchableAttribute.IgnoreCase
+                    IgnoreCase = searchableAttribute.IgnoreCase,
+                    DerivedType = derivedType
+                };
+            }
+        }
+
+        // RULE SRC-11
+        var parentAttribute = type.GetCustomAttribute<SearchableParentAttribute>(inherit: false);
+        var parentProperty = parentAttribute == null ? null : type.GetProperty("Parent", BindingFlags.Public | BindingFlags.Instance);
+        if (parentAttribute != null && parentProperty != null && includeNestedProperties && currentDepth < maxDepth - 1)
+        {
+            var keyPrefix = derivedType == null ? string.Empty : $"{derivedType.Name}:";
+            foreach (var subPath in parentAttribute.SubPaths)
+            {
+                var leafPath = string.IsNullOrEmpty(prefix) ? $"Parent.{subPath}" : $"{prefix}.Parent.{subPath}";
+                fields[keyPrefix + leafPath] = new SearchFieldInfo
+                {
+                    PropertyPath = leafPath,
+                    FieldName = "Parent" + subPath,
+                    PropertyType = typeof(string),
+                    DerivedType = derivedType
                 };
             }
         }
@@ -367,4 +423,9 @@ public class SearchFieldInfo
     /// Whether to ignore case when searching this field
     /// </summary>
     public bool IgnoreCase { get; set; } = true;
+
+    /// <summary>
+    /// The derived type that declares this member, or null when it is declared on the searched type itself
+    /// </summary>
+    public Type? DerivedType { get; set; }
 }

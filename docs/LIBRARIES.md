@@ -190,10 +190,12 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 
 - **SRC-1** Exact, contains, starts-with and ends-with search are plain LINQ any EF Core provider translates. A null string never matches and never throws.
 - **SRC-2** Fuzzy, phonetic and full-text operators throw a not-supported error naming the operator unless a provider dialect is registered. There is no silent fallback to contains.
-- **SRC-6** Searchable fields are the properties marked searchable. A type with none falls back to every readable, writable, simple-typed property, strings included; collections and not-mapped properties are excluded, and a private setter is fine.
+- **SRC-6** Searchable fields are the properties marked searchable. A type with none, in itself and its derived types, falls back to every readable, writable, simple-typed property, strings included; collections and not-mapped properties are excluded, and a private setter is fine.
 - **SRC-7** A search condition naming an unknown property is skipped; the other conditions still apply.
 - **SRC-8** A scored search loads the matching entities into memory, drops results below the minimum score (0.1 by default), orders by score and caps the count at the maximum results when one is set.
 - **SRC-9** Search does not paginate; callers page the scored results themselves.
+- **SRC-10** Searchable members declared on a derived type are searched only for records of that type; a type with none anywhere in its hierarchy falls back as in SRC-6.
+- **SRC-11** An entity marked with the parent-search attribute is also searched by the listed members of its direct parent; ancestors further up are not searched.
 
 ### Merging
 
