@@ -34,6 +34,11 @@ public class SearchCondition
     /// Minimum similarity threshold (0.0 to 1.0) for fuzzy matching
     /// </summary>
     public double MinSimilarity { get; set; } = 0.6;
+
+    /// <summary>
+    /// When set, the condition only applies to records of this derived type; the property path is read from that type
+    /// </summary>
+    public Type? DerivedType { get; set; }
 }
 
 /// <summary>
