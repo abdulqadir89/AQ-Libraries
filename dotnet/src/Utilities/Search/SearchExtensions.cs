@@ -109,6 +109,16 @@ public static class SearchExtensions
     /// Applies a global search to an IQueryable and returns an IQueryable for further composition.
     /// Handles null or empty search terms gracefully by returning the original query unchanged.
     /// This method is designed for use in CQRS queries where you need to continue composing the query.
+    /// <para>
+    /// IMPORTANT: call this on the entity query, before the Select that builds the response. Searchable fields come from
+    /// <see cref="SearchableAttribute"/> on the entity (the response is not decorated per endpoint). The attribute works
+    /// on navigation properties and value objects too: put it on the navigation (it recurses into the target's
+    /// [Searchable] members) or use <see cref="SearchableAttribute.SubPaths"/> to pick members. So every value a grid shows
+    /// from a navigation must be reachable by decorating the entity, never by hand-written Where clauses.
+    /// Members marked [Searchable] on a derived type are searched with a type check, so a query typed on the base
+    /// entity reaches them.
+    /// Filter and sort (ApplyFilter, ApplySort) always run after the projection.
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type of entities being searched</typeparam>
     /// <param name="query">The queryable to search</param>
@@ -280,7 +290,7 @@ public static class SearchExtensions
     private static Expression<Func<T, bool>>? BuildSearchExpression<T>(SearchCondition condition) where T : class
     {
         var parameter = Expression.Parameter(typeof(T), "x");
-        var property = BuildPropertyExpression(parameter, condition.PropertyPath);
+        var property = BuildPropertyExpression(parameter, condition.PropertyPath, condition.DerivedType, out var guards);
 
         // RULE SRC-7
         if (property == null)
@@ -299,6 +309,17 @@ public static class SearchExtensions
             _ => BuildContainsExpression(property, condition)
         };
 
+        foreach (var guard in guards)
+        {
+            searchExpression = Expression.AndAlso(guard, searchExpression);
+        }
+
+        // RULE SRC-10
+        if (condition.DerivedType != null)
+        {
+            searchExpression = Expression.AndAlso(Expression.TypeIs(parameter, condition.DerivedType), searchExpression);
+        }
+
         return Expression.Lambda<Func<T, bool>>(searchExpression, parameter);
     }
 
@@ -308,18 +329,25 @@ public static class SearchExtensions
             $"SearchOperator.{condition.Operator} requires a provider dialect. " +
             "Reference AQ.EntityFramework.SqlServer or AQ.EntityFramework.PostgreSql and register it at startup.");
 
-    private static Expression? BuildPropertyExpression(ParameterExpression parameter, string propertyPath)
+    private static Expression? BuildPropertyExpression(ParameterExpression parameter, string propertyPath, Type? derivedType, out List<Expression> guards)
     {
-        Expression property = parameter;
+        guards = new List<Expression>();
+        Expression property = derivedType != null ? Expression.Convert(parameter, derivedType) : parameter;
         var properties = propertyPath.Split('.');
 
-        foreach (var prop in properties)
+        for (var i = 0; i < properties.Length; i++)
         {
-            var propertyInfo = property.Type.GetProperty(prop, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            var propertyInfo = property.Type.GetProperty(properties[i], BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             if (propertyInfo == null)
                 return null;
 
             property = Expression.Property(property, propertyInfo);
+
+            // Navigation segments are null-guarded so in-memory queries do not throw; EF translates the guard away or into a join check
+            if (i < properties.Length - 1 && !property.Type.IsValueType)
+            {
+                guards.Add(Expression.NotEqual(property, Expression.Constant(null, property.Type)));
+            }
         }
 
         return property;
@@ -571,7 +599,10 @@ public static class SearchExtensions
 
             foreach (var field in searchableFields)
             {
-                var fieldValue = GetPropertyValue(entity, field.Key);
+                if (field.Value.DerivedType != null && !field.Value.DerivedType.IsInstanceOfType(entity))
+                    continue;
+
+                var fieldValue = GetPropertyValue(entity, field.Value.PropertyPath);
                 if (fieldValue != null)
                 {
                     var baseScore = CalculateFieldScore(fieldValue.ToString() ?? string.Empty, specification.GlobalSearchTerm, field.Value);
@@ -589,6 +620,9 @@ public static class SearchExtensions
         // Score specific conditions
         foreach (var condition in GetAllConditions(specification.RootGroup))
         {
+            if (condition.DerivedType != null && !condition.DerivedType.IsInstanceOfType(entity))
+                continue;
+
             var fieldValue = GetPropertyValue(entity, condition.PropertyPath);
             if (fieldValue != null)
             {
