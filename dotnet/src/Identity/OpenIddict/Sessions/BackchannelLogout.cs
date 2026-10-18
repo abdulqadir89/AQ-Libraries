@@ -13,7 +13,7 @@ namespace AQ.Identity.OpenIddict.Sessions;
 /// OpenID Connect Back-Channel Logout 1.0 (https://openid.net/specs/openid-connect-backchannel-1_0.html)
 /// names and client settings. OpenIddict 7 has no native support yet (planned for 8.0,
 /// openiddict-core#2175), so the IdP side is implemented here to the spec, reusing OpenIddict's
-/// signing credentials.
+/// signing credentials. TODO-002: switch to the native feature once OpenIddict 8 is stable.
 /// </summary>
 public static class BackchannelLogout
 {

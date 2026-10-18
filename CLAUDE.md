@@ -56,6 +56,7 @@ The code is the source of truth. Docs describe what the code does today; they ne
 |----------|-------|
 | What does each library do and promise? Rules, invariants, who depends on whom? | [docs/LIBRARIES.md](docs/LIBRARIES.md) — one file, read it first |
 | Why was it built this way / what was tried and dropped? | [docs/decisions/](docs/decisions/) — ADRs |
+| What is deferred? | [docs/todos/](docs/todos/) — one file per todo |
 | How do I work in this layer (patterns, conventions, gotchas)? | the layer's `CLAUDE.md` (`dotnet/`, `react/`) |
 | How do I use a library (syntax, examples)? | the `README.md` next to the library (Filter, Sort, Search, Results, StateMachine, DataSeeding, Identity) |
 
@@ -65,7 +66,7 @@ The code is the source of truth. Docs describe what the code does today; they ne
 - Every library section heading carries a `<!-- projects: ... -->` marker naming the projects it describes. A new project must be claimed by one.
 - **Rule ids**: every guarantee in LIBRARIES.md has an id (`**ACT-3**`: three capital letters, a dash, a number, unique per file). Put `// RULE ACT-3` on the line that enforces it, in any language in the repo. Deleting a rule in code means deleting it from the doc; the script flags both directions.
 - Write rules as what a caller can rely on, not as a tour of the implementation. One rule, one behaviour.
-- **Planning lives in code only**: a `TODO` comment next to the code it concerns. No roadmap, status or "planned" text in docs.
+- **Todos**: every deferred item is a `docs/todos/NNN-short-title.md` (Context, Scope, Impact, Options, Done when) and, when it concerns specific code, a `// TODO-NNN: reason` comment at that code. A bare `TODO` fails `docs-sync.ps1`. Finished todos get Status `Done`. No roadmap, status or "planned" text anywhere else in docs.
 - A change that breaks a consumer (DQM, ELS) changes the rule, and the consuming repo's `CLAUDE.md` or docs say what it must do — note it in the PR.
 
 ### Decisions (ADRs)

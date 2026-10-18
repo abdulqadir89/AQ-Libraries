@@ -18,7 +18,8 @@
     3. Every rule id written in LIBRARIES.md (`**ABC-12**`) appears in code as `RULE ABC-12`; ids are unique;
        every `RULE ABC-12` tag in code has a rule in the doc.
     4. Every `ADR-NNN` mentioned in code or docs resolves to docs/decisions/NNN-*.md.
-    5. Relative markdown links in LIBRARIES.md / CLAUDE.md / library README.md files resolve; code fences are balanced.
+    5. Every code TODO is written `TODO-NNN` and resolves to docs/todos/NNN-*.md.
+    6. Relative markdown links in LIBRARIES.md / CLAUDE.md / library README.md files resolve; code fences are balanced.
 
   Rules for authors: see "Documentation" in the root CLAUDE.md.
 #>
@@ -135,6 +136,22 @@ Push-Location $root
 try {
     git grep -nE --untracked 'ADR-[0-9]{3}' -- . ':!docs/decisions' ':!scripts' ':!*/node_modules/*' 2>$null | ForEach-Object {
         if ($_ -match '^(.+?):(\d+):.*?(ADR-\d{3})') { Test-Adr $Matches[3] "$($Matches[1]):$($Matches[2])" }
+    }
+} finally { Pop-Location }
+
+# ---------- check: TODO ids ----------
+$todoFiles = @(Get-ChildItem (Join-Path $root 'docs/todos') -Filter '*.md' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
+Push-Location $root
+try {
+    git grep -nE --untracked '\bTODO' -- . ':!docs' ':!scripts' ':!*.md' ':!*/node_modules/*' ':!*package-lock.json' ':!*/Migrations/*' 2>$null | ForEach-Object {
+        if ($_ -notmatch '^(.+?):(\d+):(.*)$') { return }
+        $where = "$($Matches[1]):$($Matches[2])"
+        $line = $Matches[3]
+        if ($line -notmatch 'TODO-\d{3}') { Fail "bare TODO at $where; use 'TODO-NNN' and add docs/todos/NNN-*.md"; return }
+        foreach ($m in [regex]::Matches($line, 'TODO-(\d{3})')) {
+            $n = $m.Groups[1].Value
+            if (-not ($todoFiles | Where-Object { $_ -like "$n-*" })) { Fail "TODO-$n at $where has no file in docs/todos/" }
+        }
     }
 } finally { Pop-Location }
 
