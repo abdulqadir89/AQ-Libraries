@@ -84,6 +84,10 @@ export function RichTextEditor({
   error,
   required,
   minHeight = 300,
+  height,
+  readOnly = false,
+  onEditorReady,
+  onSelectionChange,
   onUploadFile,
   fetchAuthenticated,
   onError,
@@ -92,6 +96,8 @@ export function RichTextEditor({
   const m = aqMessages.richTextEditor;
   const pendingImageFiles = useMemo(() => new Map<string, File>(), []);
   const lastEmittedValue = useRef(value);
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  onSelectionChangeRef.current = onSelectionChange;
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -115,6 +121,7 @@ export function RichTextEditor({
     ],
     content: value,
     contentType: contentFormat,
+    editable: !readOnly,
     editorProps: {
       attributes: {
         'data-placeholder': placeholder ?? '',
@@ -125,8 +132,19 @@ export function RichTextEditor({
       lastEmittedValue.current = output;
       onChange(output);
     },
+    onSelectionUpdate({ editor: currentEditor }) {
+      onSelectionChangeRef.current?.(!currentEditor.state.selection.empty);
+    },
   }, []);
 
+  useEffect(() => {
+    if (editor) onEditorReady?.(editor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  useEffect(() => {
+    if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
   useEffect(() => {
     if (!editor) return;
     if (value !== lastEmittedValue.current) {
@@ -196,6 +214,7 @@ export function RichTextEditor({
         withBorder
         style={{ borderColor: error ? 'var(--mantine-color-red-7)' : undefined }}
       >
+        {!readOnly && (
         <Group gap={2} p={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           <Menu withArrow>
             <Menu.Target>
@@ -384,8 +403,13 @@ export function RichTextEditor({
             </>
           )}
         </Group>
+        )}
 
-        <div style={{ minHeight, padding: 8 }}>
+        <div
+          style={height === undefined
+            ? { minHeight: readOnly ? undefined : minHeight, padding: 8 }
+            : { height, overflowY: 'auto', padding: 8 }}
+        >
           <EditorContent editor={editor} />
         </div>
       </Paper>
@@ -395,7 +419,7 @@ export function RichTextEditor({
           outline: none;
           white-space: pre-wrap;
           word-wrap: break-word;
-          min-height: ${minHeight - 16}px;
+          min-height: ${readOnly || height !== undefined ? 0 : minHeight - 16}px;
         }
         .tiptap.ProseMirror p {
           margin: 0 0 0.75em 0;
