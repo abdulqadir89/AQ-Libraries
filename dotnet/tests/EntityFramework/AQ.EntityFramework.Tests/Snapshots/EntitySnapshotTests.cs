@@ -132,6 +132,22 @@ public class EntitySnapshotTests : IDisposable
     }
 
     [Fact]
+    public async Task Prune_RetentionOverrideKeyIsCaseInsensitive()
+    {
+        using var context = CreateContext();
+        var invoice = await SaveInvoiceVersionsAsync(context, 5);
+        var options = new SnapshotRetentionOptions
+        {
+            Retention = new Dictionary<string, SnapshotRetention>(StringComparer.Ordinal) { ["invoice"] = new SnapshotRetention { KeepLast = 1 } }
+        };
+
+        var result = await Pruner(options).PruneAsync(context);
+
+        result["Invoice"].Should().Be(4);
+        (await VersionsAsync(context, invoice.Id)).Should().Equal(4);
+    }
+
+    [Fact]
     public async Task Prune_MaxAgeOnly_RemovesOldSnapshotsButNeverTheNewest()
     {
         using var context = CreateContext();
@@ -208,12 +224,12 @@ public class EntitySnapshotTests : IDisposable
     }
 
     [Fact]
-    public async Task Prune_DeletesInBatches()
+    public async Task Prune_DeletesAllVersionsBeyondKeepLastInOneStatement()
     {
         using var context = CreateContext();
         var invoice = await SaveInvoiceVersionsAsync(context, 9);
 
-        var result = await Pruner(new SnapshotRetentionOptions { BatchSize = 3 }).PruneAsync(context);
+        var result = await Pruner().PruneAsync(context);
 
         result["Invoice"].Should().Be(7);
         (await VersionsAsync(context, invoice.Id)).Should().Equal(7, 8);

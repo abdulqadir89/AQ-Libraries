@@ -155,6 +155,8 @@ A Roslyn incremental generator, referenced as an analyzer, that writes the snaps
 - **GEN-3** A class marked snapshottable or versionable with no decorated members in its hierarchy gets warning `AQGEN001`; an attribute option naming a member that does not exist fails the build with `AQGEN003`.
 - **GEN-4** Registrations run from a module initializer and are idempotent, so the data writers exist before the first save without any app code calling them.
 - **GEN-5** Output is deterministic: members and classes are emitted in a stable order, so a rebuild with no changes produces identical files.
+- **GEN-6** A negative `KeepLast` or `MaxAgeDays` on a snapshottable class fails the build with `AQGEN004`; 0 means no limit.
+- **GEN-7** A snapshottable class can set `Name`, used for its snapshot link, discriminator and retention configuration key instead of the class name. Two snapshottable classes ending up with the same name fail the build with `AQGEN005`.
 
 ## Utilities <!-- projects: AQ.Utilities -->
 

@@ -59,6 +59,16 @@ namespace AQ.Generators
                 context.ReportDiagnostic(diagnostic.ToDiagnostic());
             }
 
+            // RULE GEN-7
+            foreach (var group in input.Snapshottable.GroupBy(c => c.Name, System.StringComparer.Ordinal).Where(g => g.Count() > 1))
+            {
+                var classes = string.Join(", ", group.Select(c => c.FullName.Replace("global::", string.Empty)).OrderBy(n => n, System.StringComparer.Ordinal));
+                context.ReportDiagnostic(DiagnosticInfo.Create(
+                    "AQGEN005",
+                    "Snapshottable classes " + classes + " share the snapshot name '" + group.Key + "'; set a distinct [Snapshottable(Name = ...)] on all but one.",
+                    null).ToDiagnostic());
+            }
+
             if (!Emitter.HasOutput(input))
             {
                 return;

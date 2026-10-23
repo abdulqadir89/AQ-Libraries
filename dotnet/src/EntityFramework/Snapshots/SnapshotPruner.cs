@@ -11,13 +11,14 @@ public sealed class SnapshotPruner(SnapshotRetentionOptions options, TimeProvide
         ArgumentNullException.ThrowIfNull(db);
         var results = new Dictionary<string, int>(StringComparer.Ordinal);
         var now = timeProvider.GetUtcNow();
-        var batchSize = Math.Max(1, options.BatchSize);
 
         foreach (var descriptor in SnapshotRegistry.All)
         {
             var keepLast = descriptor.KeepLast;
             var maxAgeDays = descriptor.MaxAgeDays;
-            if (options.Retention.TryGetValue(descriptor.EntityTypeName, out var overrides))
+            // The configuration binder copies the dictionary with an ordinal comparer, so the lookup cannot rely on the dictionary's own.
+            var overrides = options.Retention.FirstOrDefault(r => string.Equals(r.Key, descriptor.EntityTypeName, StringComparison.OrdinalIgnoreCase)).Value;
+            if (overrides is not null)
             {
                 keepLast = overrides.KeepLast ?? keepLast;
                 maxAgeDays = overrides.MaxAgeDays ?? maxAgeDays;
@@ -35,23 +36,7 @@ public sealed class SnapshotPruner(SnapshotRetentionOptions options, TimeProvide
                 continue;
             }
 
-            var deleted = 0;
-            while (true)
-            {
-                var ids = await candidates.OrderBy(s => s.Id).Select(s => s.Id).Take(batchSize).ToListAsync(cancellationToken);
-                if (ids.Count == 0)
-                {
-                    break;
-                }
-
-                deleted += await db.Set<EntitySnapshot>().Where(s => ids.Contains(s.Id)).ExecuteDeleteAsync(cancellationToken);
-                if (ids.Count < batchSize)
-                {
-                    break;
-                }
-            }
-
-            results[descriptor.EntityTypeName] = deleted;
+            results[descriptor.EntityTypeName] = await candidates.ExecuteDeleteAsync(cancellationToken);
         }
 
         return results;
