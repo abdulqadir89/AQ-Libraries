@@ -11,6 +11,7 @@ namespace AQ.Generators
         public const string SnapshotAttribute = "AQ.Utilities.Snapshots.SnapshotAttribute";
         public const string SnapshottableAttribute = "AQ.Utilities.Snapshots.SnapshottableAttribute";
         public const string VersionGroupAttribute = "AQ.Utilities.Versioning.VersionGroupAttribute";
+        public const string TaggableAttribute = "AQ.Utilities.Tagging.TaggableAttribute";
 
         public const string EntityDataRegistry = "global::AQ.Utilities.EntityData.EntityDataRegistry";
         public const string SnapshotAttributeGlobal = "global::AQ.Utilities.Snapshots.SnapshotAttribute";
@@ -171,9 +172,18 @@ namespace AQ.Generators
         bool Snapshotted,
         EquatableArray<DiagnosticInfo> Diagnostics);
 
+    internal sealed record TaggableModel(
+        string FullName,
+        string ClassName,
+        string Name,
+        string Namespace,
+        string TagType,
+        EquatableArray<DiagnosticInfo> Diagnostics);
+
     internal sealed record GenerationInput(
         string AssemblyName,
         EquatableArray<MemberResult> SnapshotMembers,
         EquatableArray<ClassModel> Snapshottable,
-        EquatableArray<VersionGroupModel> VersionGroups);
+        EquatableArray<VersionGroupModel> VersionGroups,
+        EquatableArray<TaggableModel> Taggables);
 }

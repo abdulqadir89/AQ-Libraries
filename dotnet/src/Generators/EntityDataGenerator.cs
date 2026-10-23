@@ -26,13 +26,19 @@ namespace AQ.Generators
                 .Collect()
                 .Select(static (items, _) => items.ToEquatableArray());
 
+            var taggables = context.SyntaxProvider
+                .ForAttributeWithMetadataName(Names.TaggableAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => Parser.ParseTaggable(ctx, ct))
+                .Collect()
+                .Select(static (items, _) => items.ToEquatableArray());
+
             var assemblyName = context.CompilationProvider.Select(static (compilation, _) => compilation.AssemblyName ?? "Assembly");
 
             var input = assemblyName
                 .Combine(snapshotMembers)
                 .Combine(snapshottable)
                 .Combine(versionGroups)
-                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left, pair.Left.Left.Right, pair.Left.Right, pair.Right))
+                .Combine(taggables)
+                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left.Left, pair.Left.Left.Left.Right, pair.Left.Left.Right, pair.Left.Right, pair.Right))
                 .WithTrackingName("Input");
 
             context.RegisterSourceOutput(input, static (spc, model) => Execute(spc, model));
@@ -47,7 +53,8 @@ namespace AQ.Generators
         {
             foreach (var diagnostic in input.SnapshotMembers.SelectMany(m => m.Diagnostics)
                 .Concat(input.Snapshottable.SelectMany(c => c.Diagnostics))
-                .Concat(input.VersionGroups.SelectMany(c => c.Diagnostics)))
+                .Concat(input.VersionGroups.SelectMany(c => c.Diagnostics))
+                .Concat(input.Taggables.SelectMany(c => c.Diagnostics)))
             {
                 context.ReportDiagnostic(diagnostic.ToDiagnostic());
             }
@@ -78,6 +85,14 @@ namespace AQ.Generators
             foreach (var model in input.VersionGroups.Where(g => g.Diagnostics.Length == 0))
             {
                 context.AddSource(HintName(model.FullName) + ".VersionGroup.g.cs", SourceText.From(Emitter.EmitVersionGroupPartial(model), Encoding.UTF8));
+            }
+
+            foreach (var model in input.Taggables.Where(t => t.Diagnostics.Length == 0))
+            {
+                var hint = HintName(model.FullName);
+                context.AddSource(hint + ".Taggable.g.cs", SourceText.From(Emitter.EmitTaggablePartial(model), Encoding.UTF8));
+                context.AddSource(hint + ".TagLink.g.cs", SourceText.From(Emitter.EmitTagLinkClass(model), Encoding.UTF8));
+                context.AddSource(hint + ".TagQueries.g.cs", SourceText.From(Emitter.EmitTagQueries(model), Encoding.UTF8));
             }
         }
     }

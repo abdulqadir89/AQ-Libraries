@@ -194,6 +194,55 @@ namespace AQ.Generators
                 diagnostics.ToEquatableArray());
         }
 
+        public static TaggableModel ParseTaggable(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
+        {
+            var symbol = (INamedTypeSymbol)context.TargetSymbol;
+            var declaration = (ClassDeclarationSyntax)context.TargetNode;
+            var attribute = context.Attributes[0];
+            var diagnostics = new List<DiagnosticInfo>();
+            var reference = attribute.ApplicationSyntaxReference;
+
+            // RULE GEN-8
+            if (!declaration.Modifiers.Any(m => m.Text == "partial") || symbol.ContainingType is not null || symbol.IsGenericType)
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Taggable] and must be a partial, non-generic, top-level class.",
+                    reference));
+            }
+
+            if (!symbol.AllInterfaces.Any(i => i.Name == "IEntity"))
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Taggable] and must implement IEntity.",
+                    reference));
+            }
+
+            var tagType = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value as INamedTypeSymbol : null;
+            var tagTypeName = string.Empty;
+            if (tagType is null || !tagType.AllInterfaces.Any(i => i.Name == "ITag"))
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Taggable] with a tag type that does not implement ITag.",
+                    reference));
+            }
+            else
+            {
+                tagTypeName = tagType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+
+            var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
+            return new TaggableModel(
+                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                symbol.Name,
+                GetString(attribute, "Name") ?? symbol.Name,
+                ns,
+                tagTypeName,
+                diagnostics.ToEquatableArray());
+        }
+
         // RULE GEN-3
         private static DiagnosticInfo UnknownMember(SyntaxReference? reference, string attributeName, string option, string memberName, IPropertySymbol property, ITypeSymbol type)
         {

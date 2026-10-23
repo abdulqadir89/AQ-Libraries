@@ -3,6 +3,7 @@ using AQ.Events.Domain;
 using AQ.Utilities.References;
 using AQ.Utilities.Review;
 using AQ.Utilities.Snapshots;
+using AQ.Utilities.Tagging;
 using AQ.Utilities.Verification;
 using AQ.Utilities.Versioning;
 
@@ -81,6 +82,7 @@ public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
 }
 
 [VersionGroup]
+[Taggable(typeof(TestTag))]
 [Snapshottable]
 public partial class Manual : Entity<TestUser>, IVerifiable
 {

@@ -111,9 +111,9 @@ Base types for aggregates, plus the event plumbing. Where events are saved and w
 
 ## Entity Framework integration <!-- projects: AQ.EntityFramework -->
 
-The save pipeline, the audit log, snapshot storage and pruning, version groups and the hierarchy service. Options switch each step on; the steps always run in the order below.
+The save pipeline, the audit log, snapshot storage and pruning, version groups, tags and the hierarchy service. Options switch each step on; the steps always run in the order below.
 
-- **EFC-1** The save pipeline runs, when enabled: owned-change touch, actor check, lifecycle hooks, version groups, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
+- **EFC-1** The save pipeline runs, when enabled: tag link correction, owned-change touch, actor check, lifecycle hooks, version groups, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
 - **EFC-2** When audit, outbox or audit log is on and a save changes an auditable entity, raises a domain event or changes an audited entity, an actor must be active. Without one the save throws a missing-actor error instead of storing empty attribution.
 - **EFC-3** Stamping: an added auditable entity gets its creator, updater and creation time; a modified one gets its updater, update time and next revision. An entity that is timestamped but not auditable gets times and revision only and needs no actor.
 - **EFC-4** When only an owned part of an entity changed (a value object, verification state, review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save. A review reminder bookmark alone does not count as an edit.
@@ -136,6 +136,10 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups a
 - **EFC-24** Pruning never removes an entity's newest snapshot. A snapshot is removed only when it is beyond every limit that is set (number kept, and age in days); with no limit set nothing is removed. A limit on the entity's snapshot attribute can be replaced per entity type by configuration, where zero clears it.
 - **EFC-25** The model builder gives every version-grouped entity an index on its group and a unique index on group and version, so one group never holds the same version twice.
 - **EFC-26** An added version-grouped entity that has no group gets a new group of its own when the save runs, so every row always belongs to a group. One added with a group keeps it.
+- **EFC-27** Every record has each tag at most once: tag links share one table keyed by entity type, with a unique index on record and tag.
+- **EFC-28** A tag that is still on a record cannot be deleted; the app removes it from the records first.
+- **EFC-29** Each tag link type has a required link to its record, and deleting the record deletes its links but never the tags.
+- **EFC-30** A tag link added through a tracked record's collection is inserted: links are never edited, so one the change tracker finds as modified is treated as new.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
@@ -147,7 +151,7 @@ Provider packages translate the search operators that plain LINQ cannot express.
 
 ## Source generators <!-- projects: AQ.Generators -->
 
-A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, and the members of version-grouped classes.
+A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, and the members of version-grouped and taggable classes.
 
 - **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
 - **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class, otherwise the build fails with `AQGEN002`.
@@ -156,6 +160,7 @@ A Roslyn incremental generator, referenced as an analyzer, that writes the snaps
 - **GEN-5** Output is deterministic: members and classes are emitted in a stable order, so a rebuild with no changes produces identical files.
 - **GEN-6** A negative `KeepLast` or `MaxAgeDays` on a snapshottable class fails the build with `AQGEN004`; 0 means no limit.
 - **GEN-7** A snapshottable class can set `Name`, used for its snapshot link, discriminator and retention configuration key instead of the class name. Two snapshottable classes ending up with the same name fail the build with `AQGEN005`.
+- **GEN-8** A class marked taggable gets a generated tags collection, a link type named after the class (or the name given), a registration and query helpers. It must be a partial, non-generic, top-level entity class and name a tag type that implements the tag interface, otherwise the build fails with `AQGEN002`.
 
 ## Utilities <!-- projects: AQ.Utilities -->
 
@@ -226,6 +231,11 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 - **VSN-7** A version label is trimmed, cannot be blank and is at most 100 characters.
 - **VSN-8** The version-taken query finds the records of a group that carry a label, and can leave out the record being changed.
 - **VSN-9** A version-grouped class that is snapshottable, directly or through a base type, also writes its group and version into its snapshots.
+
+### Tagging
+
+- **TAG-1** Setting the tags of a record makes it carry exactly the given tags: the ones it lacks are added, the ones the set lacks are removed, and empty ids are ignored.
+- **TAG-2** Adding tags skips the ones the record already carries and the duplicates in the request, and empty ids.
 
 ### Generated references
 
