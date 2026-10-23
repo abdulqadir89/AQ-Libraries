@@ -16,18 +16,13 @@ namespace AQ.Generators
                 .Collect()
                 .Select(static (items, _) => items.ToEquatableArray());
 
-            var versionedMembers = context.SyntaxProvider
-                .ForAttributeWithMetadataName(Names.VersionedAttribute, static (node, _) => node is PropertyDeclarationSyntax, static (ctx, ct) => Parser.ParseMember(ctx, ct))
-                .Collect()
-                .Select(static (items, _) => items.ToEquatableArray());
-
             var snapshottable = context.SyntaxProvider
-                .ForAttributeWithMetadataName(Names.SnapshottableAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => Parser.ParseClass(ctx, Names.SnapshotAttribute, false, ct))
+                .ForAttributeWithMetadataName(Names.SnapshottableAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => Parser.ParseClass(ctx, Names.SnapshotAttribute, ct))
                 .Collect()
                 .Select(static (items, _) => items.ToEquatableArray());
 
-            var versionable = context.SyntaxProvider
-                .ForAttributeWithMetadataName(Names.VersionableAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => Parser.ParseClass(ctx, Names.VersionedAttribute, true, ct))
+            var versionGroups = context.SyntaxProvider
+                .ForAttributeWithMetadataName(Names.VersionGroupAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => Parser.ParseVersionGroup(ctx, ct))
                 .Collect()
                 .Select(static (items, _) => items.ToEquatableArray());
 
@@ -35,26 +30,24 @@ namespace AQ.Generators
 
             var input = assemblyName
                 .Combine(snapshotMembers)
-                .Combine(versionedMembers)
                 .Combine(snapshottable)
-                .Combine(versionable)
-                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left.Left, pair.Left.Left.Left.Right, pair.Left.Left.Right, pair.Left.Right, pair.Right))
+                .Combine(versionGroups)
+                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left, pair.Left.Left.Right, pair.Left.Right, pair.Right))
                 .WithTrackingName("Input");
 
             context.RegisterSourceOutput(input, static (spc, model) => Execute(spc, model));
         }
 
-        private static string HintName(ClassModel model)
+        private static string HintName(string fullName)
         {
-            return model.FullName.Replace("global::", string.Empty).Replace('<', '_').Replace('>', '_');
+            return fullName.Replace("global::", string.Empty).Replace('<', '_').Replace('>', '_');
         }
 
         private static void Execute(SourceProductionContext context, GenerationInput input)
         {
             foreach (var diagnostic in input.SnapshotMembers.SelectMany(m => m.Diagnostics)
-                .Concat(input.VersionedMembers.SelectMany(m => m.Diagnostics))
                 .Concat(input.Snapshottable.SelectMany(c => c.Diagnostics))
-                .Concat(input.Versionable.SelectMany(c => c.Diagnostics)))
+                .Concat(input.VersionGroups.SelectMany(c => c.Diagnostics)))
             {
                 context.ReportDiagnostic(diagnostic.ToDiagnostic());
             }
@@ -79,12 +72,12 @@ namespace AQ.Generators
             foreach (var model in input.Snapshottable)
             {
                 // RULE GEN-1
-                context.AddSource(HintName(model) + ".Snapshot.g.cs", SourceText.From(Emitter.EmitSnapshotClass(model), Encoding.UTF8));
+                context.AddSource(HintName(model.FullName) + ".Snapshot.g.cs", SourceText.From(Emitter.EmitSnapshotClass(model), Encoding.UTF8));
             }
 
-            foreach (var model in input.Versionable.Where(c => c.UserType is not null))
+            foreach (var model in input.VersionGroups.Where(g => g.Diagnostics.Length == 0))
             {
-                context.AddSource(HintName(model) + ".Version.g.cs", SourceText.From(Emitter.EmitVersionClass(model), Encoding.UTF8));
+                context.AddSource(HintName(model.FullName) + ".VersionGroup.g.cs", SourceText.From(Emitter.EmitVersionGroupPartial(model), Encoding.UTF8));
             }
         }
     }

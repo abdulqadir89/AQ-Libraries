@@ -1,6 +1,5 @@
 using AQ.Utilities.EntityData;
 using AQ.Utilities.Snapshots;
-using AQ.Utilities.Versioning;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -12,8 +11,7 @@ public class EntityDataWriterTests
     private const string Prelude = """
         using System;
         using AQ.Utilities.Snapshots;
-        using AQ.Utilities.Versioning;
-        namespace Sample;
+                namespace Sample;
         public enum Color { Red, Green }
         public class Money { public string? Currency { get; set; } public int Amount { get; set; } }
         public struct Triple { public int A { get; set; } public int B { get; set; } }
@@ -241,18 +239,6 @@ public class EntityDataWriterTests
 
         data.Keys.Should().Equal("id", "title");
         data["id"].Should().Be(Guid.Parse("11111111-1111-1111-1111-111111111111"));
-    }
-
-    [Fact]
-    public void SnapshotAndVersioned_UseIndependentRegistries()
-    {
-        var (entity, _, _) = Build("""
-            [Snapshottable]
-            public class Widget { [Snapshot] public string? A { get; set; } [Versioned] public string? B { get; set; } }
-            """, "Widget");
-
-        EntityDataRegistry<SnapshotAttribute>.Build(entity).Keys.Should().Equal("a");
-        EntityDataRegistry<VersionedAttribute>.Build(entity).Keys.Should().Equal("b");
     }
 
     [Fact]

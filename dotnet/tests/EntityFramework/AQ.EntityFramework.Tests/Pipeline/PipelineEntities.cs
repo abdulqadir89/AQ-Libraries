@@ -4,6 +4,7 @@ using AQ.Utilities.References;
 using AQ.Utilities.Review;
 using AQ.Utilities.Snapshots;
 using AQ.Utilities.Verification;
+using AQ.Utilities.Versioning;
 
 namespace AQ.EntityFramework.Tests.Support;
 
@@ -77,4 +78,19 @@ public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
     }
 
     public override void OnUpdate() => UpdateCalls++;
+}
+
+[VersionGroup]
+[Snapshottable]
+public partial class Manual : Entity<TestUser>, IVerifiable
+{
+    private Manual() { }
+
+    [Snapshot] public string Title { get; private set; } = "";
+
+    public VerificationState Verification { get; private set; } = new();
+
+    public static Manual Create(string title) => new() { Title = title };
+
+    public void Rename(string title) => Title = title;
 }

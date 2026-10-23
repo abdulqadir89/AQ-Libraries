@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AQ.Generators
 {
@@ -106,7 +107,7 @@ namespace AQ.Generators
             return new MemberResult(model, diagnostics.ToEquatableArray());
         }
 
-        public static ClassModel ParseClass(GeneratorAttributeSyntaxContext context, string memberAttributeName, bool requiresAuditable, CancellationToken cancellationToken)
+        public static ClassModel ParseClass(GeneratorAttributeSyntaxContext context, string memberAttributeName, CancellationToken cancellationToken)
         {
             var symbol = (INamedTypeSymbol)context.TargetSymbol;
             var attribute = context.Attributes[0];
@@ -140,24 +141,6 @@ namespace AQ.Generators
                     reference));
             }
 
-            string? userType = null;
-            if (requiresAuditable)
-            {
-                var auditable = symbol.AllInterfaces.FirstOrDefault(i => i.Name == "IAuditable" && i.TypeArguments.Length == 1);
-                // RULE GEN-2
-                if (auditable is null)
-                {
-                    diagnostics.Add(DiagnosticInfo.Create(
-                        "AQGEN002",
-                        "Class '" + symbol.Name + "' is marked [Versionable] but does not implement IAuditable<TPrincipal>.",
-                        reference));
-                }
-                else
-                {
-                    userType = auditable.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                }
-            }
-
             var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
             return new ClassModel(
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
@@ -167,7 +150,47 @@ namespace AQ.Generators
                 GetString(attribute, "SnapshotTypeName"),
                 keepLast,
                 maxAgeDays,
-                userType,
+                diagnostics.ToEquatableArray());
+        }
+
+        public static VersionGroupModel ParseVersionGroup(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
+        {
+            var symbol = (INamedTypeSymbol)context.TargetSymbol;
+            var declaration = (ClassDeclarationSyntax)context.TargetNode;
+            var attribute = context.Attributes[0];
+            var diagnostics = new List<DiagnosticInfo>();
+            var reference = attribute.ApplicationSyntaxReference;
+
+            // RULE GEN-2
+            if (!declaration.Modifiers.Any(m => m.Text == "partial") || symbol.ContainingType is not null || symbol.IsGenericType)
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [VersionGroup] and must be a partial, non-generic, top-level class.",
+                    reference));
+            }
+
+            if (!symbol.AllInterfaces.Any(i => i.Name == "IEntity"))
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [VersionGroup] and must implement IEntity.",
+                    reference));
+            }
+
+            var snapshotted = false;
+            for (var current = symbol; current is not null && !snapshotted; current = current.BaseType)
+            {
+                snapshotted = current.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == Names.SnapshottableAttribute);
+            }
+
+            var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
+            return new VersionGroupModel(
+                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                symbol.Name,
+                ns,
+                symbol.AllInterfaces.Any(i => i.Name == "IVerifiable"),
+                snapshotted,
                 diagnostics.ToEquatableArray());
         }
 

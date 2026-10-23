@@ -4,6 +4,7 @@ using AQ.EntityFramework.Review;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Snapshots;
 using AQ.EntityFramework.Verification;
+using AQ.EntityFramework.Versioning;
 using AQ.EntityFramework.Tests.Generated;
 using AQ.Events.Domain;
 using AQ.Events.Outbox;
@@ -19,6 +20,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketSnapshot> TicketSnapshots => Set<TicketSnapshot>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<Manual> Manuals => Set<Manual>();
     public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
@@ -44,6 +46,8 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
             builder.HasVerificationState(t => t.Verification);
             builder.HasReviewState(t => t.Review);
         });
+        modelBuilder.Entity<Manual>(builder => builder.HasVerificationState(m => m.Verification));
+        modelBuilder.ApplyVersionGroups();
     }
 }
 

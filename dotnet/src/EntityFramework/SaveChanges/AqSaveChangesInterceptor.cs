@@ -54,6 +54,11 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
             LifecycleStep.Run(context);
         }
 
+        if (options.VersionGroups)
+        {
+            VersionGroupStep.Run(context);
+        }
+
         if (options.GeneratedReferences)
         {
             GeneratedReferencesStep.Run(context);

@@ -111,9 +111,9 @@ Base types for aggregates, plus the event plumbing. Where events are saved and w
 
 ## Entity Framework integration <!-- projects: AQ.EntityFramework -->
 
-The save pipeline, the audit log, snapshot storage and pruning, versioning and the hierarchy service. Options switch each step on; the steps always run in the order below.
+The save pipeline, the audit log, snapshot storage and pruning, version groups and the hierarchy service. Options switch each step on; the steps always run in the order below.
 
-- **EFC-1** The save pipeline runs, when enabled: owned-change touch, actor check, lifecycle hooks, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
+- **EFC-1** The save pipeline runs, when enabled: owned-change touch, actor check, lifecycle hooks, version groups, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
 - **EFC-2** When audit, outbox or audit log is on and a save changes an auditable entity, raises a domain event or changes an audited entity, an actor must be active. Without one the save throws a missing-actor error instead of storing empty attribution.
 - **EFC-3** Stamping: an added auditable entity gets its creator, updater and creation time; a modified one gets its updater, update time and next revision. An entity that is timestamped but not auditable gets times and revision only and needs no actor.
 - **EFC-4** When only an owned part of an entity changed (a value object, verification state, review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save. A review reminder bookmark alone does not count as an edit.
@@ -127,9 +127,6 @@ The save pipeline, the audit log, snapshot storage and pruning, versioning and t
 - **EFC-12** Recording history never fails the save it describes: a value that cannot be written as JSON is recorded as text.
 - **EFC-13** Each domain event on a saved entity is stamped with the actor, written as an outbox row with its serialized payload, and then cleared from the entity.
 - **EFC-14** The audited bulk update adds updater, update time and revision plus one to the caller's changes. Bulk statements bypass the pipeline, so they write no audit event.
-- **EFC-15** A new version of an entity is numbered one above the highest existing number for that entity, and the save retries once if another writer took the number. A copy made from an older version records which version it came from.
-- **EFC-16** Versioning an entity that is not registered as versionable throws, as does versioning one that has no id.
-- **EFC-17** Version numbers are unique per entity: the model builder gives each version type a unique index on entity and number, and one shared table keyed by entity type.
 - **EFC-18** Moving a node in a hierarchy rebuilds the closure rows of its whole subtree; making a node a child of its own descendant is refused with an error.
 - **EFC-19** The closure can be recomputed for one subtree or for everything, from the parent links, which are authoritative.
 - **EFC-20** The verification and review states map to fixed column names, and a review state is always materialized, never null, even for a never-reviewed row.
@@ -137,6 +134,8 @@ The save pipeline, the audit log, snapshot storage and pruning, versioning and t
 - **EFC-22** Each snapshot type has a required link to its entity, and deleting the entity deletes its snapshots. History that must outlive an entity is the entity's own business (soft delete or status).
 - **EFC-23** Pruning keeps at most the configured number of newest snapshots per entity and removes the older ones. Snapshots are ranked by how many newer ones the entity has, never by version arithmetic, so gaps in version numbers do not matter.
 - **EFC-24** Pruning never removes an entity's newest snapshot. A snapshot is removed only when it is beyond every limit that is set (number kept, and age in days); with no limit set nothing is removed. A limit on the entity's snapshot attribute can be replaced per entity type by configuration, where zero clears it.
+- **EFC-25** The model builder gives every version-grouped entity an index on its group and a unique index on group and version, so one group never holds the same version twice.
+- **EFC-26** An added version-grouped entity that has no group gets a new group of its own when the save runs, so every row always belongs to a group. One added with a group keeps it.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
@@ -148,11 +147,11 @@ Provider packages translate the search operators that plain LINQ cannot express.
 
 ## Source generators <!-- projects: AQ.Generators -->
 
-A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot and version classes and their registrations.
+A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, and the members of version-grouped classes.
 
 - **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
-- **GEN-2** A class marked versionable gets a generated version class. It must be auditable with a principal type, otherwise the build fails with `AQGEN002`.
-- **GEN-3** A class marked snapshottable or versionable with no decorated members in its hierarchy gets warning `AQGEN001`; an attribute option naming a member that does not exist fails the build with `AQGEN003`.
+- **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class, otherwise the build fails with `AQGEN002`.
+- **GEN-3** A class marked snapshottable with no decorated members in its hierarchy gets warning `AQGEN001`; an attribute option naming a member that does not exist fails the build with `AQGEN003`.
 - **GEN-4** Registrations run from a module initializer and are idempotent, so the data writers exist before the first save without any app code calling them.
 - **GEN-5** Output is deterministic: members and classes are emitted in a stable order, so a rebuild with no changes produces identical files.
 - **GEN-6** A negative `KeepLast` or `MaxAgeDays` on a snapshottable class fails the build with `AQGEN004`; 0 means no limit.
@@ -217,11 +216,16 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 - **RVW-2** Reviewing an entity that is also verifiable adds the reviewer to its verification history unless they are already in it, and reports whether it did.
 - **RVW-3** A review is due when its due date has passed and nobody has been notified since that date. It is current when it happened at or after the last verification reset.
 
-### Snapshots, versions and entity data
+### Snapshots, version groups and entity data
 
-- **VSN-1** Snapshot and version data is JSON built from the members marked for it, in camelCase, writer by writer from the base type down to the concrete type.
-- **VSN-2** The snapshot and version registries look a runtime type up through its base types, so a derived entity finds the registration of its base.
-- **VSN-3** A version records its number, label, data and, when copied from another, the number it came from.
+- **VSN-1** Snapshot data is JSON built from the members marked for it, in camelCase, writer by writer from the base type down to the concrete type.
+- **VSN-2** The snapshot registry looks a runtime type up through its base types, so a derived entity finds the registration of its base.
+- **VSN-4** An entity joins another record's version group under a version label. It cannot join through itself or a group it is already in, and the caller checks that the label is free in the target group.
+- **VSN-5** Leaving a version group moves the entity into a new group of its own and keeps its label. The records it left stay together.
+- **VSN-6** Changing a version label keeps the entity in its group. The caller checks that the new label is free in that group.
+- **VSN-7** A version label is trimmed, cannot be blank and is at most 100 characters.
+- **VSN-8** The version-taken query finds the records of a group that carry a label, and can leave out the record being changed.
+- **VSN-9** A version-grouped class that is snapshottable, directly or through a base type, also writes its group and version into its snapshots.
 
 ### Generated references
 
