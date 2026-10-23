@@ -2,12 +2,14 @@ using AQ.Actors;
 using AQ.EntityFramework.Auditing;
 using AQ.EntityFramework.Review;
 using AQ.EntityFramework.SaveChanges;
+using AQ.EntityFramework.Snapshots;
 using AQ.EntityFramework.Verification;
 using AQ.EntityFramework.Tests.Generated;
 using AQ.Events.Domain;
 using AQ.Events.Outbox;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AQ.EntityFramework.Tests.Support;
 
@@ -16,13 +18,23 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<TestUser> Users => Set<TestUser>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketSnapshot> TicketSnapshots => Set<TicketSnapshot>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+
+    // SQLite cannot compare DateTimeOffset in SQL; binary storage lets the pruner's age filter run in the test database.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTimeOffset>().HaveConversion<DateTimeOffsetToBinaryConverter>();
+        configurationBuilder.Properties<DateTimeOffset?>().HaveConversion<DateTimeOffsetToBinaryConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<IDomainEvent>();
         AQGeneratedRegistrations.EnsureRegistered();
+        modelBuilder.ApplyEntitySnapshots();
         modelBuilder.Entity<Ticket>(builder =>
         {
             builder.Ignore(t => t.EvaluationCount);

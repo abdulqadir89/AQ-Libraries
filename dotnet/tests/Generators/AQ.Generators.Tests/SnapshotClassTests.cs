@@ -55,6 +55,83 @@ public class SnapshotClassTests
     }
 
     [Fact]
+    public void Snapshottable_RegistersDescriptorWithForeignKeyAndRetention()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Snapshottable(KeepLast = 5, MaxAgeDays = 90)]
+            public class Gadget : Entity { [Snapshot] public string? Title { get; set; } }
+            """);
+        run.CompileErrors.Should().BeEmpty();
+        var assembly = run.Load();
+        var snapshotType = assembly.GetType("Sample.GadgetSnapshot")!;
+
+        var descriptor = SnapshotRegistry.All.Single(d => d.EntityType == assembly.GetType("Sample.Gadget"));
+
+        descriptor.EntityTypeName.Should().Be("Gadget");
+        descriptor.SnapshotType.Should().Be(snapshotType);
+        descriptor.ForeignKeyPropertyName.Should().Be("GadgetId");
+        descriptor.NavigationPropertyName.Should().Be("Gadget");
+        descriptor.KeepLast.Should().Be(5);
+        descriptor.MaxAgeDays.Should().Be(90);
+        snapshotType.GetProperty("GadgetId")!.PropertyType.Should().Be(typeof(Guid));
+        var id = Guid.NewGuid();
+        var snapshot = descriptor.Factory(id, 1, "{}");
+        snapshotType.GetProperty("GadgetId")!.GetValue(snapshot).Should().Be(id);
+        snapshot.EntityId.Should().Be(id);
+    }
+
+    [Fact]
+    public void Snapshottable_NameOverrideDrivesForeignKeyAndDescriptorName()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Snapshottable(Name = "Sprocket")]
+            public class Cog : Entity { [Snapshot] public string? Title { get; set; } }
+            """);
+        run.CompileErrors.Should().BeEmpty();
+        var assembly = run.Load();
+
+        var descriptor = SnapshotRegistry.All.Single(d => d.EntityType == assembly.GetType("Sample.Cog"));
+
+        descriptor.EntityTypeName.Should().Be("Sprocket");
+        descriptor.ForeignKeyPropertyName.Should().Be("SprocketId");
+        descriptor.NavigationPropertyName.Should().Be("Sprocket");
+        descriptor.SnapshotType.Should().Be(assembly.GetType("Sample.SprocketSnapshot"));
+    }
+
+    [Fact]
+    public void Diagnostic_AQGEN005_WhenTwoClassesShareSnapshotName()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            namespace A { [Snapshottable] public class Report : Entity { [Snapshot] public string? Title { get; set; } } }
+            namespace B { [Snapshottable] public class Report : Entity { [Snapshot] public string? Title { get; set; } } }
+            """);
+
+        run.GeneratorDiagnostics.Should().ContainSingle(d => d.Id == "AQGEN005");
+    }
+
+    [Fact]
+    public void Diagnostic_AQGEN005_NotReportedWhenNameOverridden()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            namespace A { [Snapshottable] public class Report : Entity { [Snapshot] public string? Title { get; set; } } }
+            namespace B { [Snapshottable(Name = "OtherReport")] public class Report : Entity { [Snapshot] public string? Title { get; set; } } }
+            """);
+
+        run.GeneratorDiagnostics.Should().NotContain(d => d.Id == "AQGEN005");
+    }
+
+    [Fact]
+    public void Diagnostic_AQGEN004_WhenRetentionNegative()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Snapshottable(KeepLast = -1)]
+            public class Widget : Entity { [Snapshot] public string? Title { get; set; } }
+            """);
+
+        run.GeneratorDiagnostics.Should().ContainSingle(d => d.Id == "AQGEN004" && d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
     public void TryGetFactory_ReturnsFalseForUnregisteredType()
     {
         SnapshotRegistry.TryGetFactory(typeof(string), out _).Should().BeFalse();

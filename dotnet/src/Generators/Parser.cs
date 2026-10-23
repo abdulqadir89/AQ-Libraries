@@ -129,6 +129,17 @@ namespace AQ.Generators
                     reference));
             }
 
+            var keepLast = GetInt(attribute, "KeepLast");
+            var maxAgeDays = GetInt(attribute, "MaxAgeDays");
+            // RULE GEN-6
+            if (keepLast < 0 || maxAgeDays < 0)
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN004",
+                    "Class '" + symbol.Name + "' has a negative KeepLast or MaxAgeDays; use 0 for no limit.",
+                    reference));
+            }
+
             string? userType = null;
             if (requiresAuditable)
             {
@@ -150,10 +161,12 @@ namespace AQ.Generators
             var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
             return new ClassModel(
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                symbol.Name,
+                GetString(attribute, "Name") ?? symbol.Name,
                 ns,
                 GetBool(attribute, "IncludeId"),
                 GetString(attribute, "SnapshotTypeName"),
+                keepLast,
+                maxAgeDays,
                 userType,
                 diagnostics.ToEquatableArray());
         }
@@ -221,6 +234,19 @@ namespace AQ.Generators
             }
 
             return false;
+        }
+
+        private static int GetInt(AttributeData attribute, string name)
+        {
+            foreach (var pair in attribute.NamedArguments)
+            {
+                if (pair.Key == name)
+                {
+                    return pair.Value.Value is int value ? value : 0;
+                }
+            }
+
+            return 0;
         }
 
         private static string[] GetStrings(AttributeData attribute, string name)

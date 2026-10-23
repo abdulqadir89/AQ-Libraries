@@ -97,10 +97,30 @@ namespace AQ.Generators
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        public static readonly DiagnosticDescriptor NegativeRetention = new DiagnosticDescriptor(
+            "AQGEN004",
+            "Snapshot retention is negative",
+            "{0}",
+            "AQ.Generators",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor DuplicateSnapshotName = new DiagnosticDescriptor(
+            "AQGEN005",
+            "Snapshottable classes share a name",
+            "{0}",
+            "AQ.Generators",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         public static DiagnosticDescriptor ById(string id)
         {
             switch (id)
             {
+                case "AQGEN005":
+                    return DuplicateSnapshotName;
+                case "AQGEN004":
+                    return NegativeRetention;
                 case "AQGEN001":
                     return NoDecoratedMembers;
                 case "AQGEN002":
@@ -141,6 +161,8 @@ namespace AQ.Generators
         string Namespace,
         bool IncludeId,
         string? TypeNameOverride,
+        int KeepLast,
+        int MaxAgeDays,
         string? UserType,
         EquatableArray<DiagnosticInfo> Diagnostics);
 

@@ -5,4 +5,13 @@ public sealed class SnapshottableAttribute : Attribute
 {
     public bool IncludeId { get; set; }
     public string? SnapshotTypeName { get; set; }
+
+    /// <summary>Name used for the snapshot foreign key, navigation, discriminator and retention configuration key; defaults to the class name. Set it when two snapshottable classes share a name.</summary>
+    public string? Name { get; set; }
+
+    /// <summary>Snapshots to keep per entity when pruning; 0 means no limit.</summary>
+    public int KeepLast { get; set; }
+
+    /// <summary>Days a snapshot is kept when pruning; 0 means no limit.</summary>
+    public int MaxAgeDays { get; set; }
 }

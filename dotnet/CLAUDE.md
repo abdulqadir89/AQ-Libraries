@@ -66,6 +66,7 @@ dotnet pack AQ.sln --configuration Release
 - **Type safety**: use `typeof(T).Name` for type discovery in the requirements system — never manual type strings.
 - **Rules and tags**: a guarantee a caller can rely on gets a rule in `docs/LIBRARIES.md` and a `// RULE XXX-n` comment on the enforcing line. Change the behaviour, change the rule.
 - **Provider-specific code stays out of the core**: `AQ.Utilities` has no EF provider dependency; SQL Server and PostgreSQL specifics live in the `AQ.EntityFramework.*` provider packages.
+- **Snapshot storage**: apps call `ApplyEntitySnapshots()` (one `EntitySnapshots` table, FK per snapshot type) instead of mapping each generated snapshot class; retention goes on `[Snapshottable(KeepLast, MaxAgeDays)]` and the app runs `SnapshotPruner` (`AddAqSnapshotPruning`) on its own schedule.
 - **Generated data writers**: snapshot and version classes come from `AQ.Generators`; do not hand-write what `[Snapshottable]` / `[Versionable]` generate.
 
 ## Email localization conventions (`Utilities/Email`)
