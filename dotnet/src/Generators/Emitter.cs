@@ -58,9 +58,11 @@ namespace AQ.Generators
             }
 
             builder.Append("    public partial class ").Append(typeName).Append(" : global::AQ.Utilities.Snapshots.EntitySnapshot\n    {\n");
+            builder.Append("        public global::System.Guid ").Append(model.Name).Append("Id { get; private set; }\n");
+            builder.Append("        public ").Append(model.FullName).Append("? ").Append(model.Name).Append(" { get; private set; }\n\n");
             builder.Append("        private ").Append(typeName).Append("() { }\n\n");
             builder.Append("        public static ").Append(typeName).Append(" Create(global::System.Guid entityId, int version, string data)\n");
-            builder.Append("        {\n            return new ").Append(typeName).Append("() { EntityId = entityId, Version = version, Data = data };\n        }\n");
+            builder.Append("        {\n            return new ").Append(typeName).Append("() { EntityId = entityId, ").Append(model.Name).Append("Id = entityId, Version = version, Data = data };\n        }\n");
             builder.Append("    }\n");
             if (model.Namespace.Length > 0)
             {
@@ -125,8 +127,11 @@ namespace AQ.Generators
             // RULE GEN-5
             foreach (var model in input.Snapshottable.OrderBy(c => c.FullName, System.StringComparer.Ordinal))
             {
-                builder.Append("            global::AQ.Utilities.Snapshots.SnapshotRegistry.Register(typeof(").Append(model.FullName).Append("),\n");
-                builder.Append("                static (id, version, data) => ").Append(SnapshotClassFullName(model)).Append(".Create(id, version, data));\n");
+                var snapshotType = SnapshotClassFullName(model);
+                builder.Append("            global::AQ.Utilities.Snapshots.SnapshotRegistry.Register(new global::AQ.Utilities.Snapshots.SnapshotDescriptor(\n");
+                builder.Append("                \"").Append(model.Name).Append("\", typeof(").Append(model.FullName).Append("), typeof(").Append(snapshotType).Append("),\n");
+                builder.Append("                \"").Append(model.Name).Append("Id\", \"").Append(model.Name).Append("\", ").Append(model.KeepLast).Append(", ").Append(model.MaxAgeDays).Append(",\n");
+                builder.Append("                static (id, version, data) => ").Append(snapshotType).Append(".Create(id, version, data)));\n");
             }
 
             foreach (var model in input.Versionable.Where(c => c.UserType is not null).OrderBy(c => c.FullName, System.StringComparer.Ordinal))

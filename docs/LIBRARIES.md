@@ -111,7 +111,7 @@ Base types for aggregates, plus the event plumbing. Where events are saved and w
 
 ## Entity Framework integration <!-- projects: AQ.EntityFramework -->
 
-The save pipeline, the audit log, versioning and the hierarchy service. Options switch each step on; the steps always run in the order below.
+The save pipeline, the audit log, snapshot storage and pruning, versioning and the hierarchy service. Options switch each step on; the steps always run in the order below.
 
 - **EFC-1** The save pipeline runs, when enabled: owned-change touch, actor check, lifecycle hooks, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
 - **EFC-2** When audit, outbox or audit log is on and a save changes an auditable entity, raises a domain event or changes an audited entity, an actor must be active. Without one the save throws a missing-actor error instead of storing empty attribution.
@@ -133,6 +133,10 @@ The save pipeline, the audit log, versioning and the hierarchy service. Options 
 - **EFC-18** Moving a node in a hierarchy rebuilds the closure rows of its whole subtree; making a node a child of its own descendant is refused with an error.
 - **EFC-19** The closure can be recomputed for one subtree or for everything, from the parent links, which are authoritative.
 - **EFC-20** The verification and review states map to fixed column names, and a review state is always materialized, never null, even for a never-reviewed row.
+- **EFC-21** All snapshots live in one shared table keyed by entity type, with a unique index on entity and version.
+- **EFC-22** Each snapshot type has a required link to its entity, and deleting the entity deletes its snapshots. History that must outlive an entity is the entity's own business (soft delete or status).
+- **EFC-23** Pruning keeps at most the configured number of newest snapshots per entity and removes the older ones. Snapshots are ranked by how many newer ones the entity has, never by version arithmetic, so gaps in version numbers do not matter.
+- **EFC-24** Pruning never removes an entity's newest snapshot. A snapshot is removed only when it is beyond every limit that is set (number kept, and age in days); with no limit set nothing is removed. A limit on the entity's snapshot attribute can be replaced per entity type by configuration, where zero clears it.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
@@ -146,7 +150,7 @@ Provider packages translate the search operators that plain LINQ cannot express.
 
 A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot and version classes and their registrations.
 
-- **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it.
+- **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
 - **GEN-2** A class marked versionable gets a generated version class. It must be auditable with a principal type, otherwise the build fails with `AQGEN002`.
 - **GEN-3** A class marked snapshottable or versionable with no decorated members in its hierarchy gets warning `AQGEN001`; an attribute option naming a member that does not exist fails the build with `AQGEN003`.
 - **GEN-4** Registrations run from a module initializer and are idempotent, so the data writers exist before the first save without any app code calling them.

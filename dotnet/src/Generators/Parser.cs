@@ -154,6 +154,8 @@ namespace AQ.Generators
                 ns,
                 GetBool(attribute, "IncludeId"),
                 GetString(attribute, "SnapshotTypeName"),
+                GetInt(attribute, "KeepLast"),
+                GetInt(attribute, "MaxAgeDays"),
                 userType,
                 diagnostics.ToEquatableArray());
         }
@@ -221,6 +223,19 @@ namespace AQ.Generators
             }
 
             return false;
+        }
+
+        private static int GetInt(AttributeData attribute, string name)
+        {
+            foreach (var pair in attribute.NamedArguments)
+            {
+                if (pair.Key == name)
+                {
+                    return pair.Value.Value is int value ? value : 0;
+                }
+            }
+
+            return 0;
         }
 
         private static string[] GetStrings(AttributeData attribute, string name)

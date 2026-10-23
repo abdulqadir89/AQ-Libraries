@@ -22,6 +22,18 @@ public class Price
     public string Currency { get; set; } = "USD";
 }
 
+[Snapshottable(KeepLast = 2)]
+public class Invoice : Entity<TestUser>
+{
+    private Invoice() { }
+
+    [Snapshot] public string Number { get; private set; } = "";
+
+    public static Invoice Create(string number) => new() { Number = number };
+
+    public void Rename(string number) => Number = number;
+}
+
 [Audited]
 [Snapshottable(IncludeId = true)]
 public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag

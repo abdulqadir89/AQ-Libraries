@@ -141,6 +141,8 @@ namespace AQ.Generators
         string Namespace,
         bool IncludeId,
         string? TypeNameOverride,
+        int KeepLast,
+        int MaxAgeDays,
         string? UserType,
         EquatableArray<DiagnosticInfo> Diagnostics);
 
