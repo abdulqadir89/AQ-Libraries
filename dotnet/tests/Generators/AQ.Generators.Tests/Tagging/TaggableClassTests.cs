@@ -2,7 +2,7 @@ using AQ.Utilities.Tagging;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 
-namespace AQ.Generators.Tests;
+namespace AQ.Generators.Tests.Tagging;
 
 public class TaggableClassTests
 {

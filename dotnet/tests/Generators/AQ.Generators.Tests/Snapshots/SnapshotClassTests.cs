@@ -2,7 +2,7 @@ using AQ.Utilities.EntityData;
 using AQ.Utilities.Snapshots;
 using FluentAssertions;
 
-namespace AQ.Generators.Tests;
+namespace AQ.Generators.Tests.Snapshots;
 
 public class SnapshotClassTests
 {

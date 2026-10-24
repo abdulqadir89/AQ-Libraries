@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static AQ.Generators.AttributeReader;
 
-namespace AQ.Generators
+namespace AQ.Generators.Snapshots
 {
-    internal static class Parser
+    internal static class SnapshotParser
     {
         public static MemberResult ParseMember(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
         {
@@ -142,161 +140,14 @@ namespace AQ.Generators
                     reference));
             }
 
-            var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
             return new ClassModel(
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 GetString(attribute, "Name") ?? symbol.Name,
-                ns,
+                symbol.NamespaceName(),
                 GetBool(attribute, "IncludeId"),
                 GetString(attribute, "SnapshotTypeName"),
                 keepLast,
                 maxAgeDays,
-                diagnostics.ToEquatableArray());
-        }
-
-        private static bool IsInterface(INamedTypeSymbol type, string ns, string name)
-        {
-            return type.Name == name && type.TypeArguments.Length == 0 && type.ContainingNamespace.ToDisplayString() == ns;
-        }
-
-        private static bool HasMember(INamedTypeSymbol symbol, string name)
-        {
-            for (var current = symbol; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
-            {
-                if (current.GetMembers(name).Length > 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static VersionGroupModel ParseVersionGroup(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
-        {
-            var symbol = (INamedTypeSymbol)context.TargetSymbol;
-            var declaration = (ClassDeclarationSyntax)context.TargetNode;
-            var attribute = context.Attributes[0];
-            var diagnostics = new List<DiagnosticInfo>();
-            var reference = attribute.ApplicationSyntaxReference;
-
-            // RULE GEN-2
-            if (!declaration.Modifiers.Any(m => m.Text == "partial") || symbol.ContainingType is not null || symbol.IsGenericType)
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [VersionGroup] and must be a partial, non-generic, top-level class.",
-                    reference));
-            }
-
-            if (!symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Entities", "IEntity")))
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [VersionGroup] and must implement IEntity.",
-                    reference));
-            }
-
-            foreach (var reserved in new[] { "VersionGroupId", "Version" })
-            {
-                if (HasMember(symbol, reserved))
-                {
-                    diagnostics.Add(DiagnosticInfo.Create(
-                        "AQGEN002",
-                        "Class '" + symbol.Name + "' is marked [VersionGroup] and already declares a member named '" + reserved + "', which the generator adds.",
-                        reference));
-                }
-            }
-
-            var snapshotted = false;
-            for (var current = symbol; current is not null && !snapshotted; current = current.BaseType)
-            {
-                snapshotted = current.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == Names.SnapshottableAttribute);
-            }
-
-            var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
-            return new VersionGroupModel(
-                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                symbol.Name,
-                ns,
-                symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Utilities.Verification", "IVerifiable")),
-                snapshotted,
-                diagnostics.ToEquatableArray());
-        }
-
-        public static TaggableModel ParseTaggable(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
-        {
-            var symbol = (INamedTypeSymbol)context.TargetSymbol;
-            var declaration = (ClassDeclarationSyntax)context.TargetNode;
-            var attribute = context.Attributes[0];
-            var diagnostics = new List<DiagnosticInfo>();
-            var reference = attribute.ApplicationSyntaxReference;
-
-            // RULE GEN-8
-            if (!declaration.Modifiers.Any(m => m.Text == "partial") || symbol.ContainingType is not null || symbol.IsGenericType)
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [Taggable] and must be a partial, non-generic, top-level class.",
-                    reference));
-            }
-
-            if (!symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Entities", "IEntity")))
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [Taggable] and must implement IEntity.",
-                    reference));
-            }
-
-            foreach (var reserved in new[] { "Tags", "TagIds" })
-            {
-                if (HasMember(symbol, reserved))
-                {
-                    diagnostics.Add(DiagnosticInfo.Create(
-                        "AQGEN002",
-                        "Class '" + symbol.Name + "' is marked [Taggable] and already declares a member named '" + reserved + "', which the generator adds.",
-                        reference));
-                }
-            }
-
-            var tagType = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value as INamedTypeSymbol : null;
-            var tagTypeName = string.Empty;
-            if (tagType is null || !tagType.AllInterfaces.Any(i => IsInterface(i, "AQ.Utilities.Tagging", "ITag")))
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [Taggable] with a tag type that does not implement ITag.",
-                    reference));
-            }
-            else
-            {
-                tagTypeName = tagType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            }
-
-            var name = GetString(attribute, "Name") ?? symbol.Name;
-            if (!SyntaxFacts.IsValidIdentifier(name) || name == "Entity" || name == "Tag")
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [Taggable] with the name '" + name + "', which is not usable as a type and foreign key prefix.",
-                    reference));
-            }
-            else if (symbol.ContainingNamespace.GetTypeMembers(name + "Tag").Any())
-            {
-                diagnostics.Add(DiagnosticInfo.Create(
-                    "AQGEN002",
-                    "Class '" + symbol.Name + "' is marked [Taggable] and the link type '" + name + "Tag' already exists in its namespace; set a distinct Name.",
-                    reference));
-            }
-
-            var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
-            return new TaggableModel(
-                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                symbol.Name,
-                name,
-                ns,
-                tagTypeName,
                 diagnostics.ToEquatableArray());
         }
 
@@ -337,58 +188,6 @@ namespace AQ.Generators
             }
 
             return type.AllInterfaces.Any(i => i.GetMembers(name).Any(m => m is IPropertySymbol));
-        }
-
-        private static string? GetString(AttributeData attribute, string name)
-        {
-            foreach (var pair in attribute.NamedArguments)
-            {
-                if (pair.Key == name)
-                {
-                    return pair.Value.Value as string;
-                }
-            }
-
-            return null;
-        }
-
-        private static bool GetBool(AttributeData attribute, string name)
-        {
-            foreach (var pair in attribute.NamedArguments)
-            {
-                if (pair.Key == name)
-                {
-                    return pair.Value.Value is true;
-                }
-            }
-
-            return false;
-        }
-
-        private static int GetInt(AttributeData attribute, string name)
-        {
-            foreach (var pair in attribute.NamedArguments)
-            {
-                if (pair.Key == name)
-                {
-                    return pair.Value.Value is int value ? value : 0;
-                }
-            }
-
-            return 0;
-        }
-
-        private static string[] GetStrings(AttributeData attribute, string name)
-        {
-            foreach (var pair in attribute.NamedArguments)
-            {
-                if (pair.Key == name && pair.Value.Kind == TypedConstantKind.Array)
-                {
-                    return pair.Value.Values.Select(v => v.Value as string).Where(v => v is not null).Select(v => v!).ToArray();
-                }
-            }
-
-            return new string[0];
         }
     }
 }
