@@ -29,7 +29,7 @@ dotnet/
       Entities/              # AQ.StateMachine.Entities — definitions, instances, transitions, requirements
       Services/              # AQ.StateMachine.Services — requirement evaluation
     Utilities/               # AQ.Utilities — Results, Filter, Sort, Search, Merging, Verification, Review,
-                             #   Snapshots, Versioning, EntityData, References, Attachments (one project)
+                             #   Snapshots, Versioning (version groups), Tagging, EntityData, References, Attachments (one project)
       Email/                 # AQ.Utilities.Email — email sending + localized templates
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
     Identity/
@@ -67,7 +67,7 @@ dotnet pack AQ.sln --configuration Release
 - **Rules and tags**: a guarantee a caller can rely on gets a rule in `docs/LIBRARIES.md` and a `// RULE XXX-n` comment on the enforcing line. Change the behaviour, change the rule.
 - **Provider-specific code stays out of the core**: `AQ.Utilities` has no EF provider dependency; SQL Server and PostgreSQL specifics live in the `AQ.EntityFramework.*` provider packages.
 - **Snapshot storage**: apps call `ApplyEntitySnapshots()` (one `EntitySnapshots` table, FK per snapshot type) instead of mapping each generated snapshot class; retention goes on `[Snapshottable(KeepLast, MaxAgeDays)]` and the app runs `SnapshotPruner` (`AddAqSnapshotPruning`) on its own schedule.
-- **Generated data writers**: snapshot and version classes come from `AQ.Generators`; do not hand-write what `[Snapshottable]` / `[Versionable]` generate.
+- **Generated data writers**: snapshot classes and the members of `[VersionGroup]` classes come from `AQ.Generators`; do not hand-write what `[Snapshottable]` / `[VersionGroup]` / `[Taggable(typeof(Tag))]` generate (version-grouped and taggable classes are `partial`; the app owns the tag entity, which implements `ITag`, and calls `ApplyEntityTags<Tag>()` and enables the `Tags` pipeline step).
 
 ## Email localization conventions (`Utilities/Email`)
 

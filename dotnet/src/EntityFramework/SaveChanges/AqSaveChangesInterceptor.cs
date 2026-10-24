@@ -36,6 +36,11 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
             return;
         }
 
+        if (options.Tags)
+        {
+            TagLinkStep.Run(context);
+        }
+
         if (options.Audit || options.Lifecycle || options.Snapshots || options.VerificationReset || options.Review)
         {
             OwnedChangeTouchStep.Run(context);
@@ -52,6 +57,11 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
         if (options.Lifecycle)
         {
             LifecycleStep.Run(context);
+        }
+
+        if (options.VersionGroups)
+        {
+            VersionGroupStep.Run(context);
         }
 
         if (options.GeneratedReferences)

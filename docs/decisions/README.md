@@ -29,4 +29,4 @@ What gets easier, what gets harder, what to watch. For a library: what a consumi
 Reference an ADR from code with a one-line comment at the site: `// ADR-NNN: why X, not Y`.
 
 ## Index
-_None yet. Add a line per ADR: `- [NNN Title](NNN-short-title.md) - status`._
+- [001 Version groups replace data-copy versioning](001-version-groups-replace-data-copy-versioning.md) - accepted

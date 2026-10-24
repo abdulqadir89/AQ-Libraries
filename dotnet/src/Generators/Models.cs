@@ -10,12 +10,11 @@ namespace AQ.Generators
     {
         public const string SnapshotAttribute = "AQ.Utilities.Snapshots.SnapshotAttribute";
         public const string SnapshottableAttribute = "AQ.Utilities.Snapshots.SnapshottableAttribute";
-        public const string VersionedAttribute = "AQ.Utilities.Versioning.VersionedAttribute";
-        public const string VersionableAttribute = "AQ.Utilities.Versioning.VersionableAttribute";
+        public const string VersionGroupAttribute = "AQ.Utilities.Versioning.VersionGroupAttribute";
+        public const string TaggableAttribute = "AQ.Utilities.Tagging.TaggableAttribute";
 
         public const string EntityDataRegistry = "global::AQ.Utilities.EntityData.EntityDataRegistry";
         public const string SnapshotAttributeGlobal = "global::AQ.Utilities.Snapshots.SnapshotAttribute";
-        public const string VersionedAttributeGlobal = "global::AQ.Utilities.Versioning.VersionedAttribute";
 
         public static string ToCamelCase(string name)
         {
@@ -81,9 +80,9 @@ namespace AQ.Generators
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
-        public static readonly DiagnosticDescriptor MissingAuditable = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor InvalidVersionGroupClass = new DiagnosticDescriptor(
             "AQGEN002",
-            "Versionable class is not auditable",
+            "Version group class cannot be generated",
             "{0}",
             "AQ.Generators",
             DiagnosticSeverity.Error,
@@ -113,10 +112,20 @@ namespace AQ.Generators
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        public static readonly DiagnosticDescriptor DuplicateTaggableName = new DiagnosticDescriptor(
+            "AQGEN006",
+            "Taggable classes share a name",
+            "{0}",
+            "AQ.Generators",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         public static DiagnosticDescriptor ById(string id)
         {
             switch (id)
             {
+                case "AQGEN006":
+                    return DuplicateTaggableName;
                 case "AQGEN005":
                     return DuplicateSnapshotName;
                 case "AQGEN004":
@@ -124,7 +133,7 @@ namespace AQ.Generators
                 case "AQGEN001":
                     return NoDecoratedMembers;
                 case "AQGEN002":
-                    return MissingAuditable;
+                    return InvalidVersionGroupClass;
                 default:
                     return UnknownMember;
             }
@@ -163,13 +172,28 @@ namespace AQ.Generators
         string? TypeNameOverride,
         int KeepLast,
         int MaxAgeDays,
-        string? UserType,
+        EquatableArray<DiagnosticInfo> Diagnostics);
+
+    internal sealed record VersionGroupModel(
+        string FullName,
+        string Name,
+        string Namespace,
+        bool Verifiable,
+        bool Snapshotted,
+        EquatableArray<DiagnosticInfo> Diagnostics);
+
+    internal sealed record TaggableModel(
+        string FullName,
+        string ClassName,
+        string Name,
+        string Namespace,
+        string TagType,
         EquatableArray<DiagnosticInfo> Diagnostics);
 
     internal sealed record GenerationInput(
         string AssemblyName,
         EquatableArray<MemberResult> SnapshotMembers,
-        EquatableArray<MemberResult> VersionedMembers,
         EquatableArray<ClassModel> Snapshottable,
-        EquatableArray<ClassModel> Versionable);
+        EquatableArray<VersionGroupModel> VersionGroups,
+        EquatableArray<TaggableModel> Taggables);
 }

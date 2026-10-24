@@ -5,6 +5,8 @@ namespace AQ.EntityFramework.SaveChanges;
 public sealed class AqSavePipelineOptions
 {
     public bool Lifecycle { get; init; }
+    public bool VersionGroups { get; init; }
+    public bool Tags { get; init; }
     public bool GeneratedReferences { get; init; }
     public bool VerificationReset { get; init; }
     public bool Review { get; init; }
