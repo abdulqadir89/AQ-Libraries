@@ -69,6 +69,16 @@ namespace AQ.Generators
                     null).ToDiagnostic());
             }
 
+            // RULE GEN-9
+            foreach (var group in input.Taggables.Where(t => t.Diagnostics.Length == 0).GroupBy(t => t.Name, System.StringComparer.Ordinal).Where(g => g.Count() > 1))
+            {
+                var classes = string.Join(", ", group.Select(c => c.FullName.Replace("global::", string.Empty)).OrderBy(n => n, System.StringComparer.Ordinal));
+                context.ReportDiagnostic(DiagnosticInfo.Create(
+                    "AQGEN006",
+                    "Taggable classes " + classes + " share the tag name '" + group.Key + "'; set a distinct [Taggable(Name = ...)] on all but one.",
+                    null).ToDiagnostic());
+            }
+
             if (!Emitter.HasOutput(input))
             {
                 return;

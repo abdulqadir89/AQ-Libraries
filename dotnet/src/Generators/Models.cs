@@ -112,10 +112,20 @@ namespace AQ.Generators
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        public static readonly DiagnosticDescriptor DuplicateTaggableName = new DiagnosticDescriptor(
+            "AQGEN006",
+            "Taggable classes share a name",
+            "{0}",
+            "AQ.Generators",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         public static DiagnosticDescriptor ById(string id)
         {
             switch (id)
             {
+                case "AQGEN006":
+                    return DuplicateTaggableName;
                 case "AQGEN005":
                     return DuplicateSnapshotName;
                 case "AQGEN004":

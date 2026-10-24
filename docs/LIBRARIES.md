@@ -139,7 +139,7 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-27** Every record has each tag at most once: tag links share one table keyed by entity type, with a unique index on record and tag.
 - **EFC-28** A tag that is still on a record cannot be deleted; the app removes it from the records first.
 - **EFC-29** Each tag link type has a required link to its record, and deleting the record deletes its links but never the tags.
-- **EFC-30** A tag link added through a tracked record's collection is inserted: links are never edited, so one the change tracker finds as modified is treated as new.
+- **EFC-30** A tag link added through a tracked record's collection is inserted: links are never edited, so one the change tracker finds as modified is treated as new unless its row already exists, in which case it is left as it is.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
@@ -154,13 +154,14 @@ Provider packages translate the search operators that plain LINQ cannot express.
 A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, and the members of version-grouped and taggable classes.
 
 - **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
-- **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class, otherwise the build fails with `AQGEN002`.
+- **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class that does not already declare the members the generator adds, otherwise the build fails with `AQGEN002`.
 - **GEN-3** A class marked snapshottable with no decorated members in its hierarchy gets warning `AQGEN001`; an attribute option naming a member that does not exist fails the build with `AQGEN003`.
 - **GEN-4** Registrations run from a module initializer and are idempotent, so the data writers exist before the first save without any app code calling them.
 - **GEN-5** Output is deterministic: members and classes are emitted in a stable order, so a rebuild with no changes produces identical files.
 - **GEN-6** A negative `KeepLast` or `MaxAgeDays` on a snapshottable class fails the build with `AQGEN004`; 0 means no limit.
 - **GEN-7** A snapshottable class can set `Name`, used for its snapshot link, discriminator and retention configuration key instead of the class name. Two snapshottable classes ending up with the same name fail the build with `AQGEN005`.
-- **GEN-8** A class marked taggable gets a generated tags collection, a link type named after the class (or the name given), a registration and query helpers. It must be a partial, non-generic, top-level entity class and name a tag type that implements the tag interface, otherwise the build fails with `AQGEN002`.
+- **GEN-8** A class marked taggable gets a generated tags collection, a link type named after the class (or the name given), a registration and query helpers. It must be a partial, non-generic, top-level entity class and name a tag type that implements the tag interface, not already declare the members the generator adds, and use a name that is a valid identifier and does not clash with an existing type, otherwise the build fails with `AQGEN002`. The entity interface must be the non-generic one with a Guid key.
+- **GEN-9** Two taggable classes ending up with the same name fail the build with `AQGEN006`. Adding a tag id the class already has is a no-op.
 
 ## Utilities <!-- projects: AQ.Utilities -->
 

@@ -126,7 +126,9 @@ namespace AQ.Generators
             builder.Append("        public global::System.Collections.Generic.ICollection<").Append(link).Append("> Tags { get; private set; } = new global::System.Collections.Generic.List<").Append(link).Append(">();\n\n");
             builder.Append("        public global::System.Collections.Generic.IReadOnlyCollection<global::System.Guid> TagIds =>\n");
             builder.Append("            global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(Tags, t => t.TagId));\n\n");
-            builder.Append("        void global::AQ.Utilities.Tagging.ITaggable.AddTagId(global::System.Guid tagId) => Tags.Add(").Append(link).Append(".Create(Id, tagId));\n\n");
+            builder.Append("        void global::AQ.Utilities.Tagging.ITaggable.AddTagId(global::System.Guid tagId)\n        {\n");
+            builder.Append("            if (!global::System.Linq.Enumerable.Any(Tags, t => t.TagId == tagId))\n            {\n");
+            builder.Append("                Tags.Add(").Append(link).Append(".Create(Id, tagId));\n            }\n        }\n\n");
             builder.Append("        void global::AQ.Utilities.Tagging.ITaggable.RemoveTagId(global::System.Guid tagId)\n        {\n");
             builder.Append("            var link = global::System.Linq.Enumerable.FirstOrDefault(Tags, t => t.TagId == tagId);\n");
             builder.Append("            if (link is not null)\n            {\n                Tags.Remove(link);\n            }\n        }\n");

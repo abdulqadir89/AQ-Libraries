@@ -14,7 +14,7 @@ internal static class TagLinkStep
 
         foreach (var entry in discovered)
         {
-            entry.State = EntityState.Added;
+            entry.State = entry.GetDatabaseValues() is null ? EntityState.Added : EntityState.Unchanged;
         }
     }
 }

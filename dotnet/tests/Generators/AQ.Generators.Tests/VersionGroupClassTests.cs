@@ -126,4 +126,15 @@ public class VersionGroupClassTests
 
         run.GeneratorDiagnostics.Should().Contain(d => d.Id == "AQGEN002" && d.Severity == DiagnosticSeverity.Error);
     }
+
+    [Theory]
+    [InlineData("[VersionGroup] public partial class Manual : Entity<AppUser> { public string? Version { get; set; } }")]
+    [InlineData("[VersionGroup] public partial class Manual : Entity<AppUser> { public Guid VersionGroupId { get; set; } }")]
+    [InlineData("[VersionGroup] public partial class Manual : IEntity<int> { public int Id { get; } }")]
+    public void VersionGroup_ConflictingClassReportsAqgen002(string declaration)
+    {
+        var run = GeneratorHarness.Run(Prelude + "\n" + declaration);
+
+        run.GeneratorDiagnostics.Should().Contain(d => d.Id == "AQGEN002" && d.Severity == DiagnosticSeverity.Error);
+    }
 }

@@ -76,10 +76,44 @@ public class TaggableClassTests
     [InlineData("[Taggable(typeof(Label))] public partial class Manual { }")]
     [InlineData("[Taggable(typeof(AppUser))] public partial class Manual : Entity<AppUser> { }")]
     [InlineData("public partial class Outer { [Taggable(typeof(Label))] public partial class Manual : Entity<AppUser> { } }")]
+    [InlineData("[Taggable(typeof(Label))] public partial class Manual : Entity<AppUser> { public int Tags { get; set; } }")]
+    [InlineData("[Taggable(typeof(Label), Name = \"Not Valid\")] public partial class Manual : Entity<AppUser> { }")]
+    [InlineData("[Taggable(typeof(Label), Name = \"Entity\")] public partial class Manual : Entity<AppUser> { }")]
+    [InlineData("public class ManualTag { } [Taggable(typeof(Label))] public partial class Manual : Entity<AppUser> { }")]
+    [InlineData("[Taggable(typeof(Label))] public partial class Manual : IEntity<int> { public int Id { get; } }")]
     public void Taggable_InvalidClassReportsAqgen002(string declaration)
     {
         var run = GeneratorHarness.Run(Prelude + "\n" + declaration);
 
         run.GeneratorDiagnostics.Should().Contain(d => d.Id == "AQGEN002" && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Taggable_DuplicateNamesReportAqgen006()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Taggable(typeof(Label))]
+            public partial class Manual : Entity<AppUser> { }
+            [Taggable(typeof(Label), Name = "Manual")]
+            public partial class Guide : Entity<AppUser> { }
+            """);
+
+        run.GeneratorDiagnostics.Should().Contain(d => d.Id == "AQGEN006" && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Taggable_AddTagIdIgnoresAnExistingTag()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Taggable(typeof(Label))]
+            public partial class Manual : Entity<AppUser> { }
+            """);
+        var manual = (ITaggable)Activator.CreateInstance(run.Load().GetType("Sample.Manual")!)!;
+        var tagId = Guid.NewGuid();
+
+        manual.AddTagId(tagId);
+        manual.AddTagId(tagId);
+
+        manual.TagIds.Should().Equal(tagId);
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AQ.Generators
@@ -153,6 +154,24 @@ namespace AQ.Generators
                 diagnostics.ToEquatableArray());
         }
 
+        private static bool IsInterface(INamedTypeSymbol type, string ns, string name)
+        {
+            return type.Name == name && type.TypeArguments.Length == 0 && type.ContainingNamespace.ToDisplayString() == ns;
+        }
+
+        private static bool HasMember(INamedTypeSymbol symbol, string name)
+        {
+            for (var current = symbol; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+            {
+                if (current.GetMembers(name).Length > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static VersionGroupModel ParseVersionGroup(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
         {
             var symbol = (INamedTypeSymbol)context.TargetSymbol;
@@ -170,12 +189,23 @@ namespace AQ.Generators
                     reference));
             }
 
-            if (!symbol.AllInterfaces.Any(i => i.Name == "IEntity"))
+            if (!symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Entities", "IEntity")))
             {
                 diagnostics.Add(DiagnosticInfo.Create(
                     "AQGEN002",
                     "Class '" + symbol.Name + "' is marked [VersionGroup] and must implement IEntity.",
                     reference));
+            }
+
+            foreach (var reserved in new[] { "VersionGroupId", "Version" })
+            {
+                if (HasMember(symbol, reserved))
+                {
+                    diagnostics.Add(DiagnosticInfo.Create(
+                        "AQGEN002",
+                        "Class '" + symbol.Name + "' is marked [VersionGroup] and already declares a member named '" + reserved + "', which the generator adds.",
+                        reference));
+                }
             }
 
             var snapshotted = false;
@@ -189,7 +219,7 @@ namespace AQ.Generators
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 symbol.Name,
                 ns,
-                symbol.AllInterfaces.Any(i => i.Name == "IVerifiable"),
+                symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Utilities.Verification", "IVerifiable")),
                 snapshotted,
                 diagnostics.ToEquatableArray());
         }
@@ -211,7 +241,7 @@ namespace AQ.Generators
                     reference));
             }
 
-            if (!symbol.AllInterfaces.Any(i => i.Name == "IEntity"))
+            if (!symbol.AllInterfaces.Any(i => IsInterface(i, "AQ.Entities", "IEntity")))
             {
                 diagnostics.Add(DiagnosticInfo.Create(
                     "AQGEN002",
@@ -219,9 +249,20 @@ namespace AQ.Generators
                     reference));
             }
 
+            foreach (var reserved in new[] { "Tags", "TagIds" })
+            {
+                if (HasMember(symbol, reserved))
+                {
+                    diagnostics.Add(DiagnosticInfo.Create(
+                        "AQGEN002",
+                        "Class '" + symbol.Name + "' is marked [Taggable] and already declares a member named '" + reserved + "', which the generator adds.",
+                        reference));
+                }
+            }
+
             var tagType = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value as INamedTypeSymbol : null;
             var tagTypeName = string.Empty;
-            if (tagType is null || !tagType.AllInterfaces.Any(i => i.Name == "ITag"))
+            if (tagType is null || !tagType.AllInterfaces.Any(i => IsInterface(i, "AQ.Utilities.Tagging", "ITag")))
             {
                 diagnostics.Add(DiagnosticInfo.Create(
                     "AQGEN002",
@@ -233,11 +274,27 @@ namespace AQ.Generators
                 tagTypeName = tagType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             }
 
+            var name = GetString(attribute, "Name") ?? symbol.Name;
+            if (!SyntaxFacts.IsValidIdentifier(name) || name == "Entity" || name == "Tag")
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Taggable] with the name '" + name + "', which is not usable as a type and foreign key prefix.",
+                    reference));
+            }
+            else if (symbol.ContainingNamespace.GetTypeMembers(name + "Tag").Any())
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Taggable] and the link type '" + name + "Tag' already exists in its namespace; set a distinct Name.",
+                    reference));
+            }
+
             var ns = symbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : symbol.ContainingNamespace.ToDisplayString();
             return new TaggableModel(
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 symbol.Name,
-                GetString(attribute, "Name") ?? symbol.Name,
+                name,
                 ns,
                 tagTypeName,
                 diagnostics.ToEquatableArray());

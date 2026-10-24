@@ -197,4 +197,19 @@ public class TagTests : IDisposable
 
         found.Should().BeEquivalentTo(["A"]);
     }
+
+    // RULE EFC-30
+    [Fact]
+    public async Task ExistingLinkMarkedModified_IsNotReinserted()
+    {
+        using var context = CreateContext();
+        var red = await AddTagAsync(context, "red");
+        var manual = await AddManualAsync(context, "A", red);
+        var link = (await context.Manuals.Include(m => m.Tags).SingleAsync(m => m.Id == manual.Id)).Tags.Single();
+
+        context.Entry(link).State = EntityState.Modified;
+        await context.SaveChangesAsync();
+
+        (await context.Set<EntityTag<TestTag>>().CountAsync()).Should().Be(1);
+    }
 }
