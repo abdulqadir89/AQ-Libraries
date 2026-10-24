@@ -105,10 +105,30 @@ export interface FormConfig {
   height?: number;
 }
 
+export interface DataGridInitialState {
+  searchText?: string;
+  sortExpression?: string;
+  columnFilters?: Record<string, string>;
+}
+
+export interface DataGridStateSnapshot {
+  searchText: string;
+  sortExpression: string;
+  columnFilters: Record<string, string>;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface DataGridProps<T = Record<string, unknown>> {
   // Grid identification
   gridId?: string;
-  
+
+  // Seeds the search text, sort and column filters on mount (restoring a previous view).
+  // The consumer seeds its own query state from the same source; the grid does not re-emit them.
+  initialState?: DataGridInitialState;
+  // Fires on mount and whenever search (debounced), sort, column filters or pagination change.
+  onStateChange?: (state: DataGridStateSnapshot) => void;
+
   // Data and loading
   data: T[];
   loading?: boolean;

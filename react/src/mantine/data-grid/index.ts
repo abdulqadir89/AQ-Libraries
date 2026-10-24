@@ -26,6 +26,8 @@ export type {
   CardLayoutConfig,
   CardImageConfig,
   DataGridState,
+  DataGridInitialState,
+  DataGridStateSnapshot,
   FilterCondition,
   FilterOperator,
   LogicalOperator,

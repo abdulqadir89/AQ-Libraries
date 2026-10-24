@@ -59,6 +59,8 @@ interface ExtendedDataGridState extends DataGridState {
 
 export function DataGrid<T extends Record<string, unknown>>({
   gridId,
+  initialState,
+  onStateChange,
   data = [],
   loading = false,
   columns = [],
@@ -111,12 +113,12 @@ export function DataGrid<T extends Record<string, unknown>>({
   const resolvedDeleteConfirmTitle = deleteConfirmTitle ?? m.deleteConfirmTitle;
   const resolvedDeleteConfirmContent = deleteConfirmContent ?? m.deleteConfirmContent;
   const resolvedEmptyStateText = emptyStateText ?? m.noData;
-  const [state, setState] = useState<ExtendedDataGridState>({
-    searchText: '',
+  const [state, setState] = useState<ExtendedDataGridState>(() => ({
+    searchText: initialState?.searchText ?? '',
     selectedRows: selectedRows || [],
     showFilter: false,
-    columnFilters: {},
-  });
+    columnFilters: initialState?.columnFilters ?? {},
+  }));
 
   // Column filter refs for reset functionality
   const columnFilterRefs = useRef<Record<string, ColumnFilterRef | null>>({});
@@ -314,7 +316,15 @@ export function DataGrid<T extends Record<string, unknown>>({
   }, [columns, gridId, isColumnVisible]);
 
   // Sorting state
-  const [sortConditions, setSortConditions] = useState<SortCondition[]>([]);
+  const [sortConditions, setSortConditions] = useState<SortCondition[]>(() =>
+    (initialState?.sortExpression ?? '')
+      .split(';')
+      .filter(Boolean)
+      .map((part, priority) => {
+        const [property, direction] = part.split(',');
+        return { property, direction: direction === 'desc' ? 'desc' as const : 'asc' as const, priority };
+      })
+  );
 
   // Column widths state (for resizing)
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
@@ -537,6 +547,33 @@ export function DataGrid<T extends Record<string, unknown>>({
     }
     onSearchRef.current?.(debouncedSearchText);
   }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Column filter widgets own their form state, so restored filters are pushed into them once they mount.
+  useEffect(() => {
+    // RULE RCT-5
+    Object.entries(initialState?.columnFilters ?? {}).forEach(([columnKey, expression]) => {
+      columnFilterRefs.current[columnKey]?.setFilterExpression(expression);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => { onStateChangeRef.current = onStateChange; });
+
+  const currentSortExpression = [...sortConditions]
+    .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+    .map(sort => `${sort.property},${sort.direction}`)
+    .join(';');
+
+  useEffect(() => {
+    onStateChangeRef.current?.({
+      searchText: debouncedSearchText,
+      sortExpression: currentSortExpression,
+      columnFilters: state.columnFilters,
+      page: pagination?.current,
+      pageSize: pagination?.pageSize,
+    });
+  }, [debouncedSearchText, currentSortExpression, state.columnFilters, pagination?.current, pagination?.pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(() => {
     onRefresh?.();
