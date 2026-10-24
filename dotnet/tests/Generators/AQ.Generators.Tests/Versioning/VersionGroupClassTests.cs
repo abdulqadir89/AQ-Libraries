@@ -5,7 +5,7 @@ using AQ.Utilities.Versioning;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 
-namespace AQ.Generators.Tests;
+namespace AQ.Generators.Tests.Versioning;
 
 public class VersionGroupClassTests
 {
