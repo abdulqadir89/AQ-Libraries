@@ -224,18 +224,15 @@ public class RequirementEvaluationStatus
 
 ## Database Schema
 
-Requirements are stored as JSON in the `RequirementsJson` column of the `StateMachineTransition` table:
+Requirements are stored as one JSON object in the `RequirementsJson` column of the `StateMachineTransition` table, keyed by the requirement's type name:
 
 ```json
-[
-  {
-    "RequirementType": "UserRole",
-    "RequiredRole": "Manager",
-    "AllowSuperUser": true,
-    "Description": "Requires manager role"
-  }
-]
+{
+  "UserRoleRequirement": { "RequiredRole": "Manager", "AllowSuperUser": true, "Description": "Requires manager role", "IsOptional": false }
+}
 ```
+
+The app registers the assemblies that hold its requirement types once at startup (`StateMachineRequirementTypes.Register(assembly)`) so they come back as the saved type. A name that is not registered comes back as `UnresolvedStateMachineTransitionRequirement`, which is written back unchanged and never fulfilled.
 
 ## Example Requirements
 
