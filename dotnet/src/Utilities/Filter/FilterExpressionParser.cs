@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace AQ.Utilities.Filter;
+﻿namespace AQ.Utilities.Filter;
 
 /// <summary>
 /// Parses filter expressions from string format
@@ -131,19 +129,16 @@ public static class FilterExpressionParser
     }
 
     /// <summary>
-    /// Parses a complex filter expression with logical operators and parentheses
-    /// Example: "(Name,eq,John && Age,gt,25) || (Department,eq,IT)"
+    /// Parses a complex filter expression with logical operators, parentheses and negation
+    /// Example: "(Name,eq,John && Age,gt,25) || !(Department,eq,IT)"; && binds tighter than ||
     /// </summary>
-    // RULE FLT-3
     public static FilterSpecification ParseComplexExpression(string expression)
     {
         if (string.IsNullOrWhiteSpace(expression))
             return new FilterSpecification();
 
-        var tokens = TokenizeExpression(expression);
-        var rootGroup = ParseTokens(tokens);
-
-        return new FilterSpecification { RootGroup = rootGroup };
+        var reader = new ExpressionReader(TokenizeExpression(expression));
+        return new FilterSpecification { RootGroup = reader.ReadRoot() };
     }
 
     private static string[] SplitRespectingQuotes(string input, char delimiter)
@@ -234,75 +229,212 @@ public static class FilterExpressionParser
         return value;
     }
 
+    // A quote opens a quoted value only straight after a comma, so an apostrophe inside a word (O'Brien) stays plain text.
     private static List<string> TokenizeExpression(string expression)
     {
         var tokens = new List<string>();
-        var regex = new Regex(@"\(|\)|&&|\|\||[^()&|]+", RegexOptions.IgnoreCase);
-        var matches = regex.Matches(expression);
+        var text = new System.Text.StringBuilder();
+        var quote = '\0';
 
-        foreach (Match match in matches)
+        void Flush()
         {
-            var token = match.Value.Trim();
-            if (!string.IsNullOrEmpty(token))
-            {
+            var token = text.ToString().Trim();
+            if (token.Length > 0)
                 tokens.Add(token);
+            text.Clear();
+        }
+
+        for (var i = 0; i < expression.Length; i++)
+        {
+            var c = expression[i];
+
+            if (quote != '\0')
+            {
+                text.Append(c);
+                if (c == quote)
+                    quote = '\0';
+                continue;
+            }
+
+            // RULE FLT-8
+            if ((c == '"' || c == '\'') && text.Length > 0 && text[^1] == ',')
+            {
+                quote = c;
+                text.Append(c);
+                continue;
+            }
+
+            if (c == '(' || c == ')')
+            {
+                Flush();
+                tokens.Add(c.ToString());
+            }
+            else if (c == '&' && i + 1 < expression.Length && expression[i + 1] == '&')
+            {
+                Flush();
+                tokens.Add("&&");
+                i++;
+            }
+            else if (c == '|' && i + 1 < expression.Length && expression[i + 1] == '|')
+            {
+                Flush();
+                tokens.Add("||");
+                i++;
+            }
+            else if (c == '!' && text.ToString().Trim().Length == 0 && NextNonSpace(expression, i + 1) is '(' or '!')
+            {
+                tokens.Add("!");
+            }
+            else
+            {
+                text.Append(c);
             }
         }
 
+        Flush();
         return tokens;
     }
 
-    private static FilterGroup ParseTokens(List<string> tokens)
+    private static char NextNonSpace(string expression, int from)
     {
-        var rootGroup = new FilterGroup();
-        var currentGroup = rootGroup;
-        var groupStack = new Stack<FilterGroup>();
-
-        for (int i = 0; i < tokens.Count; i++)
+        for (var i = from; i < expression.Length; i++)
         {
-            var token = tokens[i];
+            if (!char.IsWhiteSpace(expression[i]))
+                return expression[i];
+        }
 
-            switch (token)
+        return '\0';
+    }
+
+    // Grammar: or := and ('||' and)* ; and := unary ('&&' unary)* ; unary := '!' unary | '(' or ')' | condition
+    // RULE FLT-3
+    private sealed class ExpressionReader(List<string> tokens)
+    {
+        // Each bracket and ! recurses once, so the depth is capped well below what the stack can take.
+        private const int MaxDepth = 32;
+
+        private int _position;
+        private int _depth;
+
+        private string? Peek => _position < tokens.Count ? tokens[_position] : null;
+
+        public FilterGroup ReadRoot()
+        {
+            var node = ReadOr();
+            if (node is null)
+                return new FilterGroup();
+
+            // A condition, a negated group or a bracketed group sits inside the root; a plain and/or group is the root.
+            if (node.Condition is not null)
+                return new FilterGroup { Conditions = { node.Condition } };
+
+            return node.Group!.IsNegated ? new FilterGroup { Groups = { node.Group } } : node.Group;
+        }
+
+        private Node? ReadOr() => ReadChain(ReadAnd, "||", LogicalOperator.Or);
+
+        private Node? ReadAnd() => ReadChain(ReadUnary, "&&", LogicalOperator.And);
+
+        private Node? ReadChain(Func<Node?> readOperand, string separator, LogicalOperator logicalOperator)
+        {
+            var operands = new List<Node>();
+            var first = readOperand();
+            if (first is not null)
+                operands.Add(first);
+
+            while (Peek == separator)
             {
-                case "(":
-                    var newGroup = new FilterGroup();
-                    currentGroup.Groups.Add(newGroup);
-                    groupStack.Push(currentGroup);
-                    currentGroup = newGroup;
-                    break;
+                _position++;
+                var next = readOperand();
+                if (next is not null)
+                    operands.Add(next);
+            }
 
-                case ")":
-                    if (groupStack.Count > 0)
-                    {
-                        currentGroup = groupStack.Pop();
-                    }
-                    break;
+            if (operands.Count == 0)
+                return null;
+            if (operands.Count == 1)
+                return operands[0];
 
-                case "&&":
-                    currentGroup.LogicalOperator = LogicalOperator.And;
-                    break;
+            var group = new FilterGroup { LogicalOperator = logicalOperator };
+            foreach (var operand in operands)
+                operand.AddTo(group);
+            return new Node(null, group);
+        }
 
-                case "||":
-                    currentGroup.LogicalOperator = LogicalOperator.Or;
-                    break;
+        private Node? ReadUnary()
+        {
+            var token = Peek;
+            if (token is null)
+                return null;
 
-                default:
-                    if (!string.IsNullOrWhiteSpace(token))
-                    {
-                        try
-                        {
-                            var condition = ParseCondition(token);
-                            currentGroup.Conditions.Add(condition);
-                        }
-                        catch
-                        {
-                            // If parsing as condition fails, ignore the token
-                        }
-                    }
-                    break;
+            if (token is "!" or "(")
+                EnterNesting();
+
+            try
+            {
+                return ReadNested(token);
+            }
+            finally
+            {
+                if (token is "!" or "(")
+                    _depth--;
             }
         }
 
-        return rootGroup;
+        // RULE FLT-2
+        private void EnterNesting()
+        {
+            if (++_depth > MaxDepth)
+                throw new ArgumentException($"A filter expression cannot nest deeper than {MaxDepth} levels.");
+        }
+
+        private Node? ReadNested(string token)
+        {
+            if (token == "!")
+            {
+                _position++;
+                var operand = ReadUnary();
+                if (operand is null)
+                    return null;
+
+                var negated = new FilterGroup { IsNegated = true };
+                operand.AddTo(negated);
+                return new Node(null, negated);
+            }
+
+            if (token == "(")
+            {
+                _position++;
+                var inner = ReadOr();
+                if (Peek == ")")
+                    _position++;
+                return inner;
+            }
+
+            if (token is ")" or "&&" or "||")
+                return null;
+
+            _position++;
+            try
+            {
+                return new Node(ParseCondition(token), null);
+            }
+            catch (ArgumentException)
+            {
+                // RULE FLT-4
+                return null;
+            }
+        }
+    }
+
+    private sealed record Node(FilterCondition? Condition, FilterGroup? Group)
+    {
+        public void AddTo(FilterGroup parent)
+        {
+            if (Condition is not null)
+                parent.Conditions.Add(Condition);
+            else
+                parent.Groups.Add(Group!);
+        }
     }
 }

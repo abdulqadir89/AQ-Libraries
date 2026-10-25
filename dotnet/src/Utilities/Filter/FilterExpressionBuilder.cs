@@ -376,10 +376,95 @@ public static class FilterExpressionBuilder
     {
         try
         {
-            var propertyExpression = GetPropertyExpression(parameter, condition.PropertyPath);
-            if (propertyExpression == null)
+            return BuildConditionOn(condition, parameter, condition.PropertyPath.Split('.'));
+        }
+        catch
+        {
+            // Return null for invalid expressions
+            return null;
+        }
+    }
+
+    private static Expression? BuildConditionOn(FilterCondition condition, Expression source, string[] path)
+    {
+        var expression = source;
+        for (var i = 0; i < path.Length; i++)
+        {
+            var propertyInfo = expression.Type.GetProperty(path[i],
+                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+            if (propertyInfo == null)
                 return null;
 
+            expression = Expression.Property(expression, propertyInfo);
+
+            if (TryGetElementType(expression.Type, out var elementType))
+                return BuildCollectionCondition(condition, expression, elementType, path[(i + 1)..]);
+        }
+
+        return BuildLeafExpression(condition, expression);
+    }
+
+    private static bool TryGetElementType(Type type, out Type elementType)
+    {
+        elementType = typeof(object);
+        if (type == typeof(string) || type == typeof(byte[]))
+            return false;
+
+        var enumerable = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+            ? type
+            : type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+        if (enumerable == null)
+            return false;
+
+        elementType = enumerable.GetGenericArguments()[0];
+        return true;
+    }
+
+    // RULE FLT-7
+    private static Expression? BuildCollectionCondition(FilterCondition condition, Expression collection, Type elementType, string[] rest)
+    {
+        var any = typeof(Enumerable).GetMethods()
+            .First(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2)
+            .MakeGenericMethod(elementType);
+
+        if (rest.Length == 0 && condition.Operator is FilterOperator.IsNull or FilterOperator.IsNotNull)
+        {
+            var hasAny = Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), new[] { elementType }, collection);
+            return condition.Operator == FilterOperator.IsNotNull ? hasAny : Expression.Not(hasAny);
+        }
+
+        var negative = condition.Operator is FilterOperator.NotEqual or FilterOperator.NotIn or FilterOperator.NotContains or FilterOperator.NotBetween;
+        var inner = new FilterCondition
+        {
+            PropertyPath = string.Join('.', rest),
+            Operator = condition.Operator switch
+            {
+                FilterOperator.NotEqual => FilterOperator.Equal,
+                FilterOperator.NotIn => FilterOperator.In,
+                FilterOperator.NotContains => FilterOperator.Contains,
+                FilterOperator.NotBetween => FilterOperator.Between,
+                var positive => positive
+            },
+            Value = condition.Value,
+            SecondValue = condition.SecondValue,
+            CaseSensitive = condition.CaseSensitive
+        };
+
+        var element = Expression.Parameter(elementType, "e");
+        // A list of plain values (ids, numbers, text) compares the elements themselves.
+        var predicate = rest.Length == 0 ? BuildLeafExpression(inner, element) : BuildConditionOn(inner, element, rest);
+        if (predicate == null)
+            return null;
+
+        var anyMatches = Expression.Call(any, collection, Expression.Lambda(predicate, element));
+        return negative ? Expression.Not(anyMatches) : anyMatches;
+    }
+
+    private static Expression? BuildLeafExpression(FilterCondition condition, Expression propertyExpression)
+    {
+        try
+        {
             return condition.Operator switch
             {
                 FilterOperator.Equal => BuildEqualExpression(propertyExpression, condition.Value),
@@ -406,25 +491,6 @@ public static class FilterExpressionBuilder
             // Return null for invalid expressions
             return null;
         }
-    }
-
-    private static Expression? GetPropertyExpression(Expression parameter, string propertyPath)
-    {
-        var properties = propertyPath.Split('.');
-        Expression expression = parameter;
-
-        foreach (var propertyName in properties)
-        {
-            var propertyInfo = expression.Type.GetProperty(propertyName,
-                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-
-            if (propertyInfo == null)
-                return null;
-
-            expression = Expression.Property(expression, propertyInfo);
-        }
-
-        return expression;
     }
 
     private static Expression? BuildEqualExpression(Expression propertyExpression, object? value)
@@ -590,14 +656,25 @@ public static class FilterExpressionBuilder
         return Expression.Call(stringExpression, endsWithMethod!, valueExpression);
     }
 
+    // A value that can never be null: "is null" matches nothing and "is not null" matches everything.
+    private static bool CannotBeNull(Expression propertyExpression) =>
+        propertyExpression.Type.IsValueType && Nullable.GetUnderlyingType(propertyExpression.Type) == null;
+
+    // RULE FLT-9
     private static Expression BuildIsNullExpression(Expression propertyExpression)
     {
+        if (CannotBeNull(propertyExpression))
+            return Expression.Constant(false);
+
         var nullConstant = Expression.Constant(null, propertyExpression.Type);
         return Expression.Equal(propertyExpression, nullConstant);
     }
 
     private static Expression BuildIsNotNullExpression(Expression propertyExpression)
     {
+        if (CannotBeNull(propertyExpression))
+            return Expression.Constant(true);
+
         var nullConstant = Expression.Constant(null, propertyExpression.Type);
         return Expression.NotEqual(propertyExpression, nullConstant);
     }

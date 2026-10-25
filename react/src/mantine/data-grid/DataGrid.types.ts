@@ -20,6 +20,12 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   defaultHidden?: boolean;
   sortable?: boolean;
   filterable?: boolean;
+  // Property the filter conditions of this column use, when it differs from `key` (e.g. 'Tags.Id' for a list column).
+  filterPath?: string;
+  // Property the sort uses, when it differs from `dataIndex` (e.g. the start of a date-range object).
+  sortPath?: string;
+  // The column holds several values per row (a list): its filter offers any / all / none of the chosen values.
+  multiValued?: boolean;
   render?: (value: unknown, record: T, index: number) => ReactNode;
   align?: 'left' | 'center' | 'right';
   // For enum columns - provide the enum options
@@ -40,6 +46,15 @@ export interface LookupFilterConfig {
   // Soft cap on selected values to keep the filter expression within safe URL length (default 15)
   maxValues?: number;
 }
+
+export interface FilterBuilderHostProps {
+  opened: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}
+
+export type FilterBuilderHost = (props: FilterBuilderHostProps) => ReactNode;
 
 export interface ActionButton<T = Record<string, unknown>> {
   key: string;
@@ -108,12 +123,17 @@ export interface FormConfig {
 export interface DataGridInitialState {
   searchText?: string;
   sortExpression?: string;
+  // The whole filter as one expression (RCT-6). Takes precedence over columnFilters.
+  filterExpression?: string;
+  // TODO-003: legacy per-column filters; remove when every consuming app seeds filterExpression.
   columnFilters?: Record<string, string>;
 }
 
 export interface DataGridStateSnapshot {
   searchText: string;
   sortExpression: string;
+  filterExpression: string;
+  // TODO-003: legacy per-column filters; remove when every consuming app reads filterExpression.
   columnFilters: Record<string, string>;
   page?: number;
   pageSize?: number;
@@ -161,7 +181,14 @@ export interface DataGridProps<T = Record<string, unknown>> {
   
   // Filter
   filterConfig?: FilterConfig;
+  // TODO-003: flat top-level conditions only; remove when every consuming app uses onFilterExpressionChange.
   onFilterChange?: (conditions: FilterCondition[], operator?: LogicalOperator) => void;
+  // Fires with the whole filter as one expression whenever it changes (RCT-6).
+  onFilterExpressionChange?: (filterExpression: string) => void;
+  // Shows the Filter and Sort buttons, the active-filter chips and the filter builder (needs onFilterExpressionChange).
+  advancedFilter?: boolean;
+  // Renders the builder in the consuming app's own modal or drawer; defaults to a Mantine modal.
+  filterBuilderHost?: FilterBuilderHost;
   
   // Sorting
   sortable?: boolean;
@@ -313,10 +340,12 @@ export interface FilterCondition {
 
 export type FilterOperator = 
   | 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte'
-  | 'contains' | 'startswith' | 'endswith'
+  | 'contains' | 'notcontains' | 'startswith' | 'endswith'
   | 'isnull' | 'isnotnull'
   | 'in' | 'notin'
-  | 'between' | 'notbetween';
+  | 'between' | 'notbetween'
+  // Builder-only: expands to one 'eq' per value inside an 'and' group.
+  | 'hasall';
 
 export type LogicalOperator = 'and' | 'or';
 
@@ -325,6 +354,8 @@ export interface FilterGroup {
   conditions: FilterCondition[];
   groups?: FilterGroup[];
   operator: LogicalOperator;
+  // The whole group is inverted: !(...)
+  negated?: boolean;
 }
 
 // Sort condition

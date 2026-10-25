@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import styles from './DataGrid.module.css';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
   Table,
   ScrollArea,
@@ -15,17 +15,39 @@ import {
   Checkbox,
   Flex,
   Box,
+  Modal,
+  Badge,
+  Indicator,
   Paper,
   LoadingOverlay,
   UnstyledButton,
 } from '@mantine/core';
-import { useDebouncedValue, useResizeObserver } from '@mantine/hooks';
+import { useDebouncedValue, useMediaQuery, useResizeObserver } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { ColumnFilter } from './ColumnFilter';
 import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
+import { FilterBuilderPanel } from './FilterBuilder';
+import { FilterChips } from './FilterChips';
+import {
+  applySlice,
+  columnPath,
+  columnSortPath,
+  conditionToLegacy,
+  countConditions,
+  emptyGroup,
+  expressionFromLegacy,
+  legacyColumnFilters,
+  legacyConditions,
+  legacyToCondition,
+  parseFilter,
+  pruneFilter,
+  serializeFilter,
+  sliceAsGroup,
+  sliceForColumn,
+} from './filterTree';
 import {
   IconSearch,
   IconRefresh,
@@ -41,6 +63,8 @@ import {
   IconStack2,
   IconX,
   IconColumns,
+  IconFilter,
+  IconArrowsSort,
 } from '@tabler/icons-react';
 import type {
   BulkAction,
@@ -49,13 +73,10 @@ import type {
   DataGridColumn,
   ActionButton,
   SortCondition,
-  FilterCondition,
+  FilterGroup,
+  FilterBuilderHost,
   SpecialModeConfig,
 } from './DataGrid.types';
-
-interface ExtendedDataGridState extends DataGridState {
-  columnFilters: Record<string, string>;
-}
 
 export function DataGrid<T extends Record<string, unknown>>({
   gridId,
@@ -102,6 +123,9 @@ export function DataGrid<T extends Record<string, unknown>>({
   onSelectionChange,
   rowKey = 'id',
   onFilterChange,
+  onFilterExpressionChange,
+  advancedFilter = false,
+  filterBuilderHost,
   bulkActions,
   actionButtonStyle = 'icon',
   emptyStateText,
@@ -113,12 +137,20 @@ export function DataGrid<T extends Record<string, unknown>>({
   const resolvedDeleteConfirmTitle = deleteConfirmTitle ?? m.deleteConfirmTitle;
   const resolvedDeleteConfirmContent = deleteConfirmContent ?? m.deleteConfirmContent;
   const resolvedEmptyStateText = emptyStateText ?? m.noData;
-  const [state, setState] = useState<ExtendedDataGridState>(() => ({
+  const [state, setState] = useState<DataGridState>(() => ({
     searchText: initialState?.searchText ?? '',
     selectedRows: selectedRows || [],
     showFilter: false,
-    columnFilters: initialState?.columnFilters ?? {},
   }));
+
+  // The whole filter lives here as one tree (RCT-6); the column popovers and the builder are views over it.
+  // RULE RCT-5
+  // ADR-002: one expression as the grid state, popovers and builder as views over it
+  const [filter, setFilter] = useState<FilterGroup>(() =>
+    parseFilter(initialState?.filterExpression ?? expressionFromLegacy(initialState?.columnFilters ?? {}))
+  );
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderTab, setBuilderTab] = useState<'filter' | 'sort'>('filter');
 
   // Column filter refs for reset functionality
   const columnFilterRefs = useRef<Record<string, ColumnFilterRef | null>>({});
@@ -548,15 +580,6 @@ export function DataGrid<T extends Record<string, unknown>>({
     onSearchRef.current?.(debouncedSearchText);
   }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Column filter widgets own their form state, so restored filters are pushed into them once they mount.
-  useEffect(() => {
-    // RULE RCT-5
-    Object.entries(initialState?.columnFilters ?? {}).forEach(([columnKey, expression]) => {
-      columnFilterRefs.current[columnKey]?.setFilterExpression(expression);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const onStateChangeRef = useRef(onStateChange);
   useEffect(() => { onStateChangeRef.current = onStateChange; });
 
@@ -565,36 +588,45 @@ export function DataGrid<T extends Record<string, unknown>>({
     .map(sort => `${sort.property},${sort.direction}`)
     .join(';');
 
+  const filterExpression = serializeFilter(filter);
+
   useEffect(() => {
     onStateChangeRef.current?.({
       searchText: debouncedSearchText,
       sortExpression: currentSortExpression,
-      columnFilters: state.columnFilters,
+      filterExpression,
+      columnFilters: legacyColumnFilters(filter, columns as DataGridColumn[]),
       page: pagination?.current,
       pageSize: pagination?.pageSize,
     });
-  }, [debouncedSearchText, currentSortExpression, state.columnFilters, pagination?.current, pagination?.pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearchText, currentSortExpression, filterExpression, pagination?.current, pagination?.pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(() => {
     onRefresh?.();
   }, [onRefresh]);
 
+  const onFilterChangeRef = useRef(onFilterChange);
+  const onFilterExpressionChangeRef = useRef(onFilterExpressionChange);
+  useEffect(() => {
+    onFilterChangeRef.current = onFilterChange;
+    onFilterExpressionChangeRef.current = onFilterExpressionChange;
+  });
+
+  const commitFilter = useCallback((next: FilterGroup) => {
+    setFilter(next);
+    onFilterExpressionChangeRef.current?.(serializeFilter(next));
+    // TODO-003: the flat condition list is all a legacy consumer can read; remove with onFilterChange.
+    onFilterChangeRef.current?.(legacyConditions(next), 'and');
+  }, []);
+
   // Handle reset filters
   const handleResetFilters = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      columnFilters: {} 
-    }));
-    onFilterChange?.([], 'and');
-    
-    // Reset all column filters using refs
-    Object.values(columnFilterRefs.current).forEach(ref => {
-      ref?.reset();
-    });
-  }, [onFilterChange]);
+    commitFilter(emptyGroup());
+  }, [commitFilter]);
 
   // Check if there are active filters
-  const hasActiveFilters = Object.keys(state.columnFilters).length > 0;
+  const filterCount = countConditions(filter);
+  const hasActiveFilters = filterCount > 0;
 
   // Get row key
   const getRowKey = useCallback((record: T): string => {
@@ -653,56 +685,44 @@ export function DataGrid<T extends Record<string, unknown>>({
     onSortChange(sortExpression);
   }, [sortConditions, sortable, onSortChange]);
 
-  // Handle column filter changes
-  const buildFilterConditions = (newFilters: Record<string, string>): FilterCondition[] =>
-    Object.values(newFilters)
-      .map(expression => {
-        const parts = expression.split(',');
-        if (parts.length >= 2) {
-          const op = parts[1] as FilterCondition['operator'];
-          let value: string;
-          let secondValue: string | undefined;
-          if (op === 'between' || op === 'notbetween') {
-            value = parts[2]?.replace(/%2C/g, ',') || '';
-            secondValue = parts[3]?.replace(/%2C/g, ',');
-          } else {
-            value = parts.slice(2).join(',').replace(/%2C/g, ',');
-          }
-          return { property: parts[0], operator: op, value, secondValue };
-        }
-        return null;
-      })
-      .filter(Boolean) as FilterCondition[];
+  // The popover reports one column's filter; the grid swaps that slice of the whole filter.
+  const handleApplyFilter = (column: DataGridColumn<T>, expression: string) => {
+    let replacement: FilterGroup | null;
+    if (column.multiValued) {
+      replacement = parseFilter(expression);
+    } else {
+      const condition = legacyToCondition(expression);
+      replacement = condition ? { conditions: [condition], groups: [], operator: 'and' } : null;
+    }
+    commitFilter(applySlice(filter, columnPath(column), replacement));
+  };
 
-  const handleApplyFilter = useCallback((filterExpression: string) => {
-    // Extract column key from filter expression
-    const columnKey = filterExpression.split(',')[0];
+  const handleClearFilter = (column: DataGridColumn<T>) => {
+    commitFilter(applySlice(filter, columnPath(column), null));
+  };
 
-    let newFilters: Record<string, string> = {};
-    setState(prev => {
-      newFilters = { ...prev.columnFilters, [columnKey]: filterExpression };
-      return {
-        ...prev,
-        columnFilters: newFilters,
-      };
-    });
+  const openBuilder = (tab: 'filter' | 'sort') => {
+    setBuilderTab(tab);
+    setBuilderOpen(true);
+  };
 
-    onFilterChange?.(buildFilterConditions(newFilters), 'and');
-  }, [onFilterChange]);
+  const canSortInBuilder = sortable && !!onSortChange;
 
-  const handleClearFilter = useCallback((columnKey: string) => {
-    let newFilters: Record<string, string> = {};
-    setState(prev => {
-      newFilters = { ...prev.columnFilters };
-      delete newFilters[columnKey];
-      return {
-        ...prev,
-        columnFilters: newFilters,
-      };
-    });
+  const handleBuilderApply = (nextFilter: FilterGroup, nextSort: SortCondition[]) => {
+    // RULE RCT-8
+    // Written out and read back, so builder-only shorthands (has all of) become the plain conditions every view reads.
+    commitFilter(parseFilter(serializeFilter(pruneFilter(nextFilter))));
+    if (canSortInBuilder) {
+      const ordered = nextSort.map((sort, priority) => ({ ...sort, priority }));
+      setSortConditions(ordered);
+      onSortChange?.(ordered.map(sort => `${sort.property},${sort.direction}`).join(';'));
+    }
+    setBuilderOpen(false);
+  };
 
-    onFilterChange?.(buildFilterConditions(newFilters), 'and');
-  }, [onFilterChange]);
+  const renderBuilderHost: FilterBuilderHost = filterBuilderHost ?? (({ opened, onClose, title, children }) => (
+    <Modal opened={opened} onClose={onClose} title={title} size="xl">{children}</Modal>
+  ));
 
   const handleFilterOpen = useCallback((columnKey: string) => {
     // Close all other filters when this one opens
@@ -915,6 +935,30 @@ export function DataGrid<T extends Record<string, unknown>>({
   // the scrollbar directly from that comparison instead of trusting the observer.
   const tableOverflows = scrollAreaRect.width > 0 && tableWidth > scrollAreaRect.width;
 
+  // Narrow screens keep the filter, sort and reset actions as icons (label in the tooltip) so the toolbar stays on few rows.
+  // RULE RCT-9
+  const compactToolbar = useMediaQuery('(max-width: 75em)');
+
+  const renderToolbarAction = (label: string, icon: ReactNode, onClick: () => void, color?: string, count = 0) => (
+    compactToolbar ? (
+      <Indicator label={count} disabled={count === 0} size={16} offset={4}>
+        <ActionIcon variant="light" color={color} size="lg" title={label} aria-label={label} onClick={onClick}>
+          {icon}
+        </ActionIcon>
+      </Indicator>
+    ) : (
+      <Button
+        variant="light"
+        color={color}
+        leftSection={icon}
+        rightSection={count > 0 ? <Badge size="xs" circle>{count}</Badge> : null}
+        onClick={onClick}
+      >
+        {label}
+      </Button>
+    )
+  );
+
   // Render create button based on mode
   const renderCreateButton = () => {
     const createConfig = getButtonConfig('create');
@@ -1001,16 +1045,11 @@ export function DataGrid<T extends Record<string, unknown>>({
               </Button>
             )}
 
-            {hasActiveFilters && (
-              <Button
-                variant="light"
-                color="orange"
-                leftSection={<IconFilterOff size={16} />}
-                onClick={handleResetFilters}
-              >
-                {m.resetFilters}
-              </Button>
-            )}
+            {advancedFilter && renderToolbarAction(aqMessages.filterBuilder.filter, <IconFilter size={16} />, () => openBuilder('filter'), undefined, filterCount)}
+
+            {advancedFilter && canSortInBuilder && renderToolbarAction(aqMessages.filterBuilder.sort, <IconArrowsSort size={16} />, () => openBuilder('sort'), undefined, sortConditions.length)}
+
+            {hasActiveFilters && renderToolbarAction(m.resetFilters, <IconFilterOff size={16} />, handleResetFilters, 'orange')}
 
             {columns.length > 1 && (
               <Menu shadow="md" closeOnItemClick={false} withinPortal>
@@ -1048,7 +1087,30 @@ export function DataGrid<T extends Record<string, unknown>>({
             {toolbarRightSection}
           </Group>
         </Flex>
+
+        {advancedFilter && hasActiveFilters && (
+          <Box mt="sm">
+            <FilterChips columns={columns as DataGridColumn[]} filter={filter} onChange={commitFilter} onOpen={() => openBuilder('filter')} />
+          </Box>
+        )}
       </Paper>
+
+      {advancedFilter && renderBuilderHost({
+        opened: builderOpen,
+        onClose: () => setBuilderOpen(false),
+        title: aqMessages.filterBuilder.filterAndSort,
+        children: builderOpen ? (
+          <FilterBuilderPanel
+            columns={columns as DataGridColumn[]}
+            filter={filter}
+            sort={sortConditions}
+            sortable={canSortInBuilder}
+            initialTab={builderTab}
+            onApply={handleBuilderApply}
+            onClose={() => setBuilderOpen(false)}
+          />
+        ) : null,
+      })}
 
       {/* Table */}
       <Paper withBorder ref={scrollAreaRef}>
@@ -1083,7 +1145,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                       )}
                       {column.sortable && sortable ? (
                         <UnstyledButton
-                          onClick={() => handleSort(String(column.dataIndex))}
+                          onClick={() => handleSort(columnSortPath(column as DataGridColumn))}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1092,21 +1154,32 @@ export function DataGrid<T extends Record<string, unknown>>({
                           }}
                         >
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>
-                          {getSortIcon(String(column.dataIndex))}
+                          {getSortIcon(columnSortPath(column as DataGridColumn))}
                         </UnstyledButton>
                       ) : (
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>
                       )}
                       
-                      {(column.filterable !== false) && (
-                        <ColumnFilter
-                          ref={(ref) => { columnFilterRefs.current[column.key] = ref; }}
-                          column={column as DataGridColumn}
-                          onApplyFilter={handleApplyFilter}
-                          onClearFilter={handleClearFilter}
-                          onFilterOpen={handleFilterOpen}
-                        />
-                      )}
+                      {(column.filterable !== false) && (() => {
+                        const slice = sliceForColumn(filter, columnPath(column), column.multiValued === true);
+                        const columnExpression = slice.advanced
+                          ? ''
+                          : column.multiValued
+                            ? serializeFilter(sliceAsGroup(slice))
+                            : slice.conditions[0] ? conditionToLegacy(slice.conditions[0]) : '';
+                        return (
+                          <ColumnFilter
+                            ref={(ref) => { columnFilterRefs.current[column.key] = ref; }}
+                            column={column as DataGridColumn}
+                            expression={columnExpression}
+                            advanced={slice.advanced}
+                            onOpenBuilder={advancedFilter ? () => openBuilder('filter') : undefined}
+                            onApplyFilter={expression => handleApplyFilter(column, expression)}
+                            onClearFilter={() => handleClearFilter(column)}
+                            onFilterOpen={handleFilterOpen}
+                          />
+                        );
+                      })()}
                     </Group>
                     
                     {/* Resize Handle */}

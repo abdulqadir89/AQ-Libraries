@@ -297,6 +297,26 @@ Use logical operators (`&&`, `||`) and parentheses for grouping:
 (Name,contains,John && Age,gt,25) || (Department,eq,IT && IsActive,eq,true)
 ```
 
+`&&` binds tighter than `||`, so `a || b && c` means `a || (b && c)`. A leading `!` negates a bracketed group: `Rank,gt,1 && !(Status,eq,Draft || Status,eq,Archived)`.
+
+### Quoted Values
+A value right after a comma can be quoted when it contains brackets, `&&`, `||` or commas:
+
+```
+Name,eq,"R&D (old)"
+```
+
+### List Properties
+A path through a list matches when some element matches; the negative operators match when no element does:
+
+```
+Labels.Id,eq,{id}                        has the label
+Labels.Id,eq,{a} && Labels.Id,eq,{b}     has both labels
+(Labels.Id,eq,{a} || Labels.Id,eq,{b})   has either label
+Labels.Id,ne,{a} && Labels.Id,ne,{b}     has neither label
+Labels,isnull                            has no labels
+```
+
 ## Best Practices
 
 1. **Use Indexed Properties**: Ensure frequently filtered properties have database indexes
