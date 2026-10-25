@@ -280,6 +280,10 @@ Usage and worked examples: [State machine README](../dotnet/src/StateMachine/Ent
 - **SMC-8** All requirements are met when each is fulfilled or optional.
 - **SMC-9** Requirements are matched to handlers and context by the requirement's type name, never by a string constant.
 - **SMC-10** Raising the transitioned event adds a domain event carrying the instance, the definition id and version and the target state, so it is saved with the state change.
+- **SMC-11** A transition's requirements are stored by type name with all their properties and come back as the same concrete types, so handlers written for a type match what was saved.
+- **SMC-12** A stored requirement whose type is not registered comes back as an unresolved requirement that keeps its name and data, is written back unchanged and is never fulfilled by a handler. Stored JSON that is not an object throws instead of reading as no requirements.
+- **SMC-13** A transition holds at most one requirement of each type; storing two of one type throws.
+- **SMC-14** A transition with an empty list of requirements has none (stored as null), so updating with an empty list clears them.
 
 ## Data seeding <!-- projects: AQ.DataSeeding -->
 

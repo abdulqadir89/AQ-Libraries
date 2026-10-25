@@ -54,7 +54,7 @@ public class StateMachineTransition : Entity
         ToStateId = toState?.Id;
         TriggerId = (trigger ?? throw new ArgumentNullException(nameof(trigger))).Id;
         Description = description?.Trim();
-        Requirements = requirements;
+        Requirements = Normalize(requirements);
         if (publishEventTypes is not null)
             PublishEventTypes = publishEventTypes.ToList();
     }
@@ -94,7 +94,7 @@ public class StateMachineTransition : Entity
         IEnumerable<string>? publishEventTypes = null)
     {
         Description = description?.Trim();
-        Requirements = requirements;
+        Requirements = Normalize(requirements);
         if (publishEventTypes is not null)
             PublishEventTypes = publishEventTypes.ToList();
     }
@@ -199,86 +199,24 @@ public class StateMachineTransition : Entity
             ? $"{FromState?.Name ?? "(entry)"} -> {ToState!.Name} ({Trigger!.Name})"
             : $"Trigger: {Trigger!.Name}";
 
-    #region JSON Serialization for Persistence
-
     /// <summary>
     /// Serializes requirements to JSON for database storage.
     /// </summary>
     public static string? SerializeRequirements(IEnumerable<IStateMachineTransitionRequirement>? requirements)
-    {
-        if (requirements == null) return null;
-
-        var requirementDict = new Dictionary<string, object>();
-
-        foreach (var requirement in requirements)
-        {
-            var typeName = requirement.GetType().Name;
-            var data = JsonSerializer.SerializeToElement(requirement);
-            requirementDict[typeName] = data;
-        }
-
-        return JsonSerializer.Serialize(requirementDict);
-    }
+        => StateMachineRequirementSerializer.Serialize(requirements);
 
     /// <summary>
     /// Deserializes requirements from JSON database storage.
     /// </summary>
     public static IEnumerable<IStateMachineTransitionRequirement>? DeserializeRequirements(string? json)
+        => StateMachineRequirementSerializer.Deserialize(json);
+
+    // RULE SMC-14
+    private static List<IStateMachineTransitionRequirement>? Normalize(IEnumerable<IStateMachineTransitionRequirement>? requirements)
     {
-        if (string.IsNullOrEmpty(json)) return null;
-
-        try
-        {
-            var requirementDict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-            if (requirementDict == null) return null;
-
-            var requirements = new List<IStateMachineTransitionRequirement>();
-
-            foreach (var kvp in requirementDict)
-            {
-                var requirementType = kvp.Key;
-                var data = kvp.Value;
-
-                // Create a generic requirement wrapper for JSON storage
-                var requirement = new JsonStoredRequirement
-                {
-                    RequirementTypeName = requirementType,
-                    Data = JsonSerializer.Deserialize<Dictionary<string, object>>(data.ToString() ?? "{}") ?? new Dictionary<string, object>()
-                };
-
-                requirements.Add(requirement);
-            }
-
-            return requirements;
-        }
-        catch
-        {
-            // Return empty collection if deserialization fails
-            return [];
-        }
+        var list = requirements?.ToList();
+        return list is { Count: > 0 } ? list : null;
     }
-
-    #endregion
-
-    #region Internal Storage Classes
-
-    /// <summary>
-    /// Internal class for storing requirements as JSON in the database.
-    /// This allows storage of any requirement type without requiring specific configurations.
-    /// The requirement type is determined by the actual implementation class type.
-    /// </summary>
-    internal class JsonStoredRequirement : IStateMachineTransitionRequirement
-    {
-        public string RequirementTypeName { get; set; } = default!;
-        public Dictionary<string, object> Data { get; set; } = [];
-
-        /// <summary>
-        /// Gets the requirement type name based on the stored type name.
-        /// </summary>
-        public string GetRequirementTypeName() => RequirementTypeName;
-    }
-
-    #endregion
 }
 
 public class AuditableStateMachineTransition<TPrincipal> : StateMachineTransition, IAuditable<TPrincipal>
