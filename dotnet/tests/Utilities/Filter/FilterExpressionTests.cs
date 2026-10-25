@@ -113,4 +113,18 @@ public class FilterExpressionTests
     {
         Names("Labels.Nope,eq,1").Should().HaveCount(5);
     }
+
+    [Fact]
+    public void ParseComplexExpression_NestingBeyondTheLimit_ThrowsInsteadOfOverflowingTheStack()
+    {
+        var atLimit = string.Concat(Enumerable.Repeat("(", 32)) + "Rank,eq,1" + string.Concat(Enumerable.Repeat(")", 32));
+        var tooDeep = string.Concat(Enumerable.Repeat("(", 33)) + "Rank,eq,1" + string.Concat(Enumerable.Repeat(")", 33));
+        var manyNots = string.Concat(Enumerable.Repeat("!", 100000)) + "(Rank,eq,1)";
+        var manyBrackets = string.Concat(Enumerable.Repeat("(", 100000)) + "Rank,eq,1";
+
+        Names(atLimit).Should().Equal("Both");
+        FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(tooDeep)).Should().Throw<ArgumentException>();
+        FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(manyNots)).Should().Throw<ArgumentException>();
+        FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(manyBrackets)).Should().Throw<ArgumentException>();
+    }
 }

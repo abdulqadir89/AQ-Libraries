@@ -125,8 +125,12 @@ function addTo(group: FilterGroup, node: Node) {
   else (group.groups ??= []).push(node.group);
 }
 
+// Each bracket and ! recurses once, so the depth is capped well below what the stack can take.
+const MAX_DEPTH = 32;
+
 class Reader {
   private position = 0;
+  private depth = 0;
 
   constructor(private readonly tokens: Token[]) {}
 
@@ -172,6 +176,19 @@ class Reader {
     const token = this.peek();
     if (!token) return null;
 
+    if (token.kind === 'not' || token.kind === 'open') {
+      if (++this.depth > MAX_DEPTH) throw new Error(`A filter expression cannot nest deeper than ${MAX_DEPTH} levels.`);
+      try {
+        return this.readNested(token);
+      } finally {
+        this.depth--;
+      }
+    }
+
+    return this.readNested(token);
+  }
+
+  private readNested(token: Token): Node | null {
     if (token.kind === 'not') {
       this.position++;
       const operand = this.readUnary();
@@ -201,6 +218,11 @@ export class FilterExpressionParser {
   // is not a valid condition is dropped.
   // RULE RCT-7
   static parse(expression: string): FilterGroup {
-    return new Reader(tokenize(expression ?? '')).readRoot();
+    try {
+      return new Reader(tokenize(expression ?? '')).readRoot();
+    } catch {
+      // Too deeply nested: the server refuses it too, so show no filter rather than crash the page.
+      return { conditions: [], groups: [], operator: 'and' };
+    }
   }
 }

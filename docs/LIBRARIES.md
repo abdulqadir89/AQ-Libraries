@@ -180,7 +180,7 @@ Usage: [Results README](../dotnet/src/Utilities/Results/README.md).
 Usage: [Filter README](../dotnet/src/Utilities/Filter/README.md).
 
 - **FLT-1** A filter condition is `Property.Path,operator,value`. Operator names and symbols are case-insensitive; quoted values may contain commas.
-- **FLT-2** An unknown operator, a missing value, or a between filter without two values throws an argument error when the expression is parsed. Null checks need no value; in and not-in take every remaining value.
+- **FLT-2** An unknown operator, a missing value, a between filter without two values, or brackets and `!` nested more than 32 levels deep throw an argument error when the expression is parsed. Null checks need no value; in and not-in take every remaining value.
 - **FLT-3** A complex expression combines conditions with `&&`, `||`, parentheses and a leading `!` that negates the group or condition after it. `&&` binds tighter than `||`.
 - **FLT-4** A condition that cannot be built, because the property does not exist or the value cannot be converted, is dropped silently. If every condition is dropped the query is returned unfiltered, so callers that need strictness validate property names first.
 - **FLT-5** An empty or missing filter string returns the query unchanged.

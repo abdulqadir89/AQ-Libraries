@@ -310,7 +310,11 @@ public static class FilterExpressionParser
     // RULE FLT-3
     private sealed class ExpressionReader(List<string> tokens)
     {
+        // Each bracket and ! recurses once, so the depth is capped well below what the stack can take.
+        private const int MaxDepth = 32;
+
         private int _position;
+        private int _depth;
 
         private string? Peek => _position < tokens.Count ? tokens[_position] : null;
 
@@ -363,6 +367,29 @@ public static class FilterExpressionParser
             if (token is null)
                 return null;
 
+            if (token is "!" or "(")
+                EnterNesting();
+
+            try
+            {
+                return ReadNested(token);
+            }
+            finally
+            {
+                if (token is "!" or "(")
+                    _depth--;
+            }
+        }
+
+        // RULE FLT-2
+        private void EnterNesting()
+        {
+            if (++_depth > MaxDepth)
+                throw new ArgumentException($"A filter expression cannot nest deeper than {MaxDepth} levels.");
+        }
+
+        private Node? ReadNested(string token)
+        {
             if (token == "!")
             {
                 _position++;
