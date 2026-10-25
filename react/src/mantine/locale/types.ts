@@ -38,6 +38,7 @@ export interface DataGridMessages {
 export interface ColumnFilterMessages {
   operators: {
     contains: string;
+    notcontains: string;
     eq: string;
     ne: string;
     startswith: string;
@@ -83,6 +84,53 @@ export interface ColumnFilterMessages {
   enterText: string;
   fromDateAfterToDate: string;
   fromValueGreaterThanToValue: string;
+  multiValue: {
+    any: string;
+    all: string;
+    none: string;
+    advanced: string;
+    openBuilder: string;
+  };
+}
+
+export interface FilterBuilderMessages {
+  filter: string;
+  sort: string;
+  filterAndSort: string;
+  filters: string;
+  noFilters: string;
+  matchAll: string;
+  matchAny: string;
+  negate: string;
+  addCondition: string;
+  addGroup: string;
+  removeCondition: string;
+  removeGroup: string;
+  group: string;
+  field: string;
+  operator: string;
+  value: string;
+  secondValue: string;
+  apply: string;
+  cancel: string;
+  clearAll: string;
+  addSort: string;
+  noSort: string;
+  ascending: string;
+  descending: string;
+  removeSort: string;
+  moveUp: string;
+  moveDown: string;
+  hasAnyOf: string;
+  hasAllOf: string;
+  hasNoneOf: string;
+  has: string;
+  doesNotHave: string;
+  selected: (count: number) => string;
+  removeChip: string;
+  not: string;
+  and: string;
+  or: string;
 }
 
 export interface CardDataGridMessages {
@@ -269,6 +317,7 @@ export interface AQMessages {
   dataGrid: DataGridMessages;
   columnFilter: ColumnFilterMessages;
   cardDataGrid: CardDataGridMessages;
+  filterBuilder: FilterBuilderMessages;
   richTextEditor: RichTextEditorMessages;
   dateTimeRange: DateTimeRangeMessages;
   address: AddressMessages;

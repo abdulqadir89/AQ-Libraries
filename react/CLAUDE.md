@@ -19,13 +19,14 @@ react/src/
     index.ts
     address/                      # AddressInput component
     autocomplete/                 # AutoCompleteCombo
-    data-grid/                    # DataGrid, CardDataGrid, ColumnFilter, DataGridSwitch, DataGridViewSwitcher
+    data-grid/                    # DataGrid, CardDataGrid, ColumnFilter, FilterBuilder, FilterChips, FilterValueInput, filterTree, DataGridSwitch, DataGridViewSwitcher
     datetime/                     # DateTimeOffsetDisplay, DateTimeOffsetRangeInput, DateRangeDisplay, DateTimeOffsetRangeDisplay
     theme/                        # ThemeProvider, ThemeSwitcher, blue/zinc themes + CSS variable resolvers
     locale/                       # AQLocaleProvider, useAQLocale, AQMessages, defaultMessages (English)
   utils/
     index.ts
     FilterExpressionBuilder.ts    # Builds FilterExpression strings for API queries
+    FilterExpressionParser.ts     # Parses FilterExpression strings back into a group tree (same grammar as the server)
     SortExpressionBuilder.ts      # Builds SortExpression strings for API queries
     DateTimeOffsetUtils.ts        # DateTimeOffset parsing/formatting helpers (locale-aware; see Localization below)
 ```

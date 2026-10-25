@@ -1,4 +1,4 @@
-import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useImperativeHandle, useEffect, forwardRef } from 'react';
 import {
   Popover,
   ActionIcon,
@@ -19,12 +19,19 @@ import { IconFilter, IconX } from '@tabler/icons-react';
 import type { DataGridColumn } from './DataGrid.types';
 import { useAQLocale } from '../locale';
 import type { ColumnFilterMessages } from '../locale';
+import { FilterExpressionBuilder } from '../../utils/FilterExpressionBuilder';
+import { FilterExpressionParser } from '../../utils/FilterExpressionParser';
 
 export interface ColumnFilterProps<T = Record<string, unknown>> {
   column: DataGridColumn<T>;
   onApplyFilter: (filterExpression: string) => void;
   onClearFilter: (columnKey: string) => void;
   onFilterOpen?: (columnKey: string) => void;
+  // The column's current filter as the grid holds it; the popover shows it whenever it changes (RCT-6).
+  expression?: string;
+  // The column's conditions are part of a larger filter the popover cannot edit.
+  advanced?: boolean;
+  onOpenBuilder?: () => void;
 }
 
 export interface ColumnFilterRef {
@@ -143,11 +150,45 @@ function parseFilterExpression(expression: string): { operator: string; value: s
   return { operator, value };
 }
 
+type MultiOperator = 'in' | 'hasall' | 'notin';
+
+// A list column filters with single-value conditions: any = eq joined by ||, all = eq joined by &&, none = ne joined by &&.
+function buildMultiValueExpression(property: string, operator: MultiOperator, values: string[]): string {
+  const condition = (op: 'eq' | 'ne', value: string) => ({ property, operator: op, value });
+  const conditionOperator = operator === 'notin' ? 'ne' : 'eq';
+  if (values.length === 1) return FilterExpressionBuilder.serializeCondition(condition(conditionOperator, values[0]));
+
+  return FilterExpressionBuilder.buildComplexFilterExpression({
+    conditions: values.map(value => condition(conditionOperator, value)),
+    groups: [],
+    operator: operator === 'in' ? 'or' : 'and',
+  });
+}
+
+function readMultiValueExpression(expression: string): { operator: MultiOperator; values: string[] } | null {
+  const root = FilterExpressionParser.parse(expression);
+  const conditions = root.conditions;
+  if (conditions.length === 0 || (root.groups ?? []).length > 0 || root.negated) return null;
+
+  const values = conditions.flatMap(c => (Array.isArray(c.value) ? c.value : [c.value])).map(String);
+  if (conditions.length === 1) {
+    const only = conditions[0];
+    if (only.operator === 'notin' || only.operator === 'ne') return { operator: 'notin', values };
+    if (only.operator === 'in' || only.operator === 'eq') return { operator: 'in', values };
+    return null;
+  }
+  if (conditions.every(c => c.operator === 'eq')) return { operator: root.operator === 'or' ? 'in' : 'hasall', values };
+  if (conditions.every(c => c.operator === 'ne') && root.operator === 'and') return { operator: 'notin', values };
+  return null;
+}
+
 export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
-  ({ column, onApplyFilter, onClearFilter, onFilterOpen }, ref) => {
+  ({ column, onApplyFilter, onClearFilter, onFilterOpen, expression, advanced, onOpenBuilder }, ref) => {
     const { messages: aqMessages } = useAQLocale();
     const m = aqMessages.columnFilter;
     const operatorSets = buildOperatorSets(m.operators);
+    const property = column.filterPath ?? column.key;
+    const isMultiValue = column.type === 'lookup' && column.multiValued === true;
     const [opened, setOpened] = useState(false);
     const [hasActiveFilter, setHasActiveFilter] = useState(false);
     // Popover's onClose also fires for our own programmatic close (setOpened(false) in
@@ -192,6 +233,59 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       return String(val);
     };
 
+    function loadExpression(source: string) {
+      if (!source) {
+        setOperator(getDefaultOperator(column.type));
+        setValue('');
+        setSecondValue('');
+        setSelectedEnumValues([]);
+        setEnumSearch('');
+        setSelectedLookupValues([]);
+        setHasActiveFilter(false);
+        setRangeError('');
+        return;
+      }
+
+      if (isMultiValue) {
+        const multi = readMultiValueExpression(source);
+        if (multi) {
+          setOperator(multi.operator);
+          setSelectedLookupValues(multi.values);
+          setHasActiveFilter(true);
+        }
+        return;
+      }
+
+      const parsed = parseFilterExpression(source);
+      setOperator(parsed.operator || getDefaultOperator(column.type));
+      setValue(parsed.value || '');
+      setSecondValue(parsed.secondValue || '');
+
+      // Handle enum 'in' and 'notin' operators
+      if (column.type === 'enum' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
+        const enumValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
+        setSelectedEnumValues(enumValues);
+      } else {
+        setSelectedEnumValues([]);
+      }
+
+      // Handle lookup 'in' and 'notin' operators
+      if (column.type === 'lookup' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
+        const lookupValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
+        setSelectedLookupValues(lookupValues);
+      } else {
+        setSelectedLookupValues([]);
+      }
+
+      setHasActiveFilter(true);
+    }
+
+    // RULE RCT-6
+    useEffect(() => {
+      if (expression !== undefined) loadExpression(expression);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expression]);
+
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
       reset: () => {
@@ -204,42 +298,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setHasActiveFilter(false);
         setRangeError('');
       },
-      setFilterExpression: (expression: string) => {
-        if (!expression) {
-          setOperator(getDefaultOperator(column.type));
-          setValue('');
-          setSecondValue('');
-          setSelectedEnumValues([]);
-          setEnumSearch('');
-          setSelectedLookupValues([]);
-          setHasActiveFilter(false);
-          setRangeError('');
-          return;
-        }
-
-        const parsed = parseFilterExpression(expression);
-        setOperator(parsed.operator || getDefaultOperator(column.type));
-        setValue(parsed.value || '');
-        setSecondValue(parsed.secondValue || '');
-
-        // Handle enum 'in' and 'notin' operators
-        if (column.type === 'enum' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
-          const enumValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
-          setSelectedEnumValues(enumValues);
-        } else {
-          setSelectedEnumValues([]);
-        }
-
-        // Handle lookup 'in' and 'notin' operators
-        if (column.type === 'lookup' && (parsed.operator === 'in' || parsed.operator === 'notin')) {
-          const lookupValues = parsed.value ? parsed.value.split(',').map(v => v.trim()) : [];
-          setSelectedLookupValues(lookupValues);
-        } else {
-          setSelectedLookupValues([]);
-        }
-
-        setHasActiveFilter(true);
-      },
+      setFilterExpression: (value: string) => loadExpression(value),
       close: () => {
         suppressNextClose.current = true;
         setOpened(false);
@@ -326,8 +385,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     function handleApply() {
       // Handle null operators
       if (operator === 'isnull' || operator === 'isnotnull') {
-        const expression = `${column.key},${operator},`;
-        onApplyFilter(expression);
+        const nullExpression = `${property},${operator},`;
+        onApplyFilter(nullExpression);
         setHasActiveFilter(true);
         suppressNextClose.current = true;
         setOpened(false);
@@ -340,7 +399,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return;
         }
         const values = selectedEnumValues.map(v => formatValue(v)).join(',');
-        const expression = `${column.key},${operator},${values}`;
+        const expression = `${property},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
         suppressNextClose.current = true;
@@ -349,12 +408,23 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       }
 
       // Handle lookup 'in' and 'notin' operators with multiple selection
+      if (isMultiValue && (operator === 'in' || operator === 'notin' || operator === 'hasall')) {
+        if (selectedLookupValues.length === 0) {
+          return;
+        }
+        onApplyFilter(buildMultiValueExpression(property, operator, selectedLookupValues));
+        setHasActiveFilter(true);
+        suppressNextClose.current = true;
+        setOpened(false);
+        return;
+      }
+
       if (column.type === 'lookup' && (operator === 'in' || operator === 'notin')) {
         if (selectedLookupValues.length === 0) {
           return;
         }
         const values = selectedLookupValues.map(v => formatValue(v)).join(',');
-        const expression = `${column.key},${operator},${values}`;
+        const expression = `${property},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
         suppressNextClose.current = true;
@@ -392,9 +462,9 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           }
         }
 
-        expression = `${column.key},${operator},${formatValue(value)},${formatValue(secondValue)}`;
+        expression = `${property},${operator},${formatValue(value)},${formatValue(secondValue)}`;
       } else {
-        expression = `${column.key},${operator},${formatValue(value)}`;
+        expression = `${property},${operator},${formatValue(value)}`;
       }
 
       onApplyFilter(expression);
@@ -669,7 +739,32 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
                 <Text size="xs" c="red">{rangeError}</Text>
               )}
 
-              {column.type !== 'enum' && column.type !== 'lookup' && column.type !== 'daterange' && (
+              {advanced && (
+                <Stack gap="xs">
+                  <Text size="sm" c="dimmed">{m.multiValue.advanced}</Text>
+                  {onOpenBuilder && (
+                    <Button variant="light" onClick={() => { suppressNextClose.current = true; setOpened(false); onOpenBuilder(); }}>
+                      {m.multiValue.openBuilder}
+                    </Button>
+                  )}
+                </Stack>
+              )}
+
+              {!advanced && isMultiValue && (
+                <Select
+                  label={m.operator}
+                  data={[
+                    { value: 'in', label: m.multiValue.any },
+                    { value: 'hasall', label: m.multiValue.all },
+                    { value: 'notin', label: m.multiValue.none },
+                  ]}
+                  value={operator}
+                  allowDeselect={false}
+                  onChange={(val) => setOperator(val || 'in')}
+                />
+              )}
+
+              {!advanced && column.type !== 'enum' && column.type !== 'lookup' && column.type !== 'daterange' && (
                 <Select
                   label={m.operator}
                   data={getOperators(column.type)}
@@ -688,12 +783,12 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
                 />
               )}
               
-              {renderValueInput()}
-              {renderSecondValueInput()}
+              {!advanced && renderValueInput()}
+              {!advanced && renderSecondValueInput()}
               
               <Divider />
               
-              <Group justify="space-between">
+              <Group justify="space-between" style={advanced ? { display: 'none' } : undefined}>
                 <Button
                   variant="light"
                   color="gray"
