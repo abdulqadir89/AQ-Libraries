@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import styles from './DataGrid.module.css';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
   Table,
   ScrollArea,
@@ -17,11 +17,12 @@ import {
   Box,
   Modal,
   Badge,
+  Indicator,
   Paper,
   LoadingOverlay,
   UnstyledButton,
 } from '@mantine/core';
-import { useDebouncedValue, useResizeObserver } from '@mantine/hooks';
+import { useDebouncedValue, useMediaQuery, useResizeObserver } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { ColumnFilter } from './ColumnFilter';
@@ -33,6 +34,7 @@ import { FilterChips } from './FilterChips';
 import {
   applySlice,
   columnPath,
+  columnSortPath,
   conditionToLegacy,
   countConditions,
   emptyGroup,
@@ -933,6 +935,30 @@ export function DataGrid<T extends Record<string, unknown>>({
   // the scrollbar directly from that comparison instead of trusting the observer.
   const tableOverflows = scrollAreaRect.width > 0 && tableWidth > scrollAreaRect.width;
 
+  // Narrow screens keep the filter, sort and reset actions as icons (label in the tooltip) so the toolbar stays on few rows.
+  // RULE RCT-9
+  const compactToolbar = useMediaQuery('(max-width: 75em)');
+
+  const renderToolbarAction = (label: string, icon: ReactNode, onClick: () => void, color?: string, count = 0) => (
+    compactToolbar ? (
+      <Indicator label={count} disabled={count === 0} size={16} offset={4}>
+        <ActionIcon variant="light" color={color} size="lg" title={label} aria-label={label} onClick={onClick}>
+          {icon}
+        </ActionIcon>
+      </Indicator>
+    ) : (
+      <Button
+        variant="light"
+        color={color}
+        leftSection={icon}
+        rightSection={count > 0 ? <Badge size="xs" circle>{count}</Badge> : null}
+        onClick={onClick}
+      >
+        {label}
+      </Button>
+    )
+  );
+
   // Render create button based on mode
   const renderCreateButton = () => {
     const createConfig = getButtonConfig('create');
@@ -1019,38 +1045,11 @@ export function DataGrid<T extends Record<string, unknown>>({
               </Button>
             )}
 
-            {advancedFilter && (
-              <Button
-                variant="light"
-                leftSection={<IconFilter size={16} />}
-                rightSection={filterCount > 0 ? <Badge size="xs" circle>{filterCount}</Badge> : null}
-                onClick={() => openBuilder('filter')}
-              >
-                {aqMessages.filterBuilder.filter}
-              </Button>
-            )}
+            {advancedFilter && renderToolbarAction(aqMessages.filterBuilder.filter, <IconFilter size={16} />, () => openBuilder('filter'), undefined, filterCount)}
 
-            {advancedFilter && canSortInBuilder && (
-              <Button
-                variant="light"
-                leftSection={<IconArrowsSort size={16} />}
-                rightSection={sortConditions.length > 0 ? <Badge size="xs" circle>{sortConditions.length}</Badge> : null}
-                onClick={() => openBuilder('sort')}
-              >
-                {aqMessages.filterBuilder.sort}
-              </Button>
-            )}
+            {advancedFilter && canSortInBuilder && renderToolbarAction(aqMessages.filterBuilder.sort, <IconArrowsSort size={16} />, () => openBuilder('sort'), undefined, sortConditions.length)}
 
-            {hasActiveFilters && (
-              <Button
-                variant="light"
-                color="orange"
-                leftSection={<IconFilterOff size={16} />}
-                onClick={handleResetFilters}
-              >
-                {m.resetFilters}
-              </Button>
-            )}
+            {hasActiveFilters && renderToolbarAction(m.resetFilters, <IconFilterOff size={16} />, handleResetFilters, 'orange')}
 
             {columns.length > 1 && (
               <Menu shadow="md" closeOnItemClick={false} withinPortal>
@@ -1146,7 +1145,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                       )}
                       {column.sortable && sortable ? (
                         <UnstyledButton
-                          onClick={() => handleSort(String(column.dataIndex))}
+                          onClick={() => handleSort(columnSortPath(column as DataGridColumn))}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1155,7 +1154,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                           }}
                         >
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>
-                          {getSortIcon(String(column.dataIndex))}
+                          {getSortIcon(columnSortPath(column as DataGridColumn))}
                         </UnstyledButton>
                       ) : (
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{column.title}</span>

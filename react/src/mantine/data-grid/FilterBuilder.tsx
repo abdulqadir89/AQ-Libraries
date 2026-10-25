@@ -5,7 +5,7 @@ import { useAQLocale } from '../locale';
 import type { AQMessages } from '../locale';
 import type { DataGridColumn, FilterCondition, FilterGroup, FilterOperator, SortCondition } from './DataGrid.types';
 import { FilterValueInput, isListOperator } from './FilterValueInput';
-import { columnPath, countConditions } from './filterTree';
+import { columnPath, columnSortPath, countConditions } from './filterTree';
 
 type AnyColumn = DataGridColumn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -185,7 +185,7 @@ interface SortEditorProps {
 function SortEditor({ columns, sort, onChange }: SortEditorProps) {
   const { messages } = useAQLocale();
   const m = messages.filterBuilder;
-  const options = columns.map(c => ({ value: String(c.dataIndex), label: c.title }));
+  const options = columns.map(c => ({ value: columnSortPath(c), label: c.title }));
 
   const move = (index: number, delta: number) => {
     const next = [...sort];

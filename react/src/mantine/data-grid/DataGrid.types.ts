@@ -22,6 +22,8 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   filterable?: boolean;
   // Property the filter conditions of this column use, when it differs from `key` (e.g. 'Tags.Id' for a list column).
   filterPath?: string;
+  // Property the sort uses, when it differs from `dataIndex` (e.g. the start of a date-range object).
+  sortPath?: string;
   // The column holds several values per row (a list): its filter offers any / all / none of the chosen values.
   multiValued?: boolean;
   render?: (value: unknown, record: T, index: number) => ReactNode;

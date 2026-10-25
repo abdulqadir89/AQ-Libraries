@@ -6,6 +6,9 @@ type ColumnLike = Pick<DataGridColumn, 'key' | 'filterPath'>;
 
 export const columnPath = (column: ColumnLike): string => column.filterPath ?? column.key;
 
+// RULE RCT-10
+export const columnSortPath = (column: { dataIndex: PropertyKey; sortPath?: string }): string => column.sortPath ?? String(column.dataIndex);
+
 export const emptyGroup = (): FilterGroup => ({ conditions: [], groups: [], operator: 'and' });
 
 export const parseFilter = (expression: string): FilterGroup => FilterExpressionParser.parse(expression);

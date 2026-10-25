@@ -428,15 +428,10 @@ public static class FilterExpressionBuilder
             .First(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2)
             .MakeGenericMethod(elementType);
 
-        if (rest.Length == 0)
+        if (rest.Length == 0 && condition.Operator is FilterOperator.IsNull or FilterOperator.IsNotNull)
         {
             var hasAny = Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), new[] { elementType }, collection);
-            return condition.Operator switch
-            {
-                FilterOperator.IsNotNull => hasAny,
-                FilterOperator.IsNull => Expression.Not(hasAny),
-                _ => null
-            };
+            return condition.Operator == FilterOperator.IsNotNull ? hasAny : Expression.Not(hasAny);
         }
 
         var negative = condition.Operator is FilterOperator.NotEqual or FilterOperator.NotIn or FilterOperator.NotContains or FilterOperator.NotBetween;
@@ -457,7 +452,8 @@ public static class FilterExpressionBuilder
         };
 
         var element = Expression.Parameter(elementType, "e");
-        var predicate = BuildConditionOn(inner, element, rest);
+        // A list of plain values (ids, numbers, text) compares the elements themselves.
+        var predicate = rest.Length == 0 ? BuildLeafExpression(inner, element) : BuildConditionOn(inner, element, rest);
         if (predicate == null)
             return null;
 

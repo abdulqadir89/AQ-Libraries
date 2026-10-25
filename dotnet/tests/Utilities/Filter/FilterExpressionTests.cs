@@ -17,6 +17,7 @@ public class FilterExpressionTests
         public string Name { get; set; } = string.Empty;
         public int Rank { get; set; }
         public List<Label> Labels { get; set; } = [];
+        public List<int> Scores { get; set; } = [];
     }
 
     private static readonly Guid A = Guid.Parse("00000000-0000-0000-0000-00000000000a");
@@ -24,8 +25,8 @@ public class FilterExpressionTests
 
     private static IQueryable<Item> Items() => new List<Item>
     {
-        new() { Name = "Both", Rank = 1, Labels = [new() { Id = A, Name = "Alpha" }, new() { Id = B, Name = "Beta" }] },
-        new() { Name = "OnlyA", Rank = 2, Labels = [new() { Id = A, Name = "Alpha" }] },
+        new() { Name = "Both", Rank = 1, Labels = [new() { Id = A, Name = "Alpha" }, new() { Id = B, Name = "Beta" }], Scores = [1, 2] },
+        new() { Name = "OnlyA", Rank = 2, Labels = [new() { Id = A, Name = "Alpha" }], Scores = [2, 3] },
         new() { Name = "None", Rank = 3 },
         new() { Name = "R&D (old)", Rank = 4 },
         new() { Name = "O'Brien", Rank = 5 },
@@ -126,5 +127,15 @@ public class FilterExpressionTests
         FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(tooDeep)).Should().Throw<ArgumentException>();
         FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(manyNots)).Should().Throw<ArgumentException>();
         FluentActions.Invoking(() => FilterExpressionParser.ParseComplexExpression(manyBrackets)).Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void ApplyFilter_ListOfPlainValues_ComparesTheElements()
+    {
+        Names("Scores,eq,2").Should().BeEquivalentTo("Both", "OnlyA");
+        Names("Scores,eq,1 && Scores,eq,2").Should().Equal("Both");
+        Names("Scores,in,3,9").Should().Equal("OnlyA");
+        Names("Scores,ne,2").Should().BeEquivalentTo("None", "R&D (old)", "O'Brien");
+        Names("Scores,gt,2").Should().Equal("OnlyA");
     }
 }
