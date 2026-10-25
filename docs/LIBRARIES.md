@@ -186,6 +186,7 @@ Usage: [Filter README](../dotnet/src/Utilities/Filter/README.md).
 - **FLT-5** An empty or missing filter string returns the query unchanged.
 - **FLT-6** Contains, starts-with and ends-with comparisons ignore case unless the condition asks for case-sensitive matching. Equality follows the database's own collation.
 - **FLT-7** A path segment that is a list filters its elements: the condition holds when some element matches, so `Labels.Id,eq,x` finds rows that have label x. The negative operators (not-equal, not-in, not-contains, not-between) hold when no element matches. A list of plain values compares the elements themselves, and a null check on the list itself tests for an empty list.
+- **FLT-9** A null check on a property that cannot be null matches nothing for is-null and everything for is-not-null, instead of being dropped.
 - **FLT-8** A value that starts right after a comma may be quoted with `"` or `'`; a quoted value can contain brackets, `&&`, `||` and commas. A quote inside a word, as in O'Brien, is plain text.
 
 ### Sorting
@@ -337,3 +338,4 @@ A source-only TypeScript package of Mantine-based components, consumed through a
 - **RCT-8** The filter builder edits a draft; the grid changes only when Apply is chosen, and conditions left without a value, and empty groups, are dropped at that point.
 - **RCT-9** On a narrow screen the grid's Filter, Sort and Reset buttons show as icons, with the label as the tooltip and accessible name; the active-condition count stays on Filter.
 - **RCT-10** A column sorts on its `sortPath` when it has one, otherwise on its `dataIndex`.
+- **RCT-11** A column with no title (an icon column) is named after its key in the builder, the chips and the filter popover, and the builder lists a filter property once even when two columns use it.

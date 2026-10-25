@@ -138,4 +138,12 @@ public class FilterExpressionTests
         Names("Scores,ne,2").Should().BeEquivalentTo("None", "R&D (old)", "O'Brien");
         Names("Scores,gt,2").Should().Equal("OnlyA");
     }
+
+    [Fact]
+    public void ApplyFilter_NullCheckOnAPropertyThatCannotBeNull_MatchesNothingOrEverything()
+    {
+        Names("Rank,isnull").Should().BeEmpty();
+        Names("Rank,isnotnull").Should().HaveCount(5);
+        Names("Rank,isnull || Name,eq,None").Should().Equal("None");
+    }
 }

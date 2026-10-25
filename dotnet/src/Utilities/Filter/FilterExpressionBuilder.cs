@@ -656,14 +656,25 @@ public static class FilterExpressionBuilder
         return Expression.Call(stringExpression, endsWithMethod!, valueExpression);
     }
 
+    // A value that can never be null: "is null" matches nothing and "is not null" matches everything.
+    private static bool CannotBeNull(Expression propertyExpression) =>
+        propertyExpression.Type.IsValueType && Nullable.GetUnderlyingType(propertyExpression.Type) == null;
+
+    // RULE FLT-9
     private static Expression BuildIsNullExpression(Expression propertyExpression)
     {
+        if (CannotBeNull(propertyExpression))
+            return Expression.Constant(false);
+
         var nullConstant = Expression.Constant(null, propertyExpression.Type);
         return Expression.Equal(propertyExpression, nullConstant);
     }
 
     private static Expression BuildIsNotNullExpression(Expression propertyExpression)
     {
+        if (CannotBeNull(propertyExpression))
+            return Expression.Constant(true);
+
         var nullConstant = Expression.Constant(null, propertyExpression.Type);
         return Expression.NotEqual(propertyExpression, nullConstant);
     }

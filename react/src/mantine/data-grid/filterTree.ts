@@ -7,6 +7,11 @@ type ColumnLike = Pick<DataGridColumn, 'key' | 'filterPath'>;
 export const columnPath = (column: ColumnLike): string => column.filterPath ?? column.key;
 
 // RULE RCT-10
+// RULE RCT-11
+// A column with no title (an icon column) is named after its key, so the builder, chips and popover never show a blank name.
+export const columnLabel = (column: { key: string; title: string }): string =>
+  column.title || column.key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
+
 export const columnSortPath = (column: { dataIndex: PropertyKey; sortPath?: string }): string => column.sortPath ?? String(column.dataIndex);
 
 export const emptyGroup = (): FilterGroup => ({ conditions: [], groups: [], operator: 'and' });

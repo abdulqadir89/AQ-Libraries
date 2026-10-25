@@ -3,7 +3,7 @@ import { useAQLocale } from '../locale';
 import type { AQMessages } from '../locale';
 import type { DataGridColumn, FilterCondition, FilterGroup } from './DataGrid.types';
 import { operatorLabel } from './FilterBuilder';
-import { columnPath, emptyGroup, isAnyOfGroup } from './filterTree';
+import { columnLabel, columnPath, emptyGroup, isAnyOfGroup } from './filterTree';
 
 type AnyColumn = DataGridColumn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -30,7 +30,7 @@ function describeValue(condition: FilterCondition, column: AnyColumn | undefined
 
 function describeCondition(condition: FilterCondition, columns: AnyColumn[], messages: AQMessages): string {
   const column = columns.find(c => columnPath(c) === condition.property);
-  const title = column?.title ?? condition.property;
+  const title = column ? columnLabel(column) : condition.property;
   const operator = operatorLabel(condition.operator, column, messages);
   const value = condition.operator === 'isnull' || condition.operator === 'isnotnull' ? '' : describeValue(condition, column, messages);
   return [title, operator, value].filter(Boolean).join(' ');
@@ -42,7 +42,7 @@ function describeGroup(group: FilterGroup, columns: AnyColumn[], messages: AQMes
   let text: string;
 
   if (anyOfColumn) {
-    text = `${anyOfColumn.title} ${m.hasAnyOf} ${m.selected(group.conditions.length)}`;
+    text = `${columnLabel(anyOfColumn)} ${m.hasAnyOf} ${m.selected(group.conditions.length)}`;
   } else {
     const parts = [
       ...group.conditions.map(c => describeCondition(c, columns, messages)),
@@ -78,7 +78,7 @@ export function FilterChips({ columns, filter, onChange, onOpen }: FilterChipsPr
         matching.forEach(c => listConditions.add(c));
         listChips.push({
           key: `l-${path}-${operator}`,
-          label: `${column.title} ${operator === 'eq' ? m.hasAllOf : m.hasNoneOf} ${m.selected(matching.length)}`,
+          label: `${columnLabel(column)} ${operator === 'eq' ? m.hasAllOf : m.hasNoneOf} ${m.selected(matching.length)}`,
           remove: () => ({ ...filter, conditions: filter.conditions.filter(c => !matching.includes(c)) }),
         });
       }

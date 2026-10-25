@@ -5,7 +5,7 @@ import { useAQLocale } from '../locale';
 import type { AQMessages } from '../locale';
 import type { DataGridColumn, FilterCondition, FilterGroup, FilterOperator, SortCondition } from './DataGrid.types';
 import { FilterValueInput, isListOperator } from './FilterValueInput';
-import { columnPath, columnSortPath, countConditions } from './filterTree';
+import { columnLabel, columnPath, columnSortPath, countConditions } from './filterTree';
 
 type AnyColumn = DataGridColumn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -107,7 +107,10 @@ function GroupEditor({ columns, group, isRoot, onChange, onRemove }: GroupEditor
       {group.conditions.map((condition, index) => {
         const column = columnFor(condition.property);
         const operators = operatorsFor(column);
-        const fieldOptions = columns.map(c => ({ value: columnPath(c), label: c.title }));
+        // Two columns can filter the same property; the select needs each value once.
+        const fieldOptions = columns
+          .map(c => ({ value: columnPath(c), label: columnLabel(c) }))
+          .filter((option, index, all) => all.findIndex(o => o.value === option.value) === index);
         if (!column) fieldOptions.push({ value: condition.property, label: condition.property });
 
         return (
@@ -185,7 +188,9 @@ interface SortEditorProps {
 function SortEditor({ columns, sort, onChange }: SortEditorProps) {
   const { messages } = useAQLocale();
   const m = messages.filterBuilder;
-  const options = columns.map(c => ({ value: columnSortPath(c), label: c.title }));
+  const options = columns
+    .map(c => ({ value: columnSortPath(c), label: columnLabel(c) }))
+    .filter((option, index, all) => all.findIndex(o => o.value === option.value) === index);
 
   const move = (index: number, delta: number) => {
     const next = [...sort];

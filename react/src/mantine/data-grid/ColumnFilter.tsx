@@ -20,6 +20,7 @@ import type { DataGridColumn } from './DataGrid.types';
 import { useAQLocale } from '../locale';
 import type { ColumnFilterMessages } from '../locale';
 import { FilterExpressionBuilder } from '../../utils/FilterExpressionBuilder';
+import { columnLabel } from './filterTree';
 import { FilterExpressionParser } from '../../utils/FilterExpressionParser';
 
 export interface ColumnFilterProps<T = Record<string, unknown>> {
@@ -733,7 +734,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         <Popover.Dropdown>
           <FocusTrap active={opened}>
             <Stack gap="md" style={{ minWidth: 250 }}>
-              <Text size="sm" fw={500}>{m.filterByLabel(column.title)}</Text>
+              <Text size="sm" fw={500}>{m.filterByLabel(columnLabel(column))}</Text>
 
               {rangeError && (
                 <Text size="xs" c="red">{rangeError}</Text>
