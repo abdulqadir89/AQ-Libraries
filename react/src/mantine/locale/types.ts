@@ -48,6 +48,7 @@ export interface ColumnFilterMessages {
     lt: string;
     lte: string;
     between: string;
+    notbetween: string;
     isnull: string;
     isnotnull: string;
     in: string;
