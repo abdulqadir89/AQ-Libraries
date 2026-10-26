@@ -26,10 +26,12 @@ export interface DataGridColumn<T = Record<string, unknown>> {
   sortPath?: string;
   // The column holds several values per row (a list): its filter offers any / all / none of the chosen values.
   multiValued?: boolean;
-  render?: (value: unknown, record: T, index: number) => ReactNode;
+  // RULE RCT-12
+  // ADR-004: a method, not a property, so a callback typed for its own cell value is accepted
+  render?(value: unknown, record: T, index: number): ReactNode;
   align?: 'left' | 'center' | 'right';
   // For enum columns - provide the enum options
-  enumOptions?: Array<{ value: string | number; label: string }>;
+  enumOptions?: Array<{ value: string | number | boolean | null; label: string }>;
   // For lookup columns - a CRUD-backed entity filtered via its own async Select component
   lookupConfig?: LookupFilterConfig;
 }

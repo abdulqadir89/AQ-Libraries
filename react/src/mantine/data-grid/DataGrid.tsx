@@ -78,7 +78,7 @@ import type {
   SpecialModeConfig,
 } from './DataGrid.types';
 
-export function DataGrid<T extends Record<string, unknown>>({
+export function DataGrid<T extends object>({
   gridId,
   initialState,
   onStateChange,
@@ -121,7 +121,7 @@ export function DataGrid<T extends Record<string, unknown>>({
   selectable = false,
   selectedRows,
   onSelectionChange,
-  rowKey = 'id',
+  rowKey = 'id' as keyof T,
   onFilterChange,
   onFilterExpressionChange,
   advancedFilter = false,

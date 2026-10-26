@@ -1,4 +1,5 @@
 import { useState, forwardRef, useMemo } from 'react';
+import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Select,
@@ -59,6 +60,7 @@ export interface AutoCompleteComboProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   clearable?: boolean;
   searchable?: boolean;
+  style?: CSSProperties;
   
   // Limit rendering performance
   maxDropdownHeight?: number;

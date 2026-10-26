@@ -629,7 +629,7 @@ export function getTimezoneSuffix(value: DateTimeOffsetRangeDto | null | undefin
 export function buildCompactRangeValue(
   value: DateTimeOffsetRangeDto,
   separator: string = ' - ',
-  timezoneSuffix: string = ''
+  _timezoneSuffix: string = ''
 ): string {
   const start = value.start ?? null;
   const end = value.end ?? null;

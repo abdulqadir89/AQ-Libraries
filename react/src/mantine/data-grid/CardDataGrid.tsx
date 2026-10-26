@@ -173,7 +173,7 @@ function toFilterDraft(condition: FilterCondition, index: number): FilterDraft {
   };
 }
 
-export function CardDataGrid<T extends Record<string, unknown>>({
+export function CardDataGrid<T extends object>({
   data = [],
   loading = false,
   columns = [],
@@ -193,7 +193,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   selectable = false,
   selectedRows,
   onSelectionChange,
-  rowKey = 'id',
+  rowKey = 'id' as keyof T,
   onFilterChange,
   initialFilterConditions = [],
   initialFilterOperator = 'and',

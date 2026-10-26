@@ -535,7 +535,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
                 ) : (
                   filteredEnumOptions.map((option) => (
                     <Checkbox
-                      key={option.value}
+                      key={String(option.value)}
                       label={option.label}
                       checked={selectedEnumValues.includes(String(option.value))}
                       onChange={(event) => {
