@@ -137,8 +137,8 @@ function parseFilterExpression(expression: string): { operator: string; value: s
   
   const operator = parts[1];
   
-  // For between: parts[2] and parts[3] are separate encoded values
-  if (operator === 'between' && parts.length >= 4) {
+  // For between and notbetween: parts[2] and parts[3] are separate encoded values
+  if ((operator === 'between' || operator === 'notbetween') && parts.length >= 4) {
     return { 
       operator, 
       value: parts[2]?.replace(/%2C/g, ',') || '', 
