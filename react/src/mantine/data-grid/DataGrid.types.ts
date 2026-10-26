@@ -291,6 +291,12 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   initialFilterOperator?: LogicalOperator;
   initialSortConditions?: SortCondition[];
   onFilterExpressionChange?: (filterExpression: string) => void;
+  // Uses the table grid's Filter and Sort buttons, chips and builder instead of the Options dialog (needs onFilterExpressionChange).
+  advancedFilter?: boolean;
+  // Renders the builder in the consuming app's own modal or drawer; defaults to a Mantine modal.
+  filterBuilderHost?: FilterBuilderHost;
+  // Filter expression the grid starts with (advancedFilter only).
+  initialFilterExpression?: string;
   toolbarConfig?: DataGridToolbarConfig;
   cardLayout?: CardLayoutConfig;
   cardImage?: CardImageConfig<T>;
