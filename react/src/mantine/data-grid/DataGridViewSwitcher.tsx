@@ -34,6 +34,10 @@ function toCardGridProps<T extends Record<string, unknown>>(
     onSelectionChange: tableProps.onSelectionChange,
     rowKey: tableProps.rowKey,
     onFilterChange: tableProps.onFilterChange,
+    onFilterExpressionChange: tableProps.onFilterExpressionChange,
+    advancedFilter: tableProps.advancedFilter,
+    filterBuilderHost: tableProps.filterBuilderHost,
+    initialFilterExpression: tableProps.initialState?.filterExpression,
     bulkActions: tableProps.bulkActions,
     ...cardOverrides,
   };

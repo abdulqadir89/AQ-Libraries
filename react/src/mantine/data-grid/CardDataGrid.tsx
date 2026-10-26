@@ -3,6 +3,7 @@ import styles from './DataGrid.module.css';
 import type { ChangeEvent } from 'react';
 import {
   ActionIcon,
+  Badge,
   Box,
   Button,
   Card,
@@ -27,6 +28,8 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
   IconAdjustmentsHorizontal,
+  IconArrowsSort,
+  IconFilter,
   IconFilterOff,
   IconPlus,
   IconRefresh,
@@ -39,11 +42,16 @@ import { FilterExpressionBuilder } from '../../utils/FilterExpressionBuilder';
 import { SortExpressionBuilder } from '../../utils/SortExpressionBuilder';
 import { useAQLocale } from '../locale';
 import type { CardDataGridMessages } from '../locale';
+import { FilterBuilderPanel } from './FilterBuilder';
+import { FilterChips } from './FilterChips';
+import { countConditions, emptyGroup, legacyConditions, parseFilter, pruneFilter, serializeFilter } from './filterTree';
 import type {
   BulkAction,
   CardDataGridProps,
   DataGridColumn,
+  FilterBuilderHost,
   FilterCondition,
+  FilterGroup,
   FilterOperator,
   LogicalOperator,
   SortCondition,
@@ -191,6 +199,9 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   initialFilterOperator = 'and',
   initialSortConditions = [],
   onFilterExpressionChange,
+  advancedFilter = false,
+  filterBuilderHost,
+  initialFilterExpression,
   toolbarConfig,
   cardLayout,
   cardImage,
@@ -215,6 +226,10 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     initialFilterConditions.map(toFilterDraft)
   );
   const [sortConditions, setSortConditions] = useState<SortCondition[]>(initialSortConditions);
+  // With advancedFilter the whole filter is one tree, edited in the same builder the table grid uses.
+  const [filter, setFilter] = useState<FilterGroup>(() => parseFilter(initialFilterExpression ?? ''));
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderTab, setBuilderTab] = useState<'filter' | 'sort'>('filter');
   const controlledSelectedRows = selectedRows ?? EMPTY_SELECTED_ROWS;
   const [internalSelection, setInternalSelection] = useState<string[]>(controlledSelectedRows);
 
@@ -257,6 +272,36 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   );
 
   const hasActiveFilters = filterDrafts.length > 0;
+  const filterCount = countConditions(filter);
+  const canSortInBuilder = sortable && !!onSortChange;
+
+  const commitFilter = useCallback(
+    (next: FilterGroup) => {
+      setFilter(next);
+      onFilterExpressionChange?.(serializeFilter(next));
+      onFilterChange?.(legacyConditions(next), 'and');
+    },
+    [onFilterChange, onFilterExpressionChange]
+  );
+
+  const openBuilder = (tab: 'filter' | 'sort') => {
+    setBuilderTab(tab);
+    setBuilderOpen(true);
+  };
+
+  const handleBuilderApply = (nextFilter: FilterGroup, nextSort: SortCondition[]) => {
+    commitFilter(parseFilter(serializeFilter(pruneFilter(nextFilter))));
+    if (canSortInBuilder) {
+      const ordered = nextSort.map((sort, priority) => ({ ...sort, priority }));
+      setSortConditions(ordered);
+      onSortChange?.(ordered.map((sort) => `${sort.property},${sort.direction}`).join(';'));
+    }
+    setBuilderOpen(false);
+  };
+
+  const renderBuilderHost: FilterBuilderHost = filterBuilderHost ?? (({ opened, onClose, title, children }) => (
+    <Modal opened={opened} onClose={onClose} title={title} size="xl">{children}</Modal>
+  ));
 
   const toolbar = {
     showSearch: toolbarConfig?.showSearch ?? searchable,
@@ -297,6 +342,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
     suppressNextSearch.current = true;
     setSearchText('');
     setFilterDrafts([]);
+    setFilter(emptyGroup());
     setSortConditions([]);
     onRefresh?.();
   }, [onRefresh]);
@@ -738,13 +784,41 @@ export function CardDataGrid<T extends Record<string, unknown>>({
               </Button>
             )}
 
-            {hasActiveFilters && (
+            {advancedFilter && (
+              <Button
+                variant="light"
+                leftSection={<IconFilter size={16} />}
+                rightSection={filterCount > 0 ? <Badge size="xs" circle>{filterCount}</Badge> : null}
+                onClick={() => openBuilder('filter')}
+              >
+                {aqMessages.filterBuilder.filter}
+              </Button>
+            )}
+
+            {advancedFilter && canSortInBuilder && (
+              <Button
+                variant="light"
+                leftSection={<IconArrowsSort size={16} />}
+                rightSection={sortConditions.length > 0 ? <Badge size="xs" circle>{sortConditions.length}</Badge> : null}
+                onClick={() => openBuilder('sort')}
+              >
+                {aqMessages.filterBuilder.sort}
+              </Button>
+            )}
+
+            {advancedFilter && filterCount > 0 && (
+              <Button variant="light" color="orange" leftSection={<IconFilterOff size={16} />} onClick={() => commitFilter(emptyGroup())}>
+                {m.resetFilters}
+              </Button>
+            )}
+
+            {!advancedFilter && hasActiveFilters && (
               <Button variant="light" color="orange" leftSection={<IconFilterOff size={16} />} onClick={handleClearFilters}>
                 {m.resetFilters}
               </Button>
             )}
 
-            {toolbar.showOptions && (
+            {!advancedFilter && toolbar.showOptions && (
               <Button
                 variant="light"
                 leftSection={<IconAdjustmentsHorizontal size={16} />}
@@ -757,7 +831,30 @@ export function CardDataGrid<T extends Record<string, unknown>>({
             {toolbarRightSection}
           </Group>
         </Flex>
+
+        {advancedFilter && filterCount > 0 && (
+          <Box mt="sm">
+            <FilterChips columns={columns as DataGridColumn[]} filter={filter} onChange={commitFilter} onOpen={() => openBuilder('filter')} />
+          </Box>
+        )}
       </Paper>
+
+      {advancedFilter && renderBuilderHost({
+        opened: builderOpen,
+        onClose: () => setBuilderOpen(false),
+        title: aqMessages.filterBuilder.filterAndSort,
+        children: builderOpen ? (
+          <FilterBuilderPanel
+            columns={columns as DataGridColumn[]}
+            filter={filter}
+            sort={sortConditions}
+            sortable={canSortInBuilder}
+            initialTab={builderTab}
+            onApply={handleBuilderApply}
+            onClose={() => setBuilderOpen(false)}
+          />
+        ) : null,
+      })}
 
       <SimpleGrid cols={gridCols}>
         {cards.length > 0 ? cards : (
@@ -809,6 +906,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
         </Group>
       )}
 
+      {!advancedFilter && (
       <Modal
         opened={optionsOpen}
         onClose={() => setOptionsOpen(false)}
@@ -1021,6 +1119,7 @@ export function CardDataGrid<T extends Record<string, unknown>>({
           </Group>
         </Stack>
       </Modal>
+      )}
     </Box>
   );
 }
