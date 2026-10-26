@@ -48,6 +48,7 @@ export const defaultMessages: AQMessages = {
       lt: 'Less Than',
       lte: 'Less Than or Equal',
       between: 'Between',
+      notbetween: 'Not Between',
       isnull: 'Is Null',
       isnotnull: 'Is Not Null',
       in: 'Is Any Of',
