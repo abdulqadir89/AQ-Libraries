@@ -343,3 +343,4 @@ A source-only TypeScript package of Mantine-based components, consumed through a
 - **RCT-9** On a narrow screen the grid's Filter, Sort and Reset buttons show as icons, with the label as the tooltip and accessible name; the active-condition count stays on Filter.
 - **RCT-10** A column sorts on its `sortPath` when it has one, otherwise on its `dataIndex`.
 - **RCT-11** A column with no title (an icon column) is named after its key in the builder, the chips and the filter popover, and the builder lists a filter property once even when two columns use it.
+- **RCT-12** A grid takes any object type as its row, an interface included. A column's `render` callback may declare the type of its own cell value instead of `unknown`, and an enum option's value may be a string, number, boolean or null. An application's type check passes against the package source.

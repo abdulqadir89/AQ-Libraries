@@ -8,7 +8,7 @@ import type {
   DataGridViewSwitcherProps,
 } from './DataGrid.types';
 
-function toCardGridProps<T extends Record<string, unknown>>(
+function toCardGridProps<T extends object>(
   tableProps: DataGridProps<T>,
   cardOverrides?: Partial<CardDataGridProps<T>>
 ): CardDataGridProps<T> {
@@ -43,7 +43,7 @@ function toCardGridProps<T extends Record<string, unknown>>(
   };
 }
 
-export function DataGridViewSwitcher<T extends Record<string, unknown>>({
+export function DataGridViewSwitcher<T extends object>({
   viewMode,
   onViewModeChange,
   showSwitch = true,
