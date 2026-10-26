@@ -341,11 +341,13 @@ export function CardDataGrid<T extends Record<string, unknown>>({
   const handleRefresh = useCallback(() => {
     suppressNextSearch.current = true;
     setSearchText('');
-    setFilterDrafts([]);
-    setFilter(emptyGroup());
-    setSortConditions([]);
+    // With advancedFilter the filter and sort belong to the parent, as in the table grid; refresh keeps them.
+    if (!advancedFilter) {
+      setFilterDrafts([]);
+      setSortConditions([]);
+    }
     onRefresh?.();
-  }, [onRefresh]);
+  }, [advancedFilter, onRefresh]);
 
   const handleClearFilters = useCallback(() => {
     setFilterDrafts([]);
