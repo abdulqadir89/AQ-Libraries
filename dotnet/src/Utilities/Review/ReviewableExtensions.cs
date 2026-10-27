@@ -1,25 +1,22 @@
-using AQ.Utilities.Verification;
-
 namespace AQ.Utilities.Review;
 
 public static class ReviewableExtensions
 {
-    // Returns true when the review also added a verification entry, so the caller can write the verification history row.
+    /// <summary>Marks the entity reviewed. The next due date is the one given, else the calculator's, else a still-future date the entity already has.</summary>
     // RULE RVW-2
-    public static bool MarkReviewed<T>(this T entity, Guid reviewedByUserId, DateTimeOffset? nextReviewDue, Guid? activityId = null)
+    public static async Task MarkReviewedAsync<T>(
+        this T entity,
+        IReviewDueCalculator<T> calculator,
+        DateTimeOffset? reviewedAt = null,
+        DateTimeOffset? nextReviewDue = null,
+        CancellationToken cancellationToken = default)
         where T : IReviewable
     {
-        entity.Review.MarkReviewed(reviewedByUserId, nextReviewDue, activityId);
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(calculator);
 
-        if (entity is IVerifiable verifiable && !verifiable.Verification.HasBeenVerifiedBy(reviewedByUserId))
-        {
-            verifiable.Verification.Add(reviewedByUserId);
-            return true;
-        }
-
-        return false;
+        var at = reviewedAt ?? DateTimeOffset.UtcNow;
+        var due = nextReviewDue ?? await calculator.CalculateAsync(entity, at, cancellationToken);
+        entity.Review.MarkReviewed(at, due);
     }
-
-    public static bool IsReviewCurrent<T>(this T entity) where T : IReviewable =>
-        entity.Review.IsCurrent((entity as IVerifiable)?.Verification);
 }

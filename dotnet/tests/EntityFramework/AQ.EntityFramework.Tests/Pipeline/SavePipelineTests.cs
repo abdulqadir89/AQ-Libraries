@@ -3,7 +3,6 @@ using AQ.EntityFramework.Extensions;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Tests.Support;
 using AQ.Events.Outbox;
-using AQ.Utilities.Review;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -136,8 +135,7 @@ public class SavePipelineTests : IDisposable
     [Fact]
     public async Task ReviewState_Persists_AndTouchesOwnerAudit()
     {
-        var reviewer = Guid.NewGuid();
-        var activityId = Guid.NewGuid();
+        var reviewedAt = DateTimeOffset.UtcNow;
         var nextDue = DateTimeOffset.UtcNow.AddDays(30);
         Guid ticketId;
         using (var context = CreateContext())
@@ -146,7 +144,7 @@ public class SavePipelineTests : IDisposable
             context.Add(ticket);
             await context.SaveChangesAsync();
             ticketId = ticket.Id;
-            ticket.MarkReviewed(reviewer, nextDue, activityId);
+            ticket.Review.MarkReviewed(reviewedAt, nextDue);
             await context.SaveChangesAsync();
             ticket.Revision.Should().Be(1);
             ticket.UpdatedById.Should().Be(_userId);
@@ -155,10 +153,8 @@ public class SavePipelineTests : IDisposable
         using var reloaded = _database.CreateContext(All, _userId);
         var loaded = await reloaded.Tickets.SingleAsync(t => t.Id == ticketId);
 
-        loaded.Review.LastReviewedById.Should().Be(reviewer);
-        loaded.Review.LastReviewActivityId.Should().Be(activityId);
+        loaded.Review.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
         loaded.Review.NextReviewDue.Should().BeCloseTo(nextDue, TimeSpan.FromSeconds(1));
-        loaded.Verification.HasBeenVerifiedBy(reviewer).Should().BeTrue();
     }
 
     [Fact]
@@ -181,24 +177,49 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
-    public async Task ReviewIsCurrent_BecomesFalseAfterVerifiableEdit_ButNotAfterOtherEdit()
+    public async Task Review_AndVerification_AreIndependent()
     {
         using var context = CreateContext();
-        var ticket = Ticket.Create("Reviewable");
+        var ticket = Ticket.Create("Independent");
         context.Add(ticket);
         await context.SaveChangesAsync();
-        ticket.MarkReviewed(Guid.NewGuid(), null);
+        var verifier = Guid.NewGuid();
+        ticket.Verification.Add(verifier);
         await context.SaveChangesAsync();
-        ticket.IsReviewCurrent().Should().BeTrue();
 
-        ticket.SetNotes("not verifiable");
+        ticket.Review.MarkReviewed(DateTimeOffset.UtcNow, null);
         await context.SaveChangesAsync();
-        ticket.IsReviewCurrent().Should().BeTrue();
+        ticket.Verification.Count.Should().Be(1);
 
-        await Task.Delay(10);
         ticket.Rename("verifiable change");
         await context.SaveChangesAsync();
-        ticket.IsReviewCurrent().Should().BeFalse();
+
+        ticket.Verification.Count.Should().Be(0);
+        ticket.Review.LastReviewedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ReviewState_DerivedByTheApp_PersistsItsOwnColumnsBesideTheDates()
+    {
+        var reviewedAt = DateTimeOffset.UtcNow;
+        Guid contractId;
+        using (var context = CreateContext())
+        {
+            var contract = Contract.Create();
+            context.Add(contract);
+            await context.SaveChangesAsync();
+            contractId = contract.Id;
+            contract.Review.Outcome = "Accepted";
+            contract.Review.MarkReviewed(reviewedAt, reviewedAt.AddDays(180));
+            await context.SaveChangesAsync();
+        }
+
+        using var reloaded = _database.CreateContext(All, _userId);
+        var loaded = await reloaded.Contracts.SingleAsync(c => c.Id == contractId);
+
+        loaded.Review.Outcome.Should().Be("Accepted");
+        loaded.Review.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
+        loaded.Review.NextReviewDue.Should().BeCloseTo(reviewedAt.AddDays(180), TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -231,23 +252,6 @@ public class SavePipelineTests : IDisposable
         await context.SaveChangesAsync();
 
         ticket.Revision.Should().Be(revision + 1);
-    }
-
-    [Fact]
-    public async Task MarkReviewed_WithVerifiableEditInSameSave_StaysCurrentAndKeepsReviewerVerification()
-    {
-        var reviewer = Guid.NewGuid();
-        using var context = CreateContext();
-        var ticket = Ticket.Create("Same save");
-        context.Add(ticket);
-        await context.SaveChangesAsync();
-
-        ticket.Rename("edited and reviewed");
-        ticket.MarkReviewed(reviewer, null);
-        await context.SaveChangesAsync();
-
-        ticket.IsReviewCurrent().Should().BeTrue();
-        ticket.Verification.HasBeenVerifiedBy(reviewer).Should().BeTrue();
     }
 
     [Fact]

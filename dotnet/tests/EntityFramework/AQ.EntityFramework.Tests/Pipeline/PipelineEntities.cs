@@ -1,5 +1,6 @@
 using AQ.Entities;
 using AQ.Events.Domain;
+using AQ.Utilities.Commenting;
 using AQ.Utilities.References;
 using AQ.Utilities.Review;
 using AQ.Utilities.Snapshots;
@@ -38,7 +39,7 @@ public class Invoice : Entity<TestUser>
 
 [Audited]
 [Snapshottable(IncludeId = true)]
-public class Ticket : Entity<TestUser>, IVerifiable, IReviewable, IHasActiveFlag
+public class Ticket : Entity<TestUser>, IVerifiable, IReviewable<ReviewState>, IHasActiveFlag
 {
     private Ticket() { }
 
@@ -95,4 +96,33 @@ public partial class Manual : Entity<TestUser>, IVerifiable
     public static Manual Create(string title) => new() { Title = title };
 
     public void Rename(string title) => Title = title;
+}
+
+public sealed class ContractReviewState : ReviewStateBase
+{
+    public string? Outcome { get; set; }
+}
+
+public class Contract : Entity<TestUser>, IReviewable<ContractReviewState>
+{
+    private Contract() { }
+
+    public ContractReviewState Review { get; private set; } = new();
+
+    public static Contract Create() => new();
+}
+
+public abstract class TestComment : Comment<TestUser>
+{
+    public string? Area { get; set; }
+}
+
+[Commentable(typeof(TestComment))]
+public class Memo : Entity<TestUser>
+{
+    private Memo() { }
+
+    public string Title { get; private set; } = "";
+
+    public static Memo Create(string title) => new() { Title = title };
 }

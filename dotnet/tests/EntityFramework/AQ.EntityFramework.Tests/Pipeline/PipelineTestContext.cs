@@ -1,5 +1,6 @@
 using AQ.Actors;
 using AQ.EntityFramework.Auditing;
+using AQ.EntityFramework.Commenting;
 using AQ.EntityFramework.Review;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Snapshots;
@@ -21,6 +22,9 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketSnapshot> TicketSnapshots => Set<TicketSnapshot>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<Memo> Memos => Set<Memo>();
+    public DbSet<MemoComment> MemoComments => Set<MemoComment>();
     public DbSet<Manual> Manuals => Set<Manual>();
     public DbSet<TestTag> TestTags => Set<TestTag>();
     public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
@@ -49,8 +53,10 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
             builder.HasReviewState(t => t.Review);
         });
         modelBuilder.Entity<Manual>(builder => builder.HasVerificationState(m => m.Verification));
+        modelBuilder.Entity<Contract>(builder => builder.HasReviewState(c => c.Review));
         modelBuilder.ApplyVersionGroups();
         modelBuilder.ApplyEntityTags<TestTag>();
+        modelBuilder.ApplyEntityComments<TestComment>();
     }
 }
 

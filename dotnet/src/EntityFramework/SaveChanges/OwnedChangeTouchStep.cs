@@ -1,5 +1,4 @@
 using System.Collections;
-using AQ.Utilities.Review;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -8,7 +7,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class OwnedChangeTouchStep
 {
-    // EF leaves an owner Unchanged when only an owned type (value object, VerificationState, ReviewState, ...) changed, so
+    // EF leaves an owner Unchanged when only an owned type (value object, VerificationState, review state, ...) changed, so
     // lifecycle, audit and snapshot steps would skip that save. Flagging Revision re-marks the owner Modified.
     // RULE EFC-4
     public static void Run(DbContext context)
@@ -108,13 +107,6 @@ internal static class OwnedChangeTouchStep
         return false;
     }
 
-    // A notification bookmark is system bookkeeping, not an edit: it must not bump the owner's revision, audit or snapshots.
     private static bool IsPending(EntityEntry entry) =>
-        entry.State is EntityState.Added or EntityState.Deleted
-        || (entry.State == EntityState.Modified && !IsNotificationOnly(entry));
-
-    // RULE EFC-4
-    private static bool IsNotificationOnly(EntityEntry entry) =>
-        entry.Entity is ReviewState
-        && entry.Properties.Where(p => p.IsModified).All(p => p.Metadata.Name == nameof(ReviewState.LastNotifiedAt));
+        entry.State is EntityState.Added or EntityState.Deleted or EntityState.Modified;
 }

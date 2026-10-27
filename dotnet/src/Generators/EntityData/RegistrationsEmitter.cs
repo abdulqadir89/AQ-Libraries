@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using AQ.Generators.Commenting;
 using AQ.Generators.Snapshots;
 using AQ.Generators.Tagging;
 using AQ.Generators.Versioning;
@@ -14,7 +15,8 @@ namespace AQ.Generators.EntityData
             return input.SnapshotMembers.Any(m => m.Model is not null)
                 || input.Snapshottable.Length > 0
                 || input.VersionGroups.Length > 0
-                || input.Taggables.Any(t => t.Diagnostics.Length == 0);
+                || input.Taggables.Any(t => t.Diagnostics.Length == 0)
+                || input.Commentables.Any(t => t.Diagnostics.Length == 0);
         }
 
         public static string Emit(GenerationInput input)
@@ -39,6 +41,7 @@ namespace AQ.Generators.EntityData
             AppendRegisterCalls(builder, snapshotWriters, SnapshotNames.SnapshotAttributeGlobal, "WriteSnapshot");
             SnapshotEmitter.AppendRegistrations(builder, input);
             TaggableEmitter.AppendRegistrations(builder, input);
+            CommentableEmitter.AppendRegistrations(builder, input);
 
             builder.Append("        }\n");
 

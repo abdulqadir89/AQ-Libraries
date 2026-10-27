@@ -29,7 +29,7 @@ dotnet/
       Entities/              # AQ.StateMachine.Entities — definitions, instances, transitions, requirements
       Services/              # AQ.StateMachine.Services — requirement evaluation
     Utilities/               # AQ.Utilities — Results, Filter, Sort, Search, Merging, Verification, Review,
-                             #   Snapshots, Versioning (version groups), Tagging, EntityData, References, Attachments (one project)
+                             #   Snapshots, Versioning (version groups), Tagging, Commenting, EntityData, References, Attachments (one project)
       Email/                 # AQ.Utilities.Email — email sending + localized templates
     DataSeeding/             # AQ.DataSeeding — EF Core seeding framework
     Identity/
@@ -68,6 +68,8 @@ dotnet pack AQ.sln --configuration Release
 - **Provider-specific code stays out of the core**: `AQ.Utilities` has no EF provider dependency; SQL Server and PostgreSQL specifics live in the `AQ.EntityFramework.*` provider packages.
 - **Snapshot storage**: apps call `ApplyEntitySnapshots()` (one `EntitySnapshots` table, FK per snapshot type) instead of mapping each generated snapshot class; retention goes on `[Snapshottable(KeepLast, MaxAgeDays)]` and the app runs `SnapshotPruner` (`AddAqSnapshotPruning`) on its own schedule.
 - **Generated data writers**: snapshot classes and the members of `[VersionGroup]` classes come from `AQ.Generators`; do not hand-write what `[Snapshottable]` / `[VersionGroup]` / `[Taggable(typeof(Tag))]` generate (version-grouped and taggable classes are `partial`; the app owns the tag entity, which implements `ITag`, and calls `ApplyEntityTags<Tag>()` and enables the `Tags` pipeline step).
+- **Comments**: `[Commentable(typeof(AppComment))]` on an entity class (it need not be partial) generates `{Name}Comment`, which derives from the app's `AppComment : Comment<TPrincipal>` (the app adds its own columns there) and carries the link to the entity. The author and time are the audit creator and creation time. The app calls `ApplyEntityComments<AppComment>()`, adds the generated comment through its `DbSet` (never into a collection), and owns authorization.
+- **Review state**: `ReviewStateBase` is two dates; entities implement `IReviewable<ReviewState>` (or `IReviewable<AppState>` for an app-derived state) and map it with `HasReviewState`. The app supplies `IReviewDueCalculator<TEntity>` for entities whose next date is not given.
 
 ## Email localization conventions (`Utilities/Email`)
 
