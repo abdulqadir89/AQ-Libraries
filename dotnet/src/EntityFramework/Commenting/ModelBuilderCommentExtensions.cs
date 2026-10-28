@@ -1,3 +1,4 @@
+using AQ.Entities;
 using AQ.Utilities.Commenting;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,6 +42,25 @@ public static class ModelBuilderCommentExtensions
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
         }
+
+        return modelBuilder;
+    }
+
+    /// <summary>Maps the app's vote type: one row per voter and comment, removed together with its comment.</summary>
+    public static ModelBuilder ApplyCommentVotes<TVote, TComment>(this ModelBuilder modelBuilder)
+        where TVote : class, IEntity
+        where TComment : class, IComment
+    {
+        var vote = modelBuilder.Entity<TVote>();
+        vote.ToTable("EntityCommentVotes");
+        // RULE EFC-33
+        vote.HasIndex(nameof(CommentVote<object>.CommentId), nameof(IAuditable.CreatedById)).IsUnique();
+        // RULE EFC-33
+        vote.HasOne<TComment>()
+            .WithMany()
+            .HasForeignKey(nameof(CommentVote<object>.CommentId))
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         return modelBuilder;
     }

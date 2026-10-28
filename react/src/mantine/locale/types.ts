@@ -314,6 +314,44 @@ export interface AutocompleteMessages {
   noOptionsFound: string;
 }
 
+export interface CommentThreadsMessages {
+  addComment: string;
+  commentPlaceholder: string;
+  replyPlaceholder: string;
+  post: string;
+  reply: string;
+  edit: string;
+  delete: string;
+  save: string;
+  cancel: string;
+  resolve: string;
+  reopen: string;
+  resolved: string;
+  resolvedBy: (name: string) => string;
+  edited: string;
+  deletedComment: string;
+  noComments: string;
+  upvote: string;
+  downvote: string;
+  deleteConfirmTitle: string;
+  deleteConfirmContent: string;
+  confirm: string;
+  showReplies: (count: number) => string;
+  hideReplies: string;
+}
+
+export interface PdfViewerMessages {
+  loading: string;
+  loadFailed: string;
+  zoomIn: string;
+  zoomOut: string;
+  fitWidth: string;
+  pageOf: (page: number, total: number) => string;
+  selectText: string;
+  selectArea: string;
+  addComment: string;
+}
+
 export interface AQMessages {
   dataGrid: DataGridMessages;
   columnFilter: ColumnFilterMessages;
@@ -327,6 +365,8 @@ export interface AQMessages {
   masterDetail: MasterDetailMessages;
   splitButton: SplitButtonMessages;
   autocomplete: AutocompleteMessages;
+  commentThreads: CommentThreadsMessages;
+  pdfViewer: PdfViewerMessages;
 }
 
 /** Deep partial helper: allows callers to override any subset of nested message keys/functions. */

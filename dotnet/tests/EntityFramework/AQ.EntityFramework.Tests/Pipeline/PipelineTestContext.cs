@@ -25,6 +25,9 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Memo> Memos => Set<Memo>();
     public DbSet<MemoComment> MemoComments => Set<MemoComment>();
+    public DbSet<Sheet> Sheets => Set<Sheet>();
+    public DbSet<SheetComment> SheetComments => Set<SheetComment>();
+    public DbSet<TestVote> TestVotes => Set<TestVote>();
     public DbSet<Manual> Manuals => Set<Manual>();
     public DbSet<TestTag> TestTags => Set<TestTag>();
     public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
@@ -57,6 +60,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         modelBuilder.ApplyVersionGroups();
         modelBuilder.ApplyEntityTags<TestTag>();
         modelBuilder.ApplyEntityComments<TestComment>();
+        modelBuilder.ApplyCommentVotes<TestVote, TestComment>();
     }
 }
 

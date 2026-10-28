@@ -11,5 +11,6 @@ namespace AQ.Generators.Commenting
         string Name,
         string Namespace,
         string CommentType,
+        int MaxDepth,
         EquatableArray<DiagnosticInfo> Diagnostics);
 }

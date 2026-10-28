@@ -83,12 +83,22 @@ namespace AQ.Generators.Commenting
                     reference));
             }
 
+            var maxDepth = GetInt(attribute, "MaxDepth");
+            if (maxDepth < 0)
+            {
+                diagnostics.Add(DiagnosticInfo.Create(
+                    "AQGEN002",
+                    "Class '" + symbol.Name + "' is marked [Commentable] with a negative MaxDepth.",
+                    reference));
+            }
+
             return new CommentableModel(
                 symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 symbol.Name,
                 name,
                 symbol.NamespaceName(),
                 commentTypeName,
+                maxDepth,
                 diagnostics.ToEquatableArray());
         }
 

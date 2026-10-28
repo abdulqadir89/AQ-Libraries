@@ -112,9 +112,31 @@ public class Contract : Entity<TestUser>, IPeriodicReviewable<ContractPeriodicRe
     public static Contract Create() => new();
 }
 
-public abstract class TestComment : Comment<TestUser>
+public abstract class TestComment : ReviewComment<TestUser>
 {
     public string? Area { get; set; }
+}
+
+public class TestVote : CommentVote<TestUser>
+{
+    private TestVote() { }
+
+    public static TestVote Create(IComment comment, int value)
+    {
+        var vote = new TestVote();
+        vote.Initialize(comment, value);
+        return vote;
+    }
+}
+
+[Commentable(typeof(TestComment), MaxDepth = 1)]
+public class Sheet : Entity<TestUser>
+{
+    private Sheet() { }
+
+    public string Title { get; private set; } = "";
+
+    public static Sheet Create(string title) => new() { Title = title };
 }
 
 [Commentable(typeof(TestComment))]
