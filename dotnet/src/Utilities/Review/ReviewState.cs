@@ -1,53 +1,29 @@
-using AQ.Utilities.Verification;
-
 namespace AQ.Utilities.Review;
 
-public sealed class ReviewState
+// ADR-005: a review is only a schedule (two dates), not who/how/notified, and it is independent of verification
+/// <summary>The schedule of a review: when the entity was last reviewed and when it is next due. An app that needs more columns derives from this and maps its type with <c>HasReviewState</c>.</summary>
+public abstract class ReviewStateBase
 {
-    public DateTimeOffset? NextReviewDue { get; private set; }
     public DateTimeOffset? LastReviewedAt { get; private set; }
-    public Guid? LastReviewedById { get; private set; }
-    public Guid? LastReviewActivityId { get; private set; }
-    public DateTimeOffset? LastNotifiedAt { get; private set; }
+    public DateTimeOffset? NextReviewDue { get; private set; }
 
     // RULE RVW-1
-    public void MarkReviewed(Guid reviewedByUserId, DateTimeOffset? nextReviewDue, Guid? activityId = null)
+    public void MarkReviewed(DateTimeOffset reviewedAt, DateTimeOffset? nextReviewDue)
     {
-        var now = DateTimeOffset.UtcNow;
-        LastReviewedAt = now;
-        LastReviewedById = reviewedByUserId;
-        LastReviewActivityId = activityId;
-        NextReviewDue = nextReviewDue ?? (NextReviewDue > now ? NextReviewDue : null);
-        LastNotifiedAt = null;
+        LastReviewedAt = reviewedAt;
+        NextReviewDue = nextReviewDue ?? (NextReviewDue > reviewedAt ? NextReviewDue : null);
     }
 
-    public void Restamp() => LastReviewedAt = DateTimeOffset.UtcNow;
-
-    public void SetNextReviewDue(DateTimeOffset? nextReviewDue)
-    {
-        if (NextReviewDue == nextReviewDue)
-            return;
-
-        NextReviewDue = nextReviewDue;
-        LastNotifiedAt = null;
-    }
-
-    public void RecordNotified() => LastNotifiedAt = DateTimeOffset.UtcNow;
+    public void SetNextReviewDue(DateTimeOffset? nextReviewDue) => NextReviewDue = nextReviewDue;
 
     public void Clear()
     {
-        NextReviewDue = null;
         LastReviewedAt = null;
-        LastReviewedById = null;
-        LastReviewActivityId = null;
-        LastNotifiedAt = null;
+        NextReviewDue = null;
     }
 
     // RULE RVW-3
-    public bool IsDue(DateTimeOffset now) =>
-        NextReviewDue is { } due && due <= now && (LastNotifiedAt is null || LastNotifiedAt < due);
-
-    // RULE RVW-3
-    public bool IsCurrent(VerificationState? verification = null) =>
-        LastReviewedAt is { } reviewedAt && (verification?.LastResetAt is not { } resetAt || reviewedAt >= resetAt);
+    public bool IsOverdue(DateTimeOffset now) => NextReviewDue is { } due && due <= now;
 }
+
+public sealed class ReviewState : ReviewStateBase;

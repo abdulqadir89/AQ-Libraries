@@ -111,15 +111,15 @@ Base types for aggregates, plus the event plumbing. Where events are saved and w
 
 ## Entity Framework integration <!-- projects: AQ.EntityFramework -->
 
-The save pipeline, the audit log, snapshot storage and pruning, version groups, tags and the hierarchy service. Options switch each step on; the steps always run in the order below.
+The save pipeline, the audit log, snapshot storage and pruning, version groups, tags, comments and the hierarchy service. Options switch each step on; the steps always run in the order below.
 
 - **EFC-1** The save pipeline runs, when enabled: tag link correction, owned-change touch, actor check, lifecycle hooks, version groups, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
 - **EFC-2** When audit, outbox or audit log is on and a save changes an auditable entity, raises a domain event or changes an audited entity, an actor must be active. Without one the save throws a missing-actor error instead of storing empty attribution.
 - **EFC-3** Stamping: an added auditable entity gets its creator, updater and creation time; a modified one gets its updater, update time and next revision. An entity that is timestamped but not auditable gets times and revision only and needs no actor.
-- **EFC-4** When only an owned part of an entity changed (a value object, verification state, review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save. A review reminder bookmark alone does not count as an edit.
+- **EFC-4** When only an owned part of an entity changed (a value object, verification state, review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save.
 - **EFC-5** Lifecycle hooks run per tracked entity: on add, on update and on remove (which can veto), and the active flag is re-evaluated for added and modified entities.
 - **EFC-6** An added entity gets its generated reference only when that property is empty; an existing value is kept.
-- **EFC-7** When a property marked verifiable changes on a modified entity, its verification history resets. A review recorded in the same save survives the reset and counts as a fresh verification by the reviewer.
+- **EFC-7** When a property marked verifiable changes on a modified entity, its verification history resets. Review is independent of verification: a review neither survives nor counts as a verification.
 - **EFC-8** Each added or modified entity that is snapshottable gets a snapshot row holding its id, revision and the data of its snapshot members.
 - **EFC-9** Every insert, update and delete of an audited entity writes one audit event in the same save, with the actor and the changed values. An update that changed nothing recordable writes nothing.
 - **EFC-10** The recorded changes list new values for inserts, old values for deletes, and old and new for updates. Revision, update time, updater, keys, shadow properties and audit-ignored properties are left out; owned parts are folded into their owner under dotted paths.
@@ -129,7 +129,7 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-14** The audited bulk update adds updater, update time and revision plus one to the caller's changes. Bulk statements bypass the pipeline, so they write no audit event.
 - **EFC-18** Moving a node in a hierarchy rebuilds the closure rows of its whole subtree; making a node a child of its own descendant is refused with an error.
 - **EFC-19** The closure can be recomputed for one subtree or for everything, from the parent links, which are authoritative.
-- **EFC-20** The verification and review states map to fixed column names, and a review state is always materialized, never null, even for a never-reviewed row.
+- **EFC-20** The verification and review states map to fixed column names, and a review state is always materialized, never null, even for a never-reviewed row. An app's own review state type, derived from the base state, maps its extra columns beside them.
 - **EFC-21** All snapshots live in one shared table keyed by entity type, with a unique index on entity and version.
 - **EFC-22** Each snapshot type has a required link to its entity, and deleting the entity deletes its snapshots. History that must outlive an entity is the entity's own business (soft delete or status).
 - **EFC-23** Pruning keeps at most the configured number of newest snapshots per entity and removes the older ones. Snapshots are ranked by how many newer ones the entity has, never by version arithmetic, so gaps in version numbers do not matter.
@@ -140,6 +140,8 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-28** A tag that is still on a record cannot be deleted; the app removes it from the records first.
 - **EFC-29** Each tag link type has a required link to its record, and deleting the record deletes its links but never the tags.
 - **EFC-30** A tag link added through a tracked record's collection is inserted: links are never edited, so one the change tracker finds as modified is treated as new unless its row already exists, in which case it is left as it is.
+- **EFC-31** All comments of one comment type live in one shared table keyed by record type. A reply points to its top-level comment by a link that does not itself cascade, so deleting the record removes a comment and its replies together, while a top-level comment is only ever soft-deleted.
+- **EFC-32** Each comment class has a required link to its record, and deleting the record deletes its comments.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
@@ -151,7 +153,7 @@ Provider packages translate the search operators that plain LINQ cannot express.
 
 ## Source generators <!-- projects: AQ.Generators -->
 
-A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, and the members of version-grouped and taggable classes.
+A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, the members of version-grouped and taggable classes, and the comment classes of commentable ones.
 
 - **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
 - **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class that does not already declare the members the generator adds, otherwise the build fails with `AQGEN002`.
@@ -162,6 +164,8 @@ A Roslyn incremental generator, referenced as an analyzer, that writes the snaps
 - **GEN-7** A snapshottable class can set `Name`, used for its snapshot link, discriminator and retention configuration key instead of the class name. Two snapshottable classes ending up with the same name fail the build with `AQGEN005`.
 - **GEN-8** A class marked taggable gets a generated tags collection, a link type named after the class (or the name given), a registration and query helpers. It must be a partial, non-generic, top-level entity class and name a tag type that implements the tag interface, not already declare the members the generator adds, and use a name that is a valid identifier and does not clash with an existing type, otherwise the build fails with `AQGEN002`. The entity interface must be the non-generic one with a Guid key.
 - **GEN-9** Two taggable classes ending up with the same name fail the build with `AQGEN006`. Adding a tag id the class already has is a no-op.
+- **GEN-10** A class marked commentable gets a generated comment class (named after the class or the name given) that derives from the given comment type, carries a required link to the record, creates comments and replies, and has query helpers and a registration. The class must be a non-generic top-level entity class (it need not be partial); the comment type must derive from the comment base, not be sealed, have an accessible parameterless constructor and not declare the members the generator adds; the name must be a valid identifier and not clash with an existing type, otherwise the build fails with `AQGEN002`.
+- **GEN-11** Two commentable classes ending up with the same name fail the build with `AQGEN007`.
 
 ## Utilities <!-- projects: AQ.Utilities -->
 
@@ -221,9 +225,9 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 
 - **VER-1** Verification state keeps a count and one entry per verification (who and when). Resetting clears both and stamps when the reset happened.
 - **VER-2** Verification can be asked "has this user verified" from the entries.
-- **RVW-1** Marking an entity reviewed stamps who and when, links the activity, sets the next due date (keeping a still-future one when none is given) and clears the notified flag.
-- **RVW-2** Reviewing an entity that is also verifiable adds the reviewer to its verification history unless they are already in it, and reports whether it did.
-- **RVW-3** A review is due when its due date has passed and nobody has been notified since that date. It is current when it happened at or after the last verification reset.
+- **RVW-1** Marking an entity reviewed stamps the review date and sets the next due date, keeping a still-future one when none is given. A review state holds only those two dates; an app that needs more derives its own state type from the base.
+- **RVW-2** Reviewing through a due calculator takes the next due date from the caller when given, else from the entity's calculator, else keeps a still-future date the entity already has.
+- **RVW-3** A review is overdue when its due date has passed. Review and verification are independent: reviewing does not verify, and a change to verifiable data does not make a review stale.
 
 ### Snapshots, version groups and entity data
 
@@ -240,6 +244,15 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 
 - **TAG-1** Setting the tags of a record makes it carry exactly the given tags: the ones it lacks are added, the ones the set lacks are removed, and empty ids are ignored.
 - **TAG-2** Adding tags skips the ones the record already carries and the duplicates in the request, and empty ids.
+
+### Comments
+
+Threaded comments on any entity, independent of review and verification. The author and time of a comment are its audit creator and creation time; who may read, write, edit or delete is the app's decision.
+
+- **CMT-1** A comment's text is trimmed and cannot be blank.
+- **CMT-2** A reply answers a top-level comment of the same record that has not been deleted. A reply to a reply, to a deleted comment or to a comment of another record is refused.
+- **CMT-3** Editing replaces the text and stamps when; editing to the same text changes nothing, and a deleted comment cannot be edited.
+- **CMT-4** Deleting marks the comment deleted and keeps its text and its replies; deleting twice changes nothing.
 
 ### Generated references
 
