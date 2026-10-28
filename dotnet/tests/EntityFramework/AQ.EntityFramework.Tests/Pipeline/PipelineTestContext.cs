@@ -1,7 +1,7 @@
 using AQ.Actors;
 using AQ.EntityFramework.Auditing;
 using AQ.EntityFramework.Commenting;
-using AQ.EntityFramework.Review;
+using AQ.EntityFramework.PeriodicReview;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Snapshots;
 using AQ.EntityFramework.Tagging;
@@ -50,10 +50,10 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
             builder.Ignore(t => t.UpdateCalls);
             builder.OwnsOne(t => t.Price);
             builder.HasVerificationState(t => t.Verification);
-            builder.HasReviewState(t => t.Review);
+            builder.HasPeriodicReviewState(t => t.PeriodicReview);
         });
         modelBuilder.Entity<Manual>(builder => builder.HasVerificationState(m => m.Verification));
-        modelBuilder.Entity<Contract>(builder => builder.HasReviewState(c => c.Review));
+        modelBuilder.Entity<Contract>(builder => builder.HasPeriodicReviewState(c => c.PeriodicReview));
         modelBuilder.ApplyVersionGroups();
         modelBuilder.ApplyEntityTags<TestTag>();
         modelBuilder.ApplyEntityComments<TestComment>();

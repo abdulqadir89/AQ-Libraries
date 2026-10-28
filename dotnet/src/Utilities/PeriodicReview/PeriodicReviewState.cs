@@ -1,8 +1,8 @@
-namespace AQ.Utilities.Review;
+namespace AQ.Utilities.PeriodicReview;
 
-// ADR-005: a review is only a schedule (two dates), not who/how/notified, and it is independent of verification
-/// <summary>The schedule of a review: when the entity was last reviewed and when it is next due. An app that needs more columns derives from this and maps its type with <c>HasReviewState</c>.</summary>
-public abstract class ReviewStateBase
+// ADR-006: named periodic review so it is not confused with approval reviews. ADR-005: a periodic review is only a schedule (two dates), not who/how/notified, and it is independent of verification
+/// <summary>The schedule of a review: when the entity was last reviewed and when it is next due. An app that needs more columns derives from this and maps its type with <c>HasPeriodicReviewState</c>.</summary>
+public abstract class PeriodicReviewStateBase
 {
     public DateTimeOffset? LastReviewedAt { get; private set; }
     public DateTimeOffset? NextReviewDue { get; private set; }
@@ -26,4 +26,4 @@ public abstract class ReviewStateBase
     public bool IsOverdue(DateTimeOffset now) => NextReviewDue is { } due && due <= now;
 }
 
-public sealed class ReviewState : ReviewStateBase;
+public sealed class PeriodicReviewState : PeriodicReviewStateBase;

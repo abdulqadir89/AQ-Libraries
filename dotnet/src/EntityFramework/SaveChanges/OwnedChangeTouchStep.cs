@@ -7,7 +7,7 @@ namespace AQ.EntityFramework.SaveChanges;
 
 internal static class OwnedChangeTouchStep
 {
-    // EF leaves an owner Unchanged when only an owned type (value object, VerificationState, review state, ...) changed, so
+    // EF leaves an owner Unchanged when only an owned type (value object, VerificationState, periodic review state, ...) changed, so
     // lifecycle, audit and snapshot steps would skip that save. Flagging Revision re-marks the owner Modified.
     // RULE EFC-4
     public static void Run(DbContext context)

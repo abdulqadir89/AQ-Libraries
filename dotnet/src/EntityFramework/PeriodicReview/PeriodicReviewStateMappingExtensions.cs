@@ -1,20 +1,20 @@
 using System.Linq.Expressions;
-using AQ.Utilities.Review;
+using AQ.Utilities.PeriodicReview;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AQ.EntityFramework.Review;
+namespace AQ.EntityFramework.PeriodicReview;
 
-public static class ReviewStateMappingExtensions
+public static class PeriodicReviewStateMappingExtensions
 {
     public const string NextReviewDueColumnName = "NextReviewDue";
     public const string LastReviewedAtColumnName = "LastReviewedAt";
 
-    public static EntityTypeBuilder<TEntity> HasReviewState<TEntity, TState>(
+    public static EntityTypeBuilder<TEntity> HasPeriodicReviewState<TEntity, TState>(
         this EntityTypeBuilder<TEntity> builder,
         Expression<Func<TEntity, TState?>> property)
         where TEntity : class
-        where TState : ReviewStateBase
+        where TState : PeriodicReviewStateBase
     {
         builder.OwnsOne(property, owned =>
         {
@@ -22,7 +22,7 @@ public static class ReviewStateMappingExtensions
             owned.Property(p => p.LastReviewedAt).HasColumnName(LastReviewedAtColumnName);
             owned.HasIndex(p => p.NextReviewDue);
         });
-        // Every column is nullable, so without this EF materializes a null Review for a never-reviewed row.
+        // Every column is nullable, so without this EF materializes a null PeriodicReview for a never-reviewed row.
         // RULE EFC-20
         builder.Navigation(property).IsRequired();
         return builder;

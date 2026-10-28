@@ -41,7 +41,7 @@ public sealed class AqSaveChangesInterceptor(AqSavePipelineOptions options, IAct
             TagLinkStep.Run(context);
         }
 
-        if (options.Audit || options.Lifecycle || options.Snapshots || options.VerificationReset || options.Review)
+        if (options.Audit || options.Lifecycle || options.Snapshots || options.VerificationReset || options.PeriodicReview)
         {
             OwnedChangeTouchStep.Run(context);
         }

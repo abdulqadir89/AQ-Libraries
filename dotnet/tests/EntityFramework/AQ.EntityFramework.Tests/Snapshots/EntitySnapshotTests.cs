@@ -14,7 +14,7 @@ public class EntitySnapshotTests : IDisposable
         Lifecycle = true,
         GeneratedReferences = true,
         VerificationReset = true,
-        Review = true,
+        PeriodicReview = true,
         Audit = true,
         Snapshots = true,
         Outbox = true,

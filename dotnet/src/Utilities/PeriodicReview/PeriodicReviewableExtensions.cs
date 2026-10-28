@@ -1,22 +1,22 @@
-namespace AQ.Utilities.Review;
+namespace AQ.Utilities.PeriodicReview;
 
-public static class ReviewableExtensions
+public static class PeriodicReviewableExtensions
 {
     /// <summary>Marks the entity reviewed. The next due date is the one given, else the calculator's, else a still-future date the entity already has.</summary>
     // RULE RVW-2
     public static async Task MarkReviewedAsync<T>(
         this T entity,
-        IReviewDueCalculator<T> calculator,
+        IPeriodicReviewDueCalculator<T> calculator,
         DateTimeOffset? reviewedAt = null,
         DateTimeOffset? nextReviewDue = null,
         CancellationToken cancellationToken = default)
-        where T : IReviewable
+        where T : IPeriodicReviewable
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(calculator);
 
         var at = reviewedAt ?? DateTimeOffset.UtcNow;
         var due = nextReviewDue ?? await calculator.CalculateAsync(entity, at, cancellationToken);
-        entity.Review.MarkReviewed(at, due);
+        entity.PeriodicReview.MarkReviewed(at, due);
     }
 }
