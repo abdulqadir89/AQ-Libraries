@@ -15,7 +15,7 @@ public class SavePipelineTests : IDisposable
         Lifecycle = true,
         GeneratedReferences = true,
         VerificationReset = true,
-        Review = true,
+        PeriodicReview = true,
         Audit = true,
         Snapshots = true,
         Outbox = true,
@@ -144,7 +144,7 @@ public class SavePipelineTests : IDisposable
             context.Add(ticket);
             await context.SaveChangesAsync();
             ticketId = ticket.Id;
-            ticket.Review.MarkReviewed(reviewedAt, nextDue);
+            ticket.PeriodicReview.MarkReviewed(reviewedAt, nextDue);
             await context.SaveChangesAsync();
             ticket.Revision.Should().Be(1);
             ticket.UpdatedById.Should().Be(_userId);
@@ -153,8 +153,8 @@ public class SavePipelineTests : IDisposable
         using var reloaded = _database.CreateContext(All, _userId);
         var loaded = await reloaded.Tickets.SingleAsync(t => t.Id == ticketId);
 
-        loaded.Review.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
-        loaded.Review.NextReviewDue.Should().BeCloseTo(nextDue, TimeSpan.FromSeconds(1));
+        loaded.PeriodicReview.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
+        loaded.PeriodicReview.NextReviewDue.Should().BeCloseTo(nextDue, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -172,8 +172,8 @@ public class SavePipelineTests : IDisposable
         using var reloaded = _database.CreateContext(All, _userId);
         var loaded = await reloaded.Tickets.SingleAsync(t => t.Id == ticketId);
 
-        loaded.Review.Should().NotBeNull();
-        loaded.Review.LastReviewedAt.Should().BeNull();
+        loaded.PeriodicReview.Should().NotBeNull();
+        loaded.PeriodicReview.LastReviewedAt.Should().BeNull();
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class SavePipelineTests : IDisposable
         ticket.Verification.Add(verifier);
         await context.SaveChangesAsync();
 
-        ticket.Review.MarkReviewed(DateTimeOffset.UtcNow, null);
+        ticket.PeriodicReview.MarkReviewed(DateTimeOffset.UtcNow, null);
         await context.SaveChangesAsync();
         ticket.Verification.Count.Should().Be(1);
 
@@ -195,7 +195,7 @@ public class SavePipelineTests : IDisposable
         await context.SaveChangesAsync();
 
         ticket.Verification.Count.Should().Be(0);
-        ticket.Review.LastReviewedAt.Should().NotBeNull();
+        ticket.PeriodicReview.LastReviewedAt.Should().NotBeNull();
     }
 
     [Fact]
@@ -209,17 +209,17 @@ public class SavePipelineTests : IDisposable
             context.Add(contract);
             await context.SaveChangesAsync();
             contractId = contract.Id;
-            contract.Review.Outcome = "Accepted";
-            contract.Review.MarkReviewed(reviewedAt, reviewedAt.AddDays(180));
+            contract.PeriodicReview.Outcome = "Accepted";
+            contract.PeriodicReview.MarkReviewed(reviewedAt, reviewedAt.AddDays(180));
             await context.SaveChangesAsync();
         }
 
         using var reloaded = _database.CreateContext(All, _userId);
         var loaded = await reloaded.Contracts.SingleAsync(c => c.Id == contractId);
 
-        loaded.Review.Outcome.Should().Be("Accepted");
-        loaded.Review.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
-        loaded.Review.NextReviewDue.Should().BeCloseTo(reviewedAt.AddDays(180), TimeSpan.FromSeconds(1));
+        loaded.PeriodicReview.Outcome.Should().Be("Accepted");
+        loaded.PeriodicReview.LastReviewedAt.Should().BeCloseTo(reviewedAt, TimeSpan.FromSeconds(1));
+        loaded.PeriodicReview.NextReviewDue.Should().BeCloseTo(reviewedAt.AddDays(180), TimeSpan.FromSeconds(1));
     }
 
     [Fact]

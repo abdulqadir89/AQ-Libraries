@@ -2,7 +2,7 @@ using AQ.Entities;
 using AQ.Events.Domain;
 using AQ.Utilities.Commenting;
 using AQ.Utilities.References;
-using AQ.Utilities.Review;
+using AQ.Utilities.PeriodicReview;
 using AQ.Utilities.Snapshots;
 using AQ.Utilities.Tagging;
 using AQ.Utilities.Verification;
@@ -39,7 +39,7 @@ public class Invoice : Entity<TestUser>
 
 [Audited]
 [Snapshottable(IncludeId = true)]
-public class Ticket : Entity<TestUser>, IVerifiable, IReviewable<ReviewState>, IHasActiveFlag
+public class Ticket : Entity<TestUser>, IVerifiable, IPeriodicReviewable<PeriodicReviewState>, IHasActiveFlag
 {
     private Ticket() { }
 
@@ -55,7 +55,7 @@ public class Ticket : Entity<TestUser>, IVerifiable, IReviewable<ReviewState>, I
     public bool RaiseOnAdd { get; set; }
 
     public VerificationState Verification { get; private set; } = new();
-    public ReviewState Review { get; private set; } = new();
+    public PeriodicReviewState PeriodicReview { get; private set; } = new();
 
     public static Ticket Create(string title, string notes = "", string reference = "") =>
         new() { Title = title, Notes = notes, Reference = reference };
@@ -98,16 +98,16 @@ public partial class Manual : Entity<TestUser>, IVerifiable
     public void Rename(string title) => Title = title;
 }
 
-public sealed class ContractReviewState : ReviewStateBase
+public sealed class ContractPeriodicReviewState : PeriodicReviewStateBase
 {
     public string? Outcome { get; set; }
 }
 
-public class Contract : Entity<TestUser>, IReviewable<ContractReviewState>
+public class Contract : Entity<TestUser>, IPeriodicReviewable<ContractPeriodicReviewState>
 {
     private Contract() { }
 
-    public ContractReviewState Review { get; private set; } = new();
+    public ContractPeriodicReviewState PeriodicReview { get; private set; } = new();
 
     public static Contract Create() => new();
 }

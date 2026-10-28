@@ -116,10 +116,10 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-1** The save pipeline runs, when enabled: tag link correction, owned-change touch, actor check, lifecycle hooks, version groups, generated references, verification reset, audit stamping, snapshots, audit log, outbox. A save with nothing for a step to do skips it.
 - **EFC-2** When audit, outbox or audit log is on and a save changes an auditable entity, raises a domain event or changes an audited entity, an actor must be active. Without one the save throws a missing-actor error instead of storing empty attribution.
 - **EFC-3** Stamping: an added auditable entity gets its creator, updater and creation time; a modified one gets its updater, update time and next revision. An entity that is timestamped but not auditable gets times and revision only and needs no actor.
-- **EFC-4** When only an owned part of an entity changed (a value object, verification state, review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save.
+- **EFC-4** When only an owned part of an entity changed (a value object, verification state, periodic review state), the owner is still treated as modified and its revision rises, so stamping, snapshots and the audit log do not skip the save.
 - **EFC-5** Lifecycle hooks run per tracked entity: on add, on update and on remove (which can veto), and the active flag is re-evaluated for added and modified entities.
 - **EFC-6** An added entity gets its generated reference only when that property is empty; an existing value is kept.
-- **EFC-7** When a property marked verifiable changes on a modified entity, its verification history resets. Review is independent of verification: a review neither survives nor counts as a verification.
+- **EFC-7** When a property marked verifiable changes on a modified entity, its verification history resets. Periodic review is independent of verification: a periodic review neither survives nor counts as a verification.
 - **EFC-8** Each added or modified entity that is snapshottable gets a snapshot row holding its id, revision and the data of its snapshot members.
 - **EFC-9** Every insert, update and delete of an audited entity writes one audit event in the same save, with the actor and the changed values. An update that changed nothing recordable writes nothing.
 - **EFC-10** The recorded changes list new values for inserts, old values for deletes, and old and new for updates. Revision, update time, updater, keys, shadow properties and audit-ignored properties are left out; owned parts are folded into their owner under dotted paths.
@@ -129,7 +129,7 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-14** The audited bulk update adds updater, update time and revision plus one to the caller's changes. Bulk statements bypass the pipeline, so they write no audit event.
 - **EFC-18** Moving a node in a hierarchy rebuilds the closure rows of its whole subtree; making a node a child of its own descendant is refused with an error.
 - **EFC-19** The closure can be recomputed for one subtree or for everything, from the parent links, which are authoritative.
-- **EFC-20** The verification and review states map to fixed column names, and a review state is always materialized, never null, even for a never-reviewed row. An app's own review state type, derived from the base state, maps its extra columns beside them.
+- **EFC-20** The verification and periodic review states map to fixed column names, and a periodic review state is always materialized, never null, even for a never-reviewed row. An app's own periodic review state type, derived from the base state, maps its extra columns beside them.
 - **EFC-21** All snapshots live in one shared table keyed by entity type, with a unique index on entity and version.
 - **EFC-22** Each snapshot type has a required link to its entity, and deleting the entity deletes its snapshots. History that must outlive an entity is the entity's own business (soft delete or status).
 - **EFC-23** Pruning keeps at most the configured number of newest snapshots per entity and removes the older ones. Snapshots are ranked by how many newer ones the entity has, never by version arithmetic, so gaps in version numbers do not matter.
@@ -221,13 +221,13 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 - **MRG-2** Unmerging an entity that is not merged throws.
 - **MRG-3** The merge query helpers return the primary plus its merged records, resolve an entity to its effective primary, and group records by primary.
 
-### Verification and review
+### Verification and periodic review
 
 - **VER-1** Verification state keeps a count and one entry per verification (who and when). Resetting clears both and stamps when the reset happened.
 - **VER-2** Verification can be asked "has this user verified" from the entries.
-- **RVW-1** Marking an entity reviewed stamps the review date and sets the next due date, keeping a still-future one when none is given. A review state holds only those two dates; an app that needs more derives its own state type from the base.
+- **RVW-1** Marking an entity periodically reviewed stamps the review date and sets the next due date, keeping a still-future one when none is given. A periodic review state holds only those two dates; an app that needs more derives its own state type from the base.
 - **RVW-2** Reviewing through a due calculator takes the next due date from the caller when given, else from the entity's calculator, else keeps a still-future date the entity already has.
-- **RVW-3** A review is overdue when its due date has passed. Review and verification are independent: reviewing does not verify, and a change to verifiable data does not make a review stale.
+- **RVW-3** A periodic review is overdue when its due date has passed. Review and verification are independent: reviewing does not verify, and a change to verifiable data does not make a review stale.
 
 ### Snapshots, version groups and entity data
 
@@ -247,7 +247,7 @@ Usage: [Search README](../dotnet/src/Utilities/Search/README.md). The provider-s
 
 ### Comments
 
-Threaded comments on any entity, independent of review and verification. The author and time of a comment are its audit creator and creation time; who may read, write, edit or delete is the app's decision.
+Threaded comments on any entity, independent of periodic review and verification. The author and time of a comment are its audit creator and creation time; who may read, write, edit or delete is the app's decision.
 
 - **CMT-1** A comment's text is trimmed and cannot be blank.
 - **CMT-2** A reply answers a top-level comment of the same record that has not been deleted. A reply to a reply, to a deleted comment or to a comment of another record is refused.

@@ -9,7 +9,7 @@ public sealed class AqSavePipelineOptions
     public bool Tags { get; init; }
     public bool GeneratedReferences { get; init; }
     public bool VerificationReset { get; init; }
-    public bool Review { get; init; }
+    public bool PeriodicReview { get; init; }
     public bool Audit { get; init; }
     public bool Snapshots { get; init; }
     public bool Outbox { get; init; }

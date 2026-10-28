@@ -1,17 +1,17 @@
-using AQ.Utilities.Review;
+using AQ.Utilities.PeriodicReview;
 using FluentAssertions;
 using Xunit;
 
-namespace AQ.Utilities.Tests.Review;
+namespace AQ.Utilities.Tests.PeriodicReview;
 
 public class ReviewStateTests
 {
-    private sealed class Reviewable : IReviewable<ReviewState>
+    private sealed class Reviewable : IPeriodicReviewable<PeriodicReviewState>
     {
-        public ReviewState Review { get; } = new();
+        public PeriodicReviewState PeriodicReview { get; } = new();
     }
 
-    private sealed class FixedCalculator(DateTimeOffset? due) : IReviewDueCalculator<Reviewable>
+    private sealed class FixedCalculator(DateTimeOffset? due) : IPeriodicReviewDueCalculator<Reviewable>
     {
         public int Calls { get; private set; }
 
@@ -25,7 +25,7 @@ public class ReviewStateTests
     [Fact]
     public void NewState_IsEmptyAndNeverOverdue()
     {
-        var state = new ReviewState();
+        var state = new PeriodicReviewState();
 
         state.NextReviewDue.Should().BeNull();
         state.LastReviewedAt.Should().BeNull();
@@ -35,7 +35,7 @@ public class ReviewStateTests
     [Fact]
     public void MarkReviewed_RecordsReviewDateAndNextDue()
     {
-        var state = new ReviewState();
+        var state = new PeriodicReviewState();
         var reviewedAt = DateTimeOffset.UtcNow.AddDays(-1);
         var nextDue = DateTimeOffset.UtcNow.AddDays(90);
 
@@ -50,12 +50,12 @@ public class ReviewStateTests
     {
         var now = DateTimeOffset.UtcNow;
         var future = now.AddDays(30);
-        var scheduled = new ReviewState();
+        var scheduled = new PeriodicReviewState();
         scheduled.SetNextReviewDue(future);
         scheduled.MarkReviewed(now, null);
         scheduled.NextReviewDue.Should().Be(future);
 
-        var overdue = new ReviewState();
+        var overdue = new PeriodicReviewState();
         overdue.SetNextReviewDue(now.AddDays(-1));
         overdue.MarkReviewed(now, null);
         overdue.NextReviewDue.Should().BeNull();
@@ -64,7 +64,7 @@ public class ReviewStateTests
     [Fact]
     public void IsOverdue_TrueOnlyOnceNextDueHasPassed()
     {
-        var state = new ReviewState();
+        var state = new PeriodicReviewState();
         state.SetNextReviewDue(DateTimeOffset.UtcNow.AddDays(1));
 
         state.IsOverdue(DateTimeOffset.UtcNow).Should().BeFalse();
@@ -74,7 +74,7 @@ public class ReviewStateTests
     [Fact]
     public void Clear_RemovesBothDates()
     {
-        var state = new ReviewState();
+        var state = new PeriodicReviewState();
         state.MarkReviewed(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(1));
 
         state.Clear();
@@ -92,7 +92,7 @@ public class ReviewStateTests
 
         await entity.MarkReviewedAsync(calculator, nextReviewDue: explicitDue);
 
-        entity.Review.NextReviewDue.Should().Be(explicitDue);
+        entity.PeriodicReview.NextReviewDue.Should().Be(explicitDue);
         calculator.Calls.Should().Be(0);
     }
 
@@ -105,8 +105,8 @@ public class ReviewStateTests
 
         await entity.MarkReviewedAsync(new FixedCalculator(calculated), reviewedAt);
 
-        entity.Review.LastReviewedAt.Should().Be(reviewedAt);
-        entity.Review.NextReviewDue.Should().Be(calculated);
+        entity.PeriodicReview.LastReviewedAt.Should().Be(reviewedAt);
+        entity.PeriodicReview.NextReviewDue.Should().Be(calculated);
     }
 
     [Fact]
@@ -114,10 +114,10 @@ public class ReviewStateTests
     {
         var entity = new Reviewable();
         var future = DateTimeOffset.UtcNow.AddDays(30);
-        entity.Review.SetNextReviewDue(future);
+        entity.PeriodicReview.SetNextReviewDue(future);
 
         await entity.MarkReviewedAsync(new FixedCalculator(null));
 
-        entity.Review.NextReviewDue.Should().Be(future);
+        entity.PeriodicReview.NextReviewDue.Should().Be(future);
     }
 }
