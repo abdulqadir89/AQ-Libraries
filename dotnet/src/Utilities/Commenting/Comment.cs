@@ -9,6 +9,7 @@ namespace AQ.Utilities.Commenting;
 public abstract class Comment<TPrincipal> : Entity<TPrincipal>, IComment where TPrincipal : class
 {
     public Guid? ParentId { get; private set; }
+    public int Depth { get; private set; }
     public string Text { get; private set; } = string.Empty;
     public DateTimeOffset? EditedAt { get; private set; }
     public DateTimeOffset? DeletedAt { get; private set; }
@@ -16,8 +17,8 @@ public abstract class Comment<TPrincipal> : Entity<TPrincipal>, IComment where T
 
     protected Comment() { }
 
-    /// <summary>Sets the text and, for a reply, the comment it answers. The generated create method calls this after checking that both comments belong to the same record.</summary>
-    protected void Initialize(string text, IComment? parent)
+    /// <summary>Sets the text and, for a reply, the comment it answers. The generated create method calls this after checking that both comments belong to the same record; <paramref name="maxDepth"/> is the commentable class's limit, 0 for none.</summary>
+    protected void Initialize(string text, IComment? parent, int maxDepth = 0)
     {
         Text = Normalize(text);
 
@@ -27,18 +28,20 @@ public abstract class Comment<TPrincipal> : Entity<TPrincipal>, IComment where T
         }
 
         // RULE CMT-2
-        if (parent.ParentId is not null)
-        {
-            throw new InvalidOperationException("A reply answers a top-level comment, not another reply.");
-        }
-
-        // RULE CMT-2
         if (parent.IsDeleted)
         {
             throw new InvalidOperationException("A deleted comment cannot be replied to.");
         }
 
+        // ADR-007: the limit is the commentable class's MaxDepth, not a fixed single level
+        // RULE CMT-2
+        if (maxDepth > 0 && parent.Depth >= maxDepth)
+        {
+            throw new InvalidOperationException($"A reply cannot be nested deeper than {maxDepth} level(s).");
+        }
+
         ParentId = parent.Id;
+        Depth = parent.Depth + 1;
     }
 
     // RULE CMT-3

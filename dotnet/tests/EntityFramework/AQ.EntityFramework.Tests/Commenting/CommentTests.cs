@@ -1,5 +1,6 @@
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Tests.Support;
+using AQ.Utilities.Commenting;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,20 +72,130 @@ public class CommentTests : IDisposable
     }
 
     [Fact]
-    public void Reply_ToAReply_ToADeletedComment_OrAcrossRecords_IsRefused()
+    public void Reply_ToADeletedComment_OrAcrossRecords_IsRefused()
     {
         var memo = Memo.Create("Rules");
         var top = MemoComment.Create(memo, "Top");
-        var reply = MemoComment.Create(memo, "Reply", top);
 
-        var replyToReply = () => MemoComment.Create(memo, "Nested", reply);
         var acrossRecords = () => MemoComment.Create(Memo.Create("Other"), "Elsewhere", top);
         top.Delete();
         var toDeleted = () => MemoComment.Create(memo, "Late", top);
 
-        replyToReply.Should().Throw<InvalidOperationException>();
         acrossRecords.Should().Throw<InvalidOperationException>();
         toDeleted.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Replies_NestWithoutLimit_WhenTheClassSetsNoMaxDepth()
+    {
+        var memo = Memo.Create("Deep");
+        var top = MemoComment.Create(memo, "Top");
+        var reply = MemoComment.Create(memo, "Reply", top);
+        var nested = MemoComment.Create(memo, "Nested", reply);
+
+        top.Depth.Should().Be(0);
+        reply.Depth.Should().Be(1);
+        nested.Depth.Should().Be(2);
+        nested.ParentId.Should().Be(reply.Id);
+    }
+
+    [Fact]
+    public void Replies_StopAtTheClassesMaxDepth()
+    {
+        var sheet = Sheet.Create("Review");
+        var top = SheetComment.Create(sheet, "Top");
+        var reply = SheetComment.Create(sheet, "Reply", top);
+
+        var nested = () => SheetComment.Create(sheet, "Nested", reply);
+
+        reply.Depth.Should().Be(1);
+        nested.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Resolve_AndReopen_RecordWhoAndWhen_AndAreRefusedOnReplies()
+    {
+        var sheet = Sheet.Create("Review");
+        var top = SheetComment.Create(sheet, "Top");
+        var reply = SheetComment.Create(sheet, "Reply", top);
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+
+        top.Resolve(first);
+        var resolvedAt = top.ResolutionChangedAt;
+        top.Resolve(second);
+
+        top.IsResolved.Should().BeTrue();
+        top.ResolutionChangedById.Should().Be(first);
+        top.ResolutionChangedAt.Should().Be(resolvedAt);
+        top.EditedAt.Should().BeNull();
+
+        top.Reopen(second);
+
+        top.IsResolved.Should().BeFalse();
+        top.ResolutionChangedById.Should().Be(second);
+        reply.Invoking(c => c.Resolve(first)).Should().Throw<InvalidOperationException>();
+        top.Delete();
+        top.Invoking(c => c.Resolve(first)).Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Vote_IsOnePerVoter_CanChange_AndIsRemovedWithTheRecord()
+    {
+        Guid sheetId;
+        using (var context = CreateContext())
+        {
+            var sheet = Sheet.Create("Votes");
+            var comment = SheetComment.Create(sheet, "Top");
+            context.AddRange(sheet, comment);
+            await context.SaveChangesAsync();
+            sheetId = sheet.Id;
+
+            var vote = TestVote.Create(comment, CommentVote<TestUser>.Up);
+            context.TestVotes.Add(vote);
+            await context.SaveChangesAsync();
+
+            vote.Change(comment, CommentVote<TestUser>.Down);
+            await context.SaveChangesAsync();
+
+            context.TestVotes.Add(TestVote.Create(comment, CommentVote<TestUser>.Up));
+            var duplicate = async () => await context.SaveChangesAsync();
+            await duplicate.Should().ThrowAsync<DbUpdateException>();
+        }
+
+        using var reloaded = _database.CreateContext(All, _userId);
+        (await reloaded.TestVotes.SingleAsync()).Value.Should().Be(CommentVote<TestUser>.Down);
+
+        reloaded.Remove(await reloaded.Sheets.SingleAsync(s => s.Id == sheetId));
+        await reloaded.SaveChangesAsync();
+
+        (await reloaded.TestVotes.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public void Vote_Change_WithAnotherComment_IsRefused()
+    {
+        var sheet = Sheet.Create("Votes");
+        var comment = SheetComment.Create(sheet, "Top");
+        var other = SheetComment.Create(sheet, "Other");
+        var vote = TestVote.Create(comment, CommentVote<TestUser>.Up);
+
+        vote.Invoking(v => v.Change(other, CommentVote<TestUser>.Down)).Should().Throw<InvalidOperationException>();
+        vote.Value.Should().Be(CommentVote<TestUser>.Up);
+    }
+
+    [Fact]
+    public void Vote_OnADeletedComment_OrWithAnInvalidValue_IsRefused()
+    {
+        var sheet = Sheet.Create("Votes");
+        var comment = SheetComment.Create(sheet, "Top");
+
+        var invalid = () => TestVote.Create(comment, 2);
+        invalid.Should().Throw<ArgumentOutOfRangeException>();
+
+        comment.Delete();
+        var deleted = () => TestVote.Create(comment, CommentVote<TestUser>.Up);
+        deleted.Should().Throw<InvalidOperationException>();
     }
 
     [Theory]

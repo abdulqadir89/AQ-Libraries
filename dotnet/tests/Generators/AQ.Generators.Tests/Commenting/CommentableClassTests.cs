@@ -87,6 +87,42 @@ public class CommentableClassTests
     }
 
     [Fact]
+    public void Create_StopsRepliesAtMaxDepth_AndSetsNoLimitByDefault()
+    {
+        var assembly = GeneratorHarness.Run(Prelude + """
+            [Commentable(typeof(Note), MaxDepth = 1)]
+            public class Limited : Entity<AppUser> { }
+            [Commentable(typeof(Note))]
+            public class Open : Entity<AppUser> { }
+            """).Load();
+        var limited = Activator.CreateInstance(assembly.GetType("Sample.Limited")!)!;
+        var open = Activator.CreateInstance(assembly.GetType("Sample.Open")!)!;
+        var createLimited = assembly.GetType("Sample.LimitedComment")!.GetMethod("Create")!;
+        var createOpen = assembly.GetType("Sample.OpenComment")!.GetMethod("Create")!;
+
+        var limitedTop = createLimited.Invoke(null, [limited, "Top", null])!;
+        var limitedReply = createLimited.Invoke(null, [limited, "Reply", limitedTop])!;
+        var tooDeep = () => createLimited.Invoke(null, [limited, "Nested", limitedReply]);
+        var openTop = createOpen.Invoke(null, [open, "Top", null])!;
+        var openReply = createOpen.Invoke(null, [open, "Reply", openTop])!;
+        var openNested = (IComment)createOpen.Invoke(null, [open, "Nested", openReply])!;
+
+        tooDeep.Should().Throw<TargetInvocationException>().WithInnerException<InvalidOperationException>();
+        openNested.Depth.Should().Be(2);
+    }
+
+    [Fact]
+    public void Commentable_NegativeMaxDepthReportsAqgen002()
+    {
+        var run = GeneratorHarness.Run(Prelude + """
+            [Commentable(typeof(Note), MaxDepth = -1)]
+            public class Manual : Entity<AppUser> { }
+            """);
+
+        run.GeneratorDiagnostics.Should().Contain(d => d.Id == "AQGEN002" && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
     public void Commentable_EmitsQueryHelpers()
     {
         var assembly = GeneratorHarness.Run(Prelude + Manual).Load();

@@ -8,4 +8,7 @@ public sealed class CommentableAttribute(Type commentType) : Attribute
 
     /// <summary>Name used for the generated comment type, its foreign key and discriminator; defaults to the class name. Set it when two commentable classes share a name.</summary>
     public string? Name { get; set; }
+
+    /// <summary>How many levels of replies a comment may have: 1 allows replies to top-level comments only. 0, the default, sets no limit.</summary>
+    public int MaxDepth { get; set; }
 }

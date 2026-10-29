@@ -50,7 +50,7 @@ namespace AQ.Generators.Commenting
             builder.Append("            if (parent is not null && parent.").Append(model.Name).Append("Id != ").Append(parameter).Append(".Id)\n            {\n");
             builder.Append("                throw new global::System.InvalidOperationException(\"A reply belongs to the same record as the comment it answers.\");\n            }\n\n");
             builder.Append("            var comment = new ").Append(type).Append("() { ").Append(model.Name).Append("Id = ").Append(parameter).Append(".Id };\n");
-            builder.Append("            comment.Initialize(text, parent);\n");
+            builder.Append("            comment.Initialize(text, parent, ").Append(model.MaxDepth).Append(");\n");
             builder.Append("            return comment;\n        }\n");
             builder.Append("    }\n");
             return SourceBuilder.End(builder, model.Namespace);

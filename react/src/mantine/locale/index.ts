@@ -12,6 +12,8 @@ export type {
   MasterDetailMessages,
   SplitButtonMessages,
   AutocompleteMessages,
+  CommentThreadsMessages,
+  PdfViewerMessages,
 } from './types';
 export { defaultMessages } from './defaultMessages';
 export { AQLocaleProvider, useAQLocale } from './AQLocaleProvider';
