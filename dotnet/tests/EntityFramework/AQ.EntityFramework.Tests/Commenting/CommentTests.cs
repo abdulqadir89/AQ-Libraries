@@ -173,6 +173,18 @@ public class CommentTests : IDisposable
     }
 
     [Fact]
+    public void Vote_Change_WithAnotherComment_IsRefused()
+    {
+        var sheet = Sheet.Create("Votes");
+        var comment = SheetComment.Create(sheet, "Top");
+        var other = SheetComment.Create(sheet, "Other");
+        var vote = TestVote.Create(comment, CommentVote<TestUser>.Up);
+
+        vote.Invoking(v => v.Change(other, CommentVote<TestUser>.Down)).Should().Throw<InvalidOperationException>();
+        vote.Value.Should().Be(CommentVote<TestUser>.Up);
+    }
+
+    [Fact]
     public void Vote_OnADeletedComment_OrWithAnInvalidValue_IsRefused()
     {
         var sheet = Sheet.Create("Votes");

@@ -69,7 +69,7 @@ export function PdfPageView({
     const element = wrapperRef.current;
     if (!element) return undefined;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries.some((e) => e.isIntersecting)) setVisible(true); },
+      (entries) => { if (entries.length > 0) setVisible(entries[entries.length - 1].isIntersecting); },
       { rootMargin: '800px 0px' },
     );
     observer.observe(element);
@@ -77,10 +77,17 @@ export function PdfPageView({
   }, []);
 
   useEffect(() => {
-    if (!visible) return undefined;
     const canvas = canvasRef.current;
     const textContainer = textRef.current;
     if (!canvas || !textContainer) return undefined;
+
+    // A page far from the viewport gives its bitmap and text back; the wrapper keeps its size, so nothing moves
+    if (!visible) {
+      canvas.width = 0;
+      canvas.height = 0;
+      textContainer.replaceChildren();
+      return undefined;
+    }
 
     const renderViewport = page.getViewport({ scale });
     const ratio = window.devicePixelRatio || 1;
@@ -119,11 +126,16 @@ export function PdfPageView({
     };
   };
 
-  const handleTextMouseUp = () => {
+  const handleTextMouseUp = (event: MouseEvent) => {
     if (!canCreate || mode !== 'text') return;
+    if ((event.target as Element | null)?.closest?.('[data-pdf-pending]')) return;
     const selection = window.getSelection();
     const textContainer = textRef.current;
-    if (!selection || selection.isCollapsed || !textContainer || selection.rangeCount === 0) return;
+    if (!selection || selection.isCollapsed) {
+      setPending((current) => (current?.selection.kind === 'text' ? null : current));
+      return;
+    }
+    if (!textContainer || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
     if (!textContainer.contains(range.startContainer)) return;
 
@@ -147,6 +159,15 @@ export function PdfPageView({
     });
   };
 
+  // The mouse can be released on another page than the one the selection started on, so every page listens on the document
+  const textMouseUpRef = useRef(handleTextMouseUp);
+  useEffect(() => { textMouseUpRef.current = handleTextMouseUp; });
+  useEffect(() => {
+    const listener = (event: MouseEvent) => textMouseUpRef.current(event);
+    document.addEventListener('mouseup', listener);
+    return () => document.removeEventListener('mouseup', listener);
+  }, []);
+
   const handleClick = (event: React.MouseEvent) => {
     if (!onSelect) return;
     if (window.getSelection()?.isCollapsed === false) return;
@@ -167,14 +188,16 @@ export function PdfPageView({
 
   const handleAreaMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drawing) return;
-    const { x, y } = point(event);
+    const raw = point(event);
+    const x = Math.min(1, Math.max(0, raw.x));
+    const y = Math.min(1, Math.max(0, raw.y));
     setDrawing({
       ...drawing,
       rect: {
-        x: Math.max(0, Math.min(drawing.startX, x)),
-        y: Math.max(0, Math.min(drawing.startY, y)),
-        width: Math.min(1, Math.abs(x - drawing.startX)),
-        height: Math.min(1, Math.abs(y - drawing.startY)),
+        x: Math.min(drawing.startX, x),
+        y: Math.min(drawing.startY, y),
+        width: Math.abs(x - drawing.startX),
+        height: Math.abs(y - drawing.startY),
       },
     });
   };
@@ -203,7 +226,6 @@ export function PdfPageView({
         wrapperRef.current = element;
         registerElement(pageNumber, element);
       }}
-      onMouseUp={handleTextMouseUp}
       onClick={handleClick}
       style={{
         position: 'relative',
@@ -253,6 +275,7 @@ export function PdfPageView({
 
       {pending && (
         <Button
+          data-pdf-pending
           size="compact-xs"
           leftSection={<IconMessagePlus size={14} />}
           onClick={(event) => { event.stopPropagation(); confirm(); }}

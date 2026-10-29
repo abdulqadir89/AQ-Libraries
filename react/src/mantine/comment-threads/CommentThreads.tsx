@@ -19,6 +19,7 @@ export interface CommentThreadsProps {
   canResolve?: boolean;
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** The handlers report their own failures: a rejected promise is not caught here, and the text stays in its box so it can be sent again. */
   /** Adds a top-level comment without an anchor. Omit to hide the composer. */
   onAdd?: (text: string) => Promise<void> | void;
   onReply?: (parentId: string, text: string) => Promise<void> | void;
@@ -103,7 +104,7 @@ function CommentNode({ node, depth, ...props }: CommentNodeProps) {
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const isRoot = depth === 0;
+  const isRoot = !item.parentId;
   const selected = props.selectedId === item.id;
   // RULE RCT-13
   const interactive = !props.readOnly;

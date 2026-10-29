@@ -21,6 +21,8 @@ export interface PdfViewerProps {
   highlights?: PdfHighlight[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** Change it to scroll to the selected highlight again, for example when the same comment is selected a second time. */
+  scrollKey?: number;
   /** Called with the page in the middle of the viewer as it scrolls. */
   onPageChange?: (page: number) => void;
   /** Called when the user confirms a text selection or a drawn area. Highlights are never created without it. */
@@ -32,7 +34,7 @@ export interface PdfViewerProps {
 }
 
 export function PdfViewer({
-  source, workerSrc, highlights = [], selectedId, onSelect, onPageChange, onCreateHighlight, readOnly, height = '100%', onError,
+  source, workerSrc, highlights = [], selectedId, onSelect, scrollKey, onPageChange, onCreateHighlight, readOnly, height = '100%', onError,
 }: PdfViewerProps) {
   const { messages } = useAQLocale();
   const t = messages.pdfViewer;
@@ -50,6 +52,9 @@ export function PdfViewer({
   // RULE RCT-15
   GlobalWorkerOptions.workerSrc = workerSrc;
 
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onErrorRef.current = onError; });
+
   useEffect(() => {
     let cancelled = false;
     setPdf(null);
@@ -66,13 +71,13 @@ export function PdfViewer({
       .catch((error: unknown) => {
         if (cancelled) return;
         setFailed(true);
-        onError?.(error);
+        onErrorRef.current?.(error);
       });
     return () => {
       cancelled = true;
       task.destroy();
     };
-  }, [source, onError]);
+  }, [source]);
 
   useEffect(() => {
     const scroller = scrollRef.current;
@@ -120,15 +125,16 @@ export function PdfViewer({
       scrolledTo.current = null;
       return;
     }
-    if (scrolledTo.current === selectedId) return;
+    const key = `${selectedId}:${scrollKey ?? 0}`;
+    if (scrolledTo.current === key) return;
     const element = selectedHighlight ? pageElements.current.get(selectedHighlight.page) : undefined;
     const scroller = scrollRef.current;
     if (!selectedHighlight || !element || !scroller) return;
-    scrolledTo.current = selectedId;
+    scrolledTo.current = key;
     const pageTop = element.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
     const top = pageTop + (selectedHighlight.rects[0]?.y ?? 0) * element.offsetHeight - 80;
     scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }, [selectedId, selectedHighlight, pages, scale]);
+  }, [selectedId, scrollKey, selectedHighlight, pages, scale]);
 
   const handleScroll = () => {
     const scroller = scrollRef.current;

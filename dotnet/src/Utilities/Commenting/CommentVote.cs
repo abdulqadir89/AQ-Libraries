@@ -18,19 +18,25 @@ public abstract class CommentVote<TPrincipal> : Entity<TPrincipal> where TPrinci
     /// <summary>Sets the comment and the value. The app's create method calls this.</summary>
     protected void Initialize(IComment comment, int value)
     {
-        ArgumentNullException.ThrowIfNull(comment);
-
-        // RULE CMT-8
-        if (comment.IsDeleted)
-        {
-            throw new InvalidOperationException("A deleted comment cannot be voted on.");
-        }
+        CheckVotable(comment);
 
         CommentId = comment.Id;
         Value = Validate(value);
     }
 
     public void Change(IComment comment, int value)
+    {
+        CheckVotable(comment);
+
+        if (comment.Id != CommentId)
+        {
+            throw new InvalidOperationException("The vote belongs to another comment.");
+        }
+
+        Value = Validate(value);
+    }
+
+    private static void CheckVotable(IComment comment)
     {
         ArgumentNullException.ThrowIfNull(comment);
 
@@ -39,8 +45,6 @@ public abstract class CommentVote<TPrincipal> : Entity<TPrincipal> where TPrinci
         {
             throw new InvalidOperationException("A deleted comment cannot be voted on.");
         }
-
-        Value = Validate(value);
     }
 
     // RULE CMT-7
