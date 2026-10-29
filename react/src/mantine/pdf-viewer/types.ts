@@ -10,8 +10,9 @@ export interface PdfHighlight {
   id: string;
   /** 1-based page number. */
   page: number;
+  /** Empty for a comment on the page as a whole: the viewer then scrolls to the top of the page. */
   rects: PdfRect[];
-  kind?: 'text' | 'area';
+  kind?: 'text' | 'area' | 'page';
 }
 
 /** What the viewer reports when the user selects text or draws an area. */

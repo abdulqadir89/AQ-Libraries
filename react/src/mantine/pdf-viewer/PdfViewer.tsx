@@ -21,6 +21,8 @@ export interface PdfViewerProps {
   highlights?: PdfHighlight[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** Called with the page in the middle of the viewer as it scrolls. */
+  onPageChange?: (page: number) => void;
   /** Called when the user confirms a text selection or a drawn area. Highlights are never created without it. */
   onCreateHighlight?: (selection: PdfSelection) => void;
   /** A read-only viewer shows highlights but cannot create them. */
@@ -30,7 +32,7 @@ export interface PdfViewerProps {
 }
 
 export function PdfViewer({
-  source, workerSrc, highlights = [], selectedId, onSelect, onCreateHighlight, readOnly, height = '100%', onError,
+  source, workerSrc, highlights = [], selectedId, onSelect, onPageChange, onCreateHighlight, readOnly, height = '100%', onError,
 }: PdfViewerProps) {
   const { messages } = useAQLocale();
   const t = messages.pdfViewer;
@@ -121,10 +123,10 @@ export function PdfViewer({
     if (scrolledTo.current === selectedId) return;
     const element = selectedHighlight ? pageElements.current.get(selectedHighlight.page) : undefined;
     const scroller = scrollRef.current;
-    if (!selectedHighlight || !element || !scroller || selectedHighlight.rects.length === 0) return;
+    if (!selectedHighlight || !element || !scroller) return;
     scrolledTo.current = selectedId;
     const pageTop = element.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
-    const top = pageTop + selectedHighlight.rects[0].y * element.offsetHeight - 80;
+    const top = pageTop + (selectedHighlight.rects[0]?.y ?? 0) * element.offsetHeight - 80;
     scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }, [selectedId, selectedHighlight, pages, scale]);
 
@@ -139,6 +141,8 @@ export function PdfViewer({
     }
     setCurrentPage(found);
   };
+
+  useEffect(() => { onPageChange?.(currentPage); }, [currentPage, onPageChange]);
 
   // RULE RCT-16
   const canCreate = !readOnly && !!onCreateHighlight;
