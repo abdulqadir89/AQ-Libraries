@@ -212,6 +212,9 @@ export function PdfPageView({
         background: 'white',
         boxShadow: 'var(--mantine-shadow-sm)',
         ['--scale-factor' as string]: scale,
+        ['--total-scale-factor' as string]: scale,
+        ['--scale-round-x' as string]: '1px',
+        ['--scale-round-y' as string]: '1px',
       }}
     >
       <canvas ref={canvasRef} style={{ width: viewport.width, height: viewport.height, display: 'block' }} />

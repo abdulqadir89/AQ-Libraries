@@ -39,7 +39,9 @@ export function PdfViewer({
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [pages, setPages] = useState<PDFPageProxy[]>([]);
   const [failed, setFailed] = useState(false);
-  const [scale, setScale] = useState(1);
+  const [manualScale, setManualScale] = useState(1);
+  const [autoFit, setAutoFit] = useState(true);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [mode, setMode] = useState<PdfSelectionMode>('text');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -58,11 +60,6 @@ export function PdfViewer({
         if (cancelled) return;
         setPdf(document);
         setPages(loaded);
-        const width = scrollRef.current?.clientWidth;
-        if (width && loaded.length > 0) {
-          const natural = loaded[0].getViewport({ scale: 1 }).width;
-          setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, (width - PAGE_PADDING * 2) / natural)));
-        }
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -74,6 +71,29 @@ export function PdfViewer({
       task.destroy();
     };
   }, [source, onError]);
+
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return undefined;
+    const measure = () => setContainerWidth(scroller.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, []);
+
+  const fitScale = useMemo(() => {
+    if (!containerWidth || pages.length === 0) return null;
+    const natural = pages[0].getViewport({ scale: 1 }).width;
+    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, (containerWidth - PAGE_PADDING * 2) / natural));
+  }, [containerWidth, pages]);
+
+  const scale = autoFit && fitScale ? fitScale : manualScale;
+
+  const zoomBy = (delta: number) => {
+    setManualScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale + delta)));
+    setAutoFit(false);
+  };
 
   const registerElement = useCallback((pageNumber: number, element: HTMLDivElement | null) => {
     if (element) pageElements.current.set(pageNumber, element);
@@ -90,37 +110,38 @@ export function PdfViewer({
     return map;
   }, [highlights]);
 
+  const scrolledTo = useRef<string | null>(null);
+  const selectedHighlight = selectedId ? highlights.find((h) => h.id === selectedId) : undefined;
+
   useEffect(() => {
-    if (!selectedId) return;
-    const highlight = highlights.find((h) => h.id === selectedId);
-    const element = highlight ? pageElements.current.get(highlight.page) : undefined;
+    if (!selectedId) {
+      scrolledTo.current = null;
+      return;
+    }
+    if (scrolledTo.current === selectedId) return;
+    const element = selectedHighlight ? pageElements.current.get(selectedHighlight.page) : undefined;
     const scroller = scrollRef.current;
-    if (!highlight || !element || !scroller || highlight.rects.length === 0) return;
-    const top = element.offsetTop + highlight.rects[0].y * element.offsetHeight - 80;
+    if (!selectedHighlight || !element || !scroller || selectedHighlight.rects.length === 0) return;
+    scrolledTo.current = selectedId;
+    const pageTop = element.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const top = pageTop + selectedHighlight.rects[0].y * element.offsetHeight - 80;
     scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- scroll only when the selection changes, not when highlights are re-created
-  }, [selectedId]);
+  }, [selectedId, selectedHighlight, pages, scale]);
 
   const handleScroll = () => {
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const middle = scroller.scrollTop + scroller.clientHeight / 2;
+    const scrollerTop = scroller.getBoundingClientRect().top;
+    const middle = scrollerTop + scroller.clientHeight / 2;
     let found = 1;
     for (const [number, element] of pageElements.current) {
-      if (element.offsetTop <= middle) found = Math.max(found, number);
+      if (element.getBoundingClientRect().top <= middle) found = Math.max(found, number);
     }
     setCurrentPage(found);
   };
 
   // RULE RCT-16
   const canCreate = !readOnly && !!onCreateHighlight;
-
-  const fitWidth = () => {
-    const width = scrollRef.current?.clientWidth;
-    if (!width || pages.length === 0) return;
-    const natural = pages[0].getViewport({ scale: 1 }).width;
-    setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, (width - PAGE_PADDING * 2) / natural)));
-  };
 
   return (
     <Stack gap={0} style={{ height, minHeight: 0 }}>
@@ -136,18 +157,18 @@ export function PdfViewer({
             />
           )}
           <Tooltip label={t.zoomOut}>
-            <ActionIcon variant="subtle" onClick={() => setScale((s) => Math.max(MIN_SCALE, s - SCALE_STEP))} aria-label={t.zoomOut}>
+            <ActionIcon variant="subtle" onClick={() => zoomBy(-SCALE_STEP)} aria-label={t.zoomOut}>
               <IconZoomOut size={16} />
             </ActionIcon>
           </Tooltip>
           <Text size="xs" w={40} ta="center">{Math.round(scale * 100)}%</Text>
           <Tooltip label={t.zoomIn}>
-            <ActionIcon variant="subtle" onClick={() => setScale((s) => Math.min(MAX_SCALE, s + SCALE_STEP))} aria-label={t.zoomIn}>
+            <ActionIcon variant="subtle" onClick={() => zoomBy(SCALE_STEP)} aria-label={t.zoomIn}>
               <IconZoomIn size={16} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t.fitWidth}>
-            <ActionIcon variant="subtle" onClick={fitWidth} aria-label={t.fitWidth}>
+            <ActionIcon variant="subtle" onClick={() => setAutoFit(true)} aria-label={t.fitWidth}>
               <IconArrowsHorizontal size={16} />
             </ActionIcon>
           </Tooltip>
@@ -157,7 +178,7 @@ export function PdfViewer({
       <Box
         ref={scrollRef}
         onScroll={handleScroll}
-        style={{ flex: 1, minHeight: 0, overflow: 'auto', background: 'var(--mantine-color-gray-light)', padding: PAGE_PADDING }}
+        style={{ flex: 1, minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable', background: 'var(--mantine-color-gray-light)', padding: PAGE_PADDING }}
       >
         {failed ? (
           <Text c="red" size="sm">{t.loadFailed}</Text>
