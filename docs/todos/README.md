@@ -30,5 +30,11 @@ When a todo is finished, set Status to `Done` and keep the file. If finishing it
 Every code `TODO` carries an id: `// TODO-NNN: short reason`, pointing at its file here. A bare `TODO` fails `docs-sync.ps1`.
 
 ## Index
-- [001 Make the reserved service-account claim set configurable per app](001-reserved-claims-per-app.md) - open
-- [002 Use native OpenIddict back-channel logout](002-native-backchannel-logout.md) - open
+
+Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done · ⚪ Dropped
+
+| # | Todo | Status |
+|---|------|--------|
+| 001 | [Make the reserved service-account claim set configurable per app](001-reserved-claims-per-app.md) | 🔴 Open |
+| 002 | [Use native OpenIddict back-channel logout](002-native-backchannel-logout.md) | 🔴 Open |
+| 003 | [Remove the legacy column-filter compatibility](003-remove-legacy-filter-compat.md) | 🔴 Open |
