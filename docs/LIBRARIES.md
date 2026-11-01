@@ -185,6 +185,7 @@ Usage: [Results README](../dotnet/src/Utilities/Results/README.md).
 An update that carries the revision the caller saw is refused when the record has moved on. The check is made against the entity the endpoint already loaded; it is not an EF concurrency token, so it never touches how entities are loaded or saved.
 
 - **RVN-1** Checking a revision against an entity succeeds only when it equals the entity's current revision; any other value is a conflict failure (409) with a stable code, so a caller can tell a stale save from other conflicts.
+- **RVN-2** Touching an entity that was loaded and not changed makes the next save stamp it and raise its revision, so an edit that only replaces its child rows still moves the revision on; touching an entity that is being added changes nothing.
 
 ### Filtering
 

@@ -239,6 +239,35 @@ public class SavePipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task TouchRevision_RaisesTheRevisionOfAnEntityWhoseValuesDidNotChange()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("Touched");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+        var revision = ticket.Revision;
+
+        context.TouchRevision(ticket);
+        await context.SaveChangesAsync();
+
+        ticket.Revision.Should().Be(revision + 1);
+        ticket.UpdatedById.Should().Be(_userId);
+    }
+
+    [Fact]
+    public async Task TouchRevision_LeavesAnAddedEntityAtRevisionZero()
+    {
+        using var context = CreateContext();
+        var ticket = Ticket.Create("New");
+        context.Add(ticket);
+
+        context.TouchRevision(ticket);
+        await context.SaveChangesAsync();
+
+        ticket.Revision.Should().Be(0);
+    }
+
+    [Fact]
     public async Task ClearingOwnedReference_BumpsOwnerRevision()
     {
         using var context = CreateContext();
