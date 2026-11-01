@@ -23,6 +23,7 @@ react/src/
     datetime/                     # DateTimeOffsetDisplay, DateTimeOffsetRangeInput, DateRangeDisplay, DateTimeOffsetRangeDisplay
     theme/                        # ThemeProvider, ThemeSwitcher, blue/zinc themes + CSS variable resolvers
     locale/                       # AQLocaleProvider, useAQLocale, AQMessages, defaultMessages (English)
+    revision-conflict/            # useRevisionConflict: toast with Reload for a stale-save 409 (pairs with isRevisionConflict in utils)
   utils/
     index.ts
     FilterExpressionBuilder.ts    # Builds FilterExpression strings for API queries

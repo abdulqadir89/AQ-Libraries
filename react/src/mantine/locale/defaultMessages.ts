@@ -338,4 +338,9 @@ export const defaultMessages: AQMessages = {
     selectArea: 'Area',
     addComment: 'Comment',
   },
+  revisionConflict: {
+    title: 'Changed by someone else',
+    message: 'This record was changed since you opened it, so your last action was not applied. Reload to see the latest version.',
+    reload: 'Reload',
+  },
 };
