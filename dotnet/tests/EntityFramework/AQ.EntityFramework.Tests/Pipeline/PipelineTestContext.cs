@@ -1,6 +1,7 @@
 using AQ.Actors;
 using AQ.EntityFramework.Auditing;
 using AQ.EntityFramework.Commenting;
+using AQ.EntityFramework.Extensions;
 using AQ.EntityFramework.PeriodicReview;
 using AQ.EntityFramework.SaveChanges;
 using AQ.EntityFramework.Snapshots;
@@ -46,6 +47,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         modelBuilder.Ignore<IDomainEvent>();
         AQGeneratedRegistrations.EnsureRegistered();
         modelBuilder.ApplyEntitySnapshots();
+        modelBuilder.Entity<Invoice>(builder => builder.UseRevisionConcurrencyToken());
         modelBuilder.Entity<Ticket>(builder =>
         {
             builder.Ignore(t => t.EvaluationCount);

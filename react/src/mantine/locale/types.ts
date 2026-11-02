@@ -367,6 +367,13 @@ export interface AQMessages {
   autocomplete: AutocompleteMessages;
   commentThreads: CommentThreadsMessages;
   pdfViewer: PdfViewerMessages;
+  revisionConflict: RevisionConflictMessages;
+}
+
+export interface RevisionConflictMessages {
+  title: string;
+  message: string;
+  reload: string;
 }
 
 /** Deep partial helper: allows callers to override any subset of nested message keys/functions. */

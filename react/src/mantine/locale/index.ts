@@ -14,6 +14,7 @@ export type {
   AutocompleteMessages,
   CommentThreadsMessages,
   PdfViewerMessages,
+  RevisionConflictMessages,
 } from './types';
 export { defaultMessages } from './defaultMessages';
 export { AQLocaleProvider, useAQLocale } from './AQLocaleProvider';
