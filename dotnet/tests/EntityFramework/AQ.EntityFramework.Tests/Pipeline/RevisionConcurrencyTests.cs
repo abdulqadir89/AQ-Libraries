@@ -98,4 +98,66 @@ public class RevisionConcurrencyTests : IDisposable
 
         await save.Should().ThrowAsync<DbUpdateConcurrencyException>();
     }
+
+    [Fact]
+    public async Task TouchRevision_OnAnUnchangedEntity_RaisesItsRevisionOnSave()
+    {
+        var id = await SeedInvoiceAsync();
+        using var context = CreateContext();
+        var invoice = await context.Invoices.SingleAsync(i => i.Id == id);
+
+        context.TouchRevision(invoice);
+        await context.SaveChangesAsync();
+
+        invoice.Revision.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TouchRevision_OnAnEntityBeingAdded_ChangesNothing()
+    {
+        using var context = CreateContext();
+        context.Users.Add(new TestUser { Id = _userId });
+        var invoice = Invoice.Create("INV-2");
+        context.Add(invoice);
+
+        context.TouchRevision(invoice);
+        await context.SaveChangesAsync();
+
+        invoice.Revision.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task TouchRevision_WithAnExpectedRevisionOlderThanTheRow_ThrowsConcurrencyException()
+    {
+        var id = await SeedInvoiceAsync();
+        using (var other = CreateContext())
+        {
+            var changed = await other.Invoices.SingleAsync(i => i.Id == id);
+            changed.Rename("changed elsewhere");
+            await other.SaveChangesAsync();
+        }
+
+        using var context = CreateContext();
+        var invoice = await context.Invoices.SingleAsync(i => i.Id == id);
+        context.ExpectRevision(invoice, 0);
+        context.TouchRevision(invoice);
+
+        var save = () => context.SaveChangesAsync();
+
+        await save.Should().ThrowAsync<DbUpdateConcurrencyException>();
+    }
+
+    [Fact]
+    public async Task ExpectRevision_OnAnEntityTypeWithoutTheToken_Throws()
+    {
+        using var context = CreateContext();
+        context.Users.Add(new TestUser { Id = _userId });
+        var ticket = Ticket.Create("No token");
+        context.Add(ticket);
+        await context.SaveChangesAsync();
+
+        var act = () => context.ExpectRevision(ticket, 0);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*does not use a revision concurrency token*");
+    }
 }

@@ -47,7 +47,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         modelBuilder.Ignore<IDomainEvent>();
         AQGeneratedRegistrations.EnsureRegistered();
         modelBuilder.ApplyEntitySnapshots();
-        modelBuilder.Entity<Invoice>(builder => builder.UseRevisionConcurrencyToken());
+        modelBuilder.UseRevisionConcurrencyToken(typeof(Invoice));
         modelBuilder.Entity<Ticket>(builder =>
         {
             builder.Ignore(t => t.EvaluationCount);

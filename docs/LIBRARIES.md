@@ -143,8 +143,9 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-31** All comments of one comment type live in one shared table keyed by record type. A reply points to the comment it answers by a link that does not itself cascade, so deleting the record removes a comment and its replies together, while a comment is only ever soft-deleted.
 - **EFC-32** Each comment class has a required link to its record, and deleting the record deletes its comments.
 - **EFC-33** Votes on comments live in one table. A voter has at most one vote per comment, and deleting a comment, through its record, deletes its votes.
-- **CON-3** An entity type can opt in to making its revision a database concurrency token: an update or delete then only goes through when the row still has the revision the entity was loaded with, otherwise the save throws a concurrency exception. Other entity types are unaffected.
-- **CON-4** A caller can state the revision it was looking at; the save then compares against that revision instead of the loaded one, so a save from an out-of-date view fails even when the row changed before the entity was loaded, and a save with no other change still fails.
+- **CON-3** An entity type can opt in to making its revision a database concurrency token: an update or delete then only goes through when the row still has the revision the entity was loaded with, otherwise the save throws a concurrency exception. For a type in an inheritance hierarchy the token goes on the hierarchy's root. Other entity types are unaffected.
+- **CON-4** A caller can state the revision it was looking at; the save then compares against that revision instead of the loaded one, so a save from an out-of-date view fails even when the row changed before the entity was loaded, and a save with no other change still fails. Stating a revision for a type that did not opt in throws, so a missing opt-in is found at once instead of leaving stale saves unrefused.
+- **CON-5** Touching an entity that was loaded and not changed makes the next save stamp it and raise its revision, so an edit that only replaces its child rows still moves the revision on; touching an entity that is being added changes nothing.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 
