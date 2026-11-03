@@ -110,6 +110,7 @@ Base types for aggregates, plus the event plumbing. Where events are saved and w
 - **EVT-8** An outbox event is ready when it is unprocessed and its next attempt is empty or due. It has run out of retries when its attempts reach the limit.
 - **EVT-9** When the dispatcher is given a handler invoker, it runs each handler through it, one handler at a time. The Entity Framework invoker runs a handler again, from a cleared change tracker, when its save loses a race on a concurrency token, up to a stated number of attempts; only the handler that failed runs again, never the handlers that already ran for the event, and the failure is thrown after the last attempt. Without an invoker a handler runs once.
 - **EVT-10** The invoker can also run each handler in one database transaction, joining one that is already open and leaving it to its owner. A handler that fails, for a lost race or any other reason, then leaves none of the changes it saved, so a run again starts from the state before it; a handler that succeeds commits them together.
+- **EVT-11** An outbox event can be postponed: another try is scheduled and the reason kept, but no attempt is counted, so a run stopped only by a race with another save never uses up the event's retries.
 
 ## Entity Framework integration <!-- projects: AQ.EntityFramework -->
 
