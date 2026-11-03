@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Actors\AQ.Actors.csproj" />
     <ProjectReference Include="..\Entities\AQ.Entities.csproj" />
+    <ProjectReference Include="..\Events\Dispatchers\AQ.Events.Dispatchers.csproj" />
     <ProjectReference Include="..\Events\Outbox\AQ.Events.Outbox.csproj" />
     <ProjectReference Include="..\Utilities\AQ.Utilities.csproj" />
   </ItemGroup>
