@@ -161,6 +161,19 @@ public class OutboxEvent : IEntity
     }
 
     /// <summary>
+    /// Schedules another try without counting an attempt, for a run that was stopped by a race with another save and not
+    /// by a fault in the event or its handlers, so contention alone can never use up the event's retries.
+    /// </summary>
+    /// <param name="reason">Why the run was stopped.</param>
+    /// <param name="delay">The delay before the next try.</param>
+    // RULE EVT-11
+    public void Postpone(string reason, TimeSpan delay)
+    {
+        LastError = reason;
+        NextProcessingAttempt = DateTimeOffset.UtcNow.Add(delay);
+    }
+
+    /// <summary>
     /// Checks if the event is ready for processing (either first attempt or retry time has passed).
     /// </summary>
     // RULE EVT-8
