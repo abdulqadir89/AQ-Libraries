@@ -146,6 +146,7 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **CON-3** An entity type can opt in to making its revision a database concurrency token: an update or delete then only goes through when the row still has the revision the entity was loaded with, otherwise the save throws a concurrency exception. For a type in an inheritance hierarchy the token goes on the hierarchy's root. Other entity types are unaffected.
 - **CON-4** A caller can state the revision it was looking at; the save then compares against that revision instead of the loaded one, so a save from an out-of-date view fails even when the row changed before the entity was loaded, and a save with no other change still fails. Stating a revision for a type that did not opt in throws, so a missing opt-in is found at once instead of leaving stale saves unrefused.
 - **CON-5** Touching an entity that was loaded and not changed makes the next save stamp it and raise its revision, so an edit that only replaces its child rows still moves the revision on; touching an entity that is being added changes nothing.
+- **CON-6** A writer that no person is waiting on can run its load-and-change step and save as one unit that is retried: when the save loses a race on a concurrency token, the change tracker is cleared and the step runs again against the winner's values, up to a stated number of attempts, after which the concurrency failure is thrown.
 
 ### Search providers <!-- projects: AQ.EntityFramework.SqlServer, AQ.EntityFramework.PostgreSql -->
 

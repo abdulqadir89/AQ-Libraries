@@ -47,6 +47,38 @@ public static class RevisionConcurrencyExtensions
     }
 
     /// <summary>
+    /// Runs <paramref name="operation"/> (load, change) and saves, and when the save loses a race on a concurrency
+    /// token starts over from a clean change tracker, so the operation sees the winner's values. For writers that
+    /// no person is waiting on (background jobs, event handlers): the operation must load what it changes itself and
+    /// must not rely on tracked state from before the call, because the tracker is cleared before every retry.
+    /// The last concurrency exception is rethrown after <paramref name="maxAttempts"/> attempts.
+    /// </summary>
+    // RULE CON-6
+    public static async Task SaveChangesWithRetryAsync(
+        this DbContext context,
+        Func<CancellationToken, Task> operation,
+        int maxAttempts = 3,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxAttempts, 1);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await operation(cancellationToken);
+                await context.SaveChangesAsync(cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maxAttempts)
+            {
+                context.ChangeTracker.Clear();
+            }
+        }
+    }
+
+    /// <summary>
     /// Marks an entity as updated even though none of its own values changed, so the next save stamps it and raises
     /// its revision. For an edit that only replaces the entity's child rows (a full-set replace), so the revision the
     /// caller was looking at moves on and a second caller working from the old view is refused.

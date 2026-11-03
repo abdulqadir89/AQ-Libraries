@@ -160,4 +160,52 @@ public class RevisionConcurrencyTests : IDisposable
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*does not use a revision concurrency token*");
     }
+
+    [Fact]
+    public async Task SaveChangesWithRetry_WhenTheFirstAttemptLosesARace_ReloadsAndSucceeds()
+    {
+        var id = await SeedInvoiceAsync();
+        using var context = CreateContext();
+        var attempts = 0;
+
+        await context.SaveChangesWithRetryAsync(async ct =>
+        {
+            var invoice = await context.Invoices.SingleAsync(i => i.Id == id, ct);
+            if (++attempts == 1)
+            {
+                using var other = CreateContext();
+                var changed = await other.Invoices.SingleAsync(i => i.Id == id, ct);
+                changed.Rename("changed elsewhere");
+                await other.SaveChangesAsync(ct);
+            }
+
+            invoice.Rename("mine");
+        });
+
+        attempts.Should().Be(2);
+        using var check = CreateContext();
+        (await check.Invoices.SingleAsync(i => i.Id == id)).Revision.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task SaveChangesWithRetry_WhenEveryAttemptLosesTheRace_ThrowsAfterTheLastAttempt()
+    {
+        var id = await SeedInvoiceAsync();
+        using var context = CreateContext();
+        var attempts = 0;
+
+        var save = () => context.SaveChangesWithRetryAsync(async ct =>
+        {
+            var invoice = await context.Invoices.SingleAsync(i => i.Id == id, ct);
+            attempts++;
+            using var other = CreateContext();
+            var changed = await other.Invoices.SingleAsync(i => i.Id == id, ct);
+            changed.Rename($"changed {attempts}");
+            await other.SaveChangesAsync(ct);
+            invoice.Rename("mine");
+        }, maxAttempts: 2);
+
+        await save.Should().ThrowAsync<DbUpdateConcurrencyException>();
+        attempts.Should().Be(2);
+    }
 }
