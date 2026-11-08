@@ -23,9 +23,11 @@ react/src/
     datetime/                     # DateTimeOffsetDisplay, DateTimeOffsetRangeInput, DateRangeDisplay, DateTimeOffsetRangeDisplay
     theme/                        # ThemeProvider, ThemeSwitcher, blue/zinc themes + CSS variable resolvers
     locale/                       # AQLocaleProvider, useAQLocale, AQMessages, defaultMessages (English)
+    revision-conflict/            # useRevisionConflict: toast with Reload for a refused stale save (412)
   utils/
     index.ts
     FilterExpressionBuilder.ts    # Builds FilterExpression strings for API queries
+    EntityTag.ts                  # formatETag (If-Match value of a revision), isPreconditionFailed (412)
     FilterExpressionParser.ts     # Parses FilterExpression strings back into a group tree (same grammar as the server)
     SortExpressionBuilder.ts      # Builds SortExpression strings for API queries
     DateTimeOffsetUtils.ts        # DateTimeOffset parsing/formatting helpers (locale-aware; see Localization below)

@@ -22,11 +22,13 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DomainEventDispatcher> _logger;
+    private readonly IDomainEventHandlerInvoker? _invoker;
 
-    public DomainEventDispatcher(IServiceProvider serviceProvider, ILogger<DomainEventDispatcher> logger)
+    public DomainEventDispatcher(IServiceProvider serviceProvider, ILogger<DomainEventDispatcher> logger, IDomainEventHandlerInvoker? invoker = null)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _invoker = invoker;
     }
 
     public async Task DispatchAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
@@ -49,7 +51,12 @@ public class DomainEventDispatcher : IDomainEventDispatcher
                 .ToList();
 
             foreach (var handler in handlers)
-                await handler.HandleAsync(domainEvent, cancellationToken);
+            {
+                if (_invoker is null)
+                    await handler.HandleAsync(domainEvent, cancellationToken);
+                else
+                    await _invoker.InvokeAsync(handler, domainEvent, cancellationToken);
+            }
 
             _logger.LogDebug("Dispatched {EventType} to {Count} handler(s)", eventType.Name, handlers.Count);
         }
