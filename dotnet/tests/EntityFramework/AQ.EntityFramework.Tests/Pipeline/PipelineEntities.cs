@@ -34,7 +34,14 @@ public class Invoice : Entity<TestUser>
 
     public static Invoice Create(string number) => new() { Number = number };
 
+    [RevisionNeutral] public string Flag { get; private set; } = "";
+    [RevisionNeutral] public int Checks { get; private set; }
+
     public void Rename(string number) => Number = number;
+
+    public void SetFlag(string flag) => Flag = flag;
+
+    public void CountCheck() => Checks++;
 }
 
 [Audited]
