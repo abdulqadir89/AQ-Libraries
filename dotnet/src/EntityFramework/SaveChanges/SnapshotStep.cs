@@ -16,6 +16,12 @@ internal static class SnapshotStep
 
         foreach (var entry in entries)
         {
+            // A revision-neutral save keeps the revision, so a snapshot of it would repeat the last one's key
+            if (RevisionNeutralCheck.IsNeutralOnly(entry))
+            {
+                continue;
+            }
+
             if (!SnapshotRegistry.TryGetFactory(entry.Entity.GetType(), out var factory))
             {
                 continue;

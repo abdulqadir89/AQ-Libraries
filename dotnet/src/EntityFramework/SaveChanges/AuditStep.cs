@@ -15,6 +15,12 @@ internal static class AuditStep
 
         foreach (var entry in entries)
         {
+            // RULE EFC-34
+            if (RevisionNeutralCheck.IsNeutralOnly(entry))
+            {
+                continue;
+            }
+
             if (entry.Entity is IAuditable auditable)
             {
                 // Lifecycle hooks may have added auditable entities after the actor check.

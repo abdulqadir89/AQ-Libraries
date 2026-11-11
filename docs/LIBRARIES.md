@@ -93,13 +93,14 @@ Apps consume the libraries by project reference. A library never knows an app: t
 Base types for aggregates, plus the event plumbing. Where events are saved and who stamps them is the save pipeline's job (see EntityFramework).
 
 - **ENT-1** A new entity gets a time-ordered GUID id, a creation time of now and revision 0.
-- **ENT-2** A save stamps the update time and raises the revision by one.
+- **ENT-2** A save stamps the update time and raises the revision by one, except a save that changes only revision-neutral properties (ENT-9, EFC-34).
 - **ENT-3** Created-by is set once: it never overwrites an existing creator, and the updater starts out equal to the creator.
 - **ENT-4** Marking an auditable entity updated records the updater, the update time and the next revision.
 - **ENT-5** Domain events raised by an entity stay on the entity until the save pipeline takes them; adding a null event is refused.
 - **ENT-6** Removing an entity whose removal check says no throws, naming the entity type and id.
 - **ENT-7** Changing a hierarchical entity's parent first runs the caller-supplied closure update, then assigns the parent. A root has no parent; a leaf has no children.
 - **ENT-8** Marking an entity as audited opts it, and its subtypes, into the audit log; marking a property as audit-ignored keeps its value out of the recorded changes.
+- **ENT-9** A property marked revision-neutral is bookkeeping that is derived or recomputed (a validity flag, a last-checked time), not something a person edits. It is meant for a value with one logical writer or one recomputed in full: neutral saves of the same row do not conflict with each other, so a counter or read-modify-write value would lose updates.
 - **EVT-1** A domain event records when it occurred. Its actor, on-behalf-of and correlation id are filled in by the save pipeline, never by callers.
 - **EVT-2** The dispatcher hands an event to every handler registered for its type, one after another. A failing handler is logged with the event data and the failure is rethrown, so later handlers do not run.
 - **EVT-3** A typed handler is invoked only for events of its own type; the untyped bridge ignores anything else.
@@ -146,6 +147,7 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-31** All comments of one comment type live in one shared table keyed by record type. A reply points to the comment it answers by a link that does not itself cascade, so deleting the record removes a comment and its replies together, while a comment is only ever soft-deleted.
 - **EFC-32** Each comment class has a required link to its record, and deleting the record deletes its comments.
 - **EFC-33** Votes on comments live in one table. A voter has at most one vote per comment, and deleting a comment, through its record, deletes its votes.
+- **EFC-34** A save whose only modified properties on an entity are revision-neutral leaves that entity's revision, update time, updater and snapshot alone, so it neither makes an open edit form stale nor counts as an edit. It still compares against the revision it loaded when the type uses a revision concurrency token (CON-3), so it cannot overwrite a newer edit. A save that also changes any other property, touches the revision (CON-5) or changes an owned part (EFC-4) raises the revision as usual.
 - **CON-3** An entity type can opt in to making its revision a database concurrency token: an update or delete then only goes through when the row still has the revision the entity was loaded with, otherwise the save throws a concurrency exception. For a type in an inheritance hierarchy the token goes on the hierarchy's root. Other entity types are unaffected.
 - **CON-4** A caller can state the revision it was looking at; the save then compares against that revision instead of the loaded one, so a save from an out-of-date view fails even when the row changed before the entity was loaded, and a save with no other change still fails. Stating a revision for a type that did not opt in throws, so a missing opt-in is found at once instead of leaving stale saves unrefused.
 - **CON-5** Touching an entity that was loaded and not changed makes the next save stamp it and raise its revision, so an edit that only replaces its child rows still moves the revision on; touching an entity that is being added changes nothing.
