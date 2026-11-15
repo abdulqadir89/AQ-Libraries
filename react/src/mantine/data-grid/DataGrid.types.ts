@@ -69,6 +69,7 @@ export interface ActionButton<T = Record<string, unknown>> {
   visible?: (record: T) => boolean;
   disabled?: (record: T) => boolean;
   // Key that runs this action on the focused row, e.g. 'shift+A' or 'mod+Enter'. Wins over the grid and app-wide maps; false = none.
+  // Table grid only (CardDataGrid ignores it), and only while the action's button is shown for that row.
   hotkey?: string | false;
 }
 

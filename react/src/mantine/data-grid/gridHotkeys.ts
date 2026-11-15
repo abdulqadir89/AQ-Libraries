@@ -59,6 +59,8 @@ interface ParsedHotkey {
 
 const KEY_ALIASES: Record<string, string> = { space: ' ', esc: 'escape', del: 'delete', up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright' };
 
+const SHIFTED_CHARACTERS = '?!@#$%^&*()_+{}|:"<>~';
+
 const parsedCache = new Map<string, ParsedHotkey>();
 
 function parseHotkey(combo: string): ParsedHotkey {
@@ -89,13 +91,16 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
   const p = parseHotkey(combo);
   if (!p.key) return false;
 
+  // mod is Cmd on a Mac and Ctrl elsewhere, so Ctrl+A stays the line-start key on a Mac and Win+A stays the OS's.
+  const modDown = detectMac() ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
   const modifiersMatch = p.mod
-    ? (event.ctrlKey || event.metaKey) && event.altKey === p.alt
+    ? modDown && event.altKey === p.alt
     : event.ctrlKey === p.ctrl && event.metaKey === p.meta && event.altKey === p.alt;
   if (!modifiersMatch) return false;
 
-  const isPunctuation = p.key.length === 1 && !/[a-z0-9 ]/.test(p.key);
-  if (!isPunctuation && event.shiftKey !== p.shift) return false;
+  // A character that is itself typed with Shift (?, :) cannot be told apart by the Shift state; every other key must match it exactly, so '/' is not Shift+7 on a German layout.
+  const typedWithShift = p.key.length === 1 && SHIFTED_CHARACTERS.includes(p.key);
+  if (!typedWithShift && event.shiftKey !== p.shift) return false;
 
   // Alt rewrites the typed character on some layouts (Option+N gives a tilde on a Mac) and a non-Latin layout types no Latin letter at all, so a letter is then matched by its physical key.
   if (/^[a-z]$/.test(p.key)) {
