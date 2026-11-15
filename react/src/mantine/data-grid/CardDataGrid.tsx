@@ -173,6 +173,7 @@ function toFilterDraft(condition: FilterCondition, index: number): FilterDraft {
   };
 }
 
+// TODO-010: no keyboard navigation or hotkeys here; the table grid has both (RCT-21, RCT-22).
 export function CardDataGrid<T extends object>({
   data = [],
   loading = false,
