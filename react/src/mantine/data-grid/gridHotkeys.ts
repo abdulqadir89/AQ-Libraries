@@ -147,6 +147,12 @@ export function isTextEntry(element: EventTarget | null): boolean {
   return false;
 }
 
+// The grid's own controls inside a row, whose arrow keys carry no meaning of their own.
+export function isRowControl(element: EventTarget | null): boolean {
+  if (element instanceof HTMLButtonElement || element instanceof HTMLAnchorElement) return true;
+  return element instanceof HTMLInputElement && element.type === 'checkbox';
+}
+
 const noopSubscribe = () => () => {};
 const detectMac = (): boolean => {
   if (typeof navigator === 'undefined') return false;
@@ -166,12 +172,18 @@ export function markGridActive(root: HTMLElement | null) {
   lastActiveGrid = root;
 }
 
+function openModal(): Element | null {
+  const modals = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]')).filter(modal => modal.getClientRects().length > 0);
+  return modals[modals.length - 1] ?? null;
+}
+
 // Which mounted grid answers a page-wide key: the grid holding focus, else the one last used, else the first visible one.
 // Inside a dialog only the grids in that dialog count, so a grid behind it stays quiet and a grid in it works.
 export function ownsPageKeys(root: HTMLElement | null, event: KeyboardEvent): boolean {
   if (!root) return false;
   const element = event.target instanceof Element ? event.target : null;
-  const overlay = element?.closest(PAGE_KEY_OVERLAYS) ?? null;
+  // With focus on the body or a backdrop an open modal still decides: only grids inside it answer.
+  const overlay = element?.closest(PAGE_KEY_OVERLAYS) ?? openModal();
   // Only grids that answer this key (their data-aq-page-keys lists it) are candidates.
   const grids = Array.from(document.querySelectorAll<HTMLElement>('[data-aq-grid]')).filter(grid =>
     grid.getClientRects().length > 0

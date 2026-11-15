@@ -30,7 +30,7 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { findDuplicateHotkeys, formatHotkey, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, useIsMac } from './gridHotkeys';
+import { findDuplicateHotkeys, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, useIsMac } from './gridHotkeys';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -969,7 +969,8 @@ export function DataGrid<T extends object>({
     // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
     if (!event.currentTarget.contains(event.target as Node)) return;
     const onRow = event.target === event.currentTarget;
-    if (!onRow && isTextEntry(event.target)) return;
+    // A widget in a cell (radio group, slider, select) keeps its own arrow keys; only the row, its checkbox and its buttons navigate.
+    if (!onRow && (isTextEntry(event.target) || !isRowControl(event.target))) return;
     const native = event.nativeEvent;
     const pressed = (combo: string | false | undefined) => matchesHotkey(native, combo);
 
@@ -1032,10 +1033,11 @@ export function DataGrid<T extends object>({
   };
 
   // Create, refresh and search answer anywhere on the page, but never while typing, in a dialog or menu, or in another grid.
+  const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
   const createConfig = getButtonConfig('create');
   const canCreate = keyboardEnabled && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
   const canRefresh = keyboardEnabled && refreshable && !!gridKeys.refresh;
-  const canSearch = keyboardEnabled && searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false) && !!gridKeys.search;
+  const canSearch = keyboardEnabled && searchShown && !!gridKeys.search;
   // The page keys this grid answers, so a page with several grids hands each key to a grid that has a use for it.
   const pageKeyCombos = [canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean).join(' ');
 
@@ -1212,7 +1214,7 @@ export function DataGrid<T extends object>({
 
           <Group>
             {/* Search Input - only show if enabled based on mode */}
-            {searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false) && (
+            {searchShown && (
               <TextInput
                 placeholder={resolvedSearchPlaceholder}
                 leftSection={<IconSearch size={16} />}
