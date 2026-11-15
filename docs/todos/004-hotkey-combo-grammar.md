@@ -1,6 +1,6 @@
 # 004. Let a hotkey combination name "+" and hold a space
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/gridHotkeys.ts`, `react/src/mantine/data-grid/DataGrid.tsx` (page-key attribute)
 

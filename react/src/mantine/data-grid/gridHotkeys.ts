@@ -64,20 +64,38 @@ const SHIFTED_CHARACTERS = '?!@#$%^&*()_+{}|:"<>~';
 
 const parsedCache = new Map<string, ParsedHotkey>();
 
-// TODO-004: a combination ending in "+" parses to an empty key, and the page-key list is split on spaces.
+const MODIFIER_NAMES = ['mod', 'ctrl', 'control', 'meta', 'cmd', 'alt', 'option', 'shift'];
+
+// "alt+N", "alt + N", "alt++" (the plus key), "+" and " " (the space key) all parse; a modifier name that is not one of ours is reported once.
 function parseHotkey(combo: string): ParsedHotkey {
   const cached = parsedCache.get(combo);
   if (cached) return cached;
 
-  const parts = combo.trim().toLowerCase().split('+').map(part => part.trim());
-  const rawKey = parts.pop() ?? '';
+  const text = combo.trim().toLowerCase();
+  let rawKey: string;
+  let modifierText: string;
+  if (text === '') {
+    rawKey = ' ';
+    modifierText = '';
+  } else if (text.endsWith('+')) {
+    rawKey = '+';
+    modifierText = text.slice(0, -1).trim().replace(/\+$/, '');
+  } else {
+    const parts = text.split('+').map(part => part.trim());
+    rawKey = parts.pop() ?? '';
+    modifierText = parts.join('+');
+  }
+  const modifiers = modifierText.split('+').map(part => part.trim()).filter(Boolean);
+  const unknown = modifiers.filter(name => !MODIFIER_NAMES.includes(name));
+  if (unknown.length > 0) console.warn(`Hotkey "${combo}" has unknown modifier ${unknown.map(name => `"${name}"`).join(', ')} and will not match as written.`);
+
   const parsed: ParsedHotkey = {
     key: KEY_ALIASES[rawKey] ?? rawKey,
-    mod: parts.includes('mod'),
-    ctrl: parts.includes('ctrl') || parts.includes('control'),
-    meta: parts.includes('meta') || parts.includes('cmd'),
-    alt: parts.includes('alt') || parts.includes('option'),
-    shift: parts.includes('shift'),
+    mod: modifiers.includes('mod'),
+    ctrl: modifiers.includes('ctrl') || modifiers.includes('control'),
+    meta: modifiers.includes('meta') || modifiers.includes('cmd'),
+    alt: modifiers.includes('alt') || modifiers.includes('option'),
+    shift: modifiers.includes('shift'),
   };
   parsedCache.set(combo, parsed);
   return parsed;
@@ -181,6 +199,16 @@ function openModal(): Element | null {
   return modals[modals.length - 1] ?? null;
 }
 
+// The combinations a grid lists in data-aq-page-keys, written as a JSON list so no combination can break the list apart.
+function pageKeyCombos(grid: HTMLElement): string[] {
+  try {
+    const listed: unknown = JSON.parse(grid.dataset.aqPageKeys ?? '[]');
+    return Array.isArray(listed) ? listed.filter((combo): combo is string => typeof combo === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 // Which mounted grid answers a page-wide key: the grid holding focus, else the one last used, else the first visible one.
 // Inside a dialog only the grids in that dialog count, so a grid behind it stays quiet and a grid in it works.
 export function ownsPageKeys(root: HTMLElement | null, event: KeyboardEvent): boolean {
@@ -192,7 +220,7 @@ export function ownsPageKeys(root: HTMLElement | null, event: KeyboardEvent): bo
   const grids = Array.from(document.querySelectorAll<HTMLElement>('[data-aq-grid]')).filter(grid =>
     grid.getClientRects().length > 0
     && (!overlay || overlay.contains(grid))
-    && (grid.dataset.aqPageKeys ?? '').split(' ').some(combo => matchesHotkey(event, combo)));
+    && pageKeyCombos(grid).some(combo => matchesHotkey(event, combo)));
   if (!grids.includes(root)) return false;
   const focusedGrid = element?.closest<HTMLElement>('[data-aq-grid]');
   if (focusedGrid && grids.includes(focusedGrid)) return focusedGrid === root;
