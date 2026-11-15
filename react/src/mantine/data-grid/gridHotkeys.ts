@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import type { GridHotkeyMap, GridHotkeyName } from './DataGrid.types';
 
 export type ResolvedGridHotkeys = Record<GridHotkeyName, string | false>;
@@ -93,11 +94,15 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
     : event.ctrlKey === p.ctrl && event.metaKey === p.meta && event.altKey === p.alt;
   if (!modifiersMatch) return false;
 
-  const isPunctuation = p.key.length === 1 && !/[a-z0-9]/.test(p.key);
+  const isPunctuation = p.key.length === 1 && !/[a-z0-9 ]/.test(p.key);
   if (!isPunctuation && event.shiftKey !== p.shift) return false;
 
-  // Alt rewrites the typed character on some layouts (Option+N gives a tilde on a Mac), so a letter is matched by its physical key.
-  if (event.altKey && /^[a-z]$/.test(p.key)) return event.code === `Key${p.key.toUpperCase()}`;
+  // Alt rewrites the typed character on some layouts (Option+N gives a tilde on a Mac) and a non-Latin layout types no Latin letter at all, so a letter is then matched by its physical key.
+  if (/^[a-z]$/.test(p.key)) {
+    const typed = event.key.toLowerCase();
+    if (event.altKey || !/^[a-z]$/.test(typed)) return event.code === `Key${p.key.toUpperCase()}`;
+    return typed === p.key;
+  }
   return event.key.toLowerCase() === p.key;
 }
 
@@ -133,4 +138,37 @@ export function isTextEntry(element: EventTarget | null): boolean {
   if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return true;
   if (element instanceof HTMLInputElement) return !['checkbox', 'radio', 'button', 'submit'].includes(element.type);
   return false;
+}
+
+const noopSubscribe = () => () => {};
+const detectMac = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform ?? '';
+  return /^(Mac|iPhone|iPad)/.test(platform);
+};
+
+// False while hydrating on the server's HTML, then the real platform, so the first client render needs no extra pass.
+export function useIsMac(): boolean {
+  return useSyncExternalStore(noopSubscribe, detectMac, () => false);
+}
+
+const PAGE_KEY_OVERLAYS = '[role="dialog"], [role="menu"], [role="listbox"]';
+let lastActiveGrid: HTMLElement | null = null;
+
+export function markGridActive(root: HTMLElement | null) {
+  lastActiveGrid = root;
+}
+
+// Which mounted grid answers a page-wide key: the grid holding focus, else the one last used, else the first visible one.
+// Inside a dialog only the grids in that dialog count, so a grid behind it stays quiet and a grid in it works.
+export function ownsPageKeys(root: HTMLElement | null, target: EventTarget | null): boolean {
+  if (!root) return false;
+  const element = target instanceof Element ? target : null;
+  const overlay = element?.closest(PAGE_KEY_OVERLAYS) ?? null;
+  const grids = Array.from(document.querySelectorAll<HTMLElement>('[data-aq-grid]'))
+    .filter(grid => grid.getClientRects().length > 0 && (!overlay || overlay.contains(grid)));
+  if (!grids.includes(root)) return false;
+  const focusedGrid = element?.closest('[data-aq-grid]');
+  if (focusedGrid) return focusedGrid === root;
+  return (lastActiveGrid && grids.includes(lastActiveGrid) ? lastActiveGrid : grids[0]) === root;
 }

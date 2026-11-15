@@ -30,7 +30,7 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { findDuplicateHotkeys, formatHotkey, isTextEntry, matchesHotkey } from './gridHotkeys';
+import { findDuplicateHotkeys, formatHotkey, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, useIsMac } from './gridHotkeys';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -79,6 +79,8 @@ import type {
   FilterBuilderHost,
   SpecialModeConfig,
 } from './DataGrid.types';
+
+const PENDING_FOCUS_TTL_MS = 5000;
 
 export function DataGrid<T extends object>({
   gridId,
@@ -296,8 +298,7 @@ export function DataGrid<T extends object>({
     actionHotkeys.set(action.key, action.hotkey ?? builtIn ?? false);
   });
 
-  const [isMac, setIsMac] = useState(false);
-  useEffect(() => { setIsMac(/Mac|iPhone|iPad/.test(navigator.platform)); }, []);
+  const isMac = useIsMac();
   const withHotkey = (label: string, combo: string | false | undefined) =>
     combo ? `${label} (${formatHotkey(combo, isMac)})` : label;
 
@@ -913,13 +914,14 @@ export function DataGrid<T extends object>({
   const rootRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pendingRowFocus = useRef<{ page: number; where: 'first' | 'last'; from: T[] } | null>(null);
+  const pendingRowFocus = useRef<{ page: number; where: 'first' | 'last'; from: T[]; at: number } | null>(null);
   const [activeRowKey, setActiveRowKey] = useState<string | null>(null);
   const activeRowIndex = Math.max(0, activeRowKey === null ? 0 : data.findIndex(record => getRowKey(record) === activeRowKey));
 
   const focusRow = (index: number) => {
     const record = data[index];
     if (!record) return;
+    pendingRowFocus.current = null;
     setActiveRowKey(getRowKey(record));
     tbodyRef.current?.querySelector<HTMLElement>(`tr[data-row-index="${index}"]`)?.focus();
   };
@@ -929,12 +931,13 @@ export function DataGrid<T extends object>({
     const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
     const page = pagination.current + delta;
     if (page < 1 || page > lastPage) return;
-    pendingRowFocus.current = { page, where, from: data };
+    pendingRowFocus.current = { page, where, from: data, at: Date.now() };
     onPageChange(page, pagination.pageSize);
   };
 
   useEffect(() => {
     const pending = pendingRowFocus.current;
+    if (pending && Date.now() - pending.at > PENDING_FOCUS_TTL_MS) { pendingRowFocus.current = null; return; }
     if (!pending || loading || data === pending.from || pagination?.current !== pending.page || data.length === 0) return;
     pendingRowFocus.current = null;
     focusRow(pending.where === 'first' ? 0 : data.length - 1);
@@ -950,6 +953,8 @@ export function DataGrid<T extends object>({
 
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
     if (!keyboardEnabled || event.defaultPrevented) return;
+    // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
+    if (!event.currentTarget.contains(event.target as Node)) return;
     const onRow = event.target === event.currentTarget;
     if (!onRow && isTextEntry(event.target)) return;
     const native = event.nativeEvent;
@@ -1004,10 +1009,7 @@ export function DataGrid<T extends object>({
   useEffect(() => {
     pageKeyHandler.current = (event: KeyboardEvent) => {
       if (!keyboardEnabled || event.defaultPrevented) return;
-      const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest('[role="dialog"], [role="menu"], [role="listbox"]')) return;
-      const owner = target?.closest('[data-aq-grid]');
-      if (owner && owner !== rootRef.current) return;
+      if (!ownsPageKeys(rootRef.current, event.target)) return;
       const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
       if (!hasModifier && isTextEntry(event.target)) return;
 
@@ -1144,7 +1146,7 @@ export function DataGrid<T extends object>({
   };
 
   return (
-    <Box pos="relative" ref={rootRef} data-aq-grid="">
+    <Box pos="relative" ref={rootRef} data-aq-grid="" onFocus={() => markGridActive(rootRef.current)} onPointerDown={() => markGridActive(rootRef.current)}>
       <LoadingOverlay visible={loading} />
       
       {/* Toolbar */}
