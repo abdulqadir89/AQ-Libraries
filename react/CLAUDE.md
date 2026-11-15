@@ -83,3 +83,7 @@ consumer that doesn't opt in sees unchanged English behavior.
 - ELS web supplies actual translated strings by wiring `AQLocaleProvider` into its own
   `providers/LocaleProvider.tsx` with `buildAqMessages(t)` — see `frontend/web`'s
   `CLAUDE.md` "Internationalization" section for that side of the wiring.
+
+## DataGrid hotkeys
+
+Keys live in `data-grid/gridHotkeys.ts` (defaults, combo matcher) and resolve through `useGridHotkeys` (defaults, then `AQGridHotkeysProvider`, then the grid's `hotkeys` prop). Combos are `alt+N`, `mod+A` (mod = Ctrl, or Cmd on a Mac), `Delete`, `Space`. A new grid action that can be keyed gets a `GridHotkeyName`, a default, and the `data-action-index` attribute on its rendered button: hotkeys click that button instead of calling the handler. `CardDataGrid` has no keyboard support.

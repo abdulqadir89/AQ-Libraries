@@ -10,11 +10,17 @@ export { FilterChips } from './FilterChips';
 export { FilterValueInput } from './FilterValueInput';
 export { normalizeFilterText, parseFilter, serializeFilter } from './filterTree';
 export type { ColumnFilterRef, ColumnFilterProps } from './ColumnFilter';
+export { AQGridHotkeysProvider, useGridHotkeys } from './GridHotkeysProvider';
+export type { AQGridHotkeysProviderProps } from './GridHotkeysProvider';
+export { defaultGridHotkeys, formatHotkey } from './gridHotkeys';
+export type { ResolvedGridHotkeys } from './gridHotkeys';
 
 // Types
 export type {
   DataGridColumn,
   ActionButton,
+  GridHotkeyName,
+  GridHotkeyMap,
   BulkAction,
   GridMode,
   SpecialModeButtonConfig,
