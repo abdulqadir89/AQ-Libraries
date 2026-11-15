@@ -1044,7 +1044,7 @@ export function DataGrid<T extends object>({
   const canRefresh = keyboardEnabled && refreshable && !!gridKeys.refresh;
   const canSearch = keyboardEnabled && searchShown && !!gridKeys.search;
   // The page keys this grid answers, so a page with several grids hands each key to a grid that has a use for it.
-  const pageKeyCombos = [canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean).join(' ');
+  const pageKeyCombos = JSON.stringify([canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean));
 
   const pageKeyHandler = useRef<(event: KeyboardEvent) => void>(() => {});
   useEffect(() => {
