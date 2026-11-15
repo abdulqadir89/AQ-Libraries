@@ -22,8 +22,8 @@ export function AQGridHotkeysProvider({ hotkeys, children }: AQGridHotkeysProvid
  * The keys a grid answers to: built-in defaults, then the app-wide provider, then the grid's own `hotkeys` prop.
  * Works with no provider mounted.
  */
-// RULE RCT-20
 export function useGridHotkeys(gridHotkeys?: GridHotkeyMap | false): ResolvedGridHotkeys {
   const appHotkeys = useContext(GridHotkeysContext);
+  // RULE RCT-20
   return resolveGridHotkeys(appHotkeys, gridHotkeys);
 }

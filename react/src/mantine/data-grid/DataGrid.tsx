@@ -80,8 +80,6 @@ import type {
   SpecialModeConfig,
 } from './DataGrid.types';
 
-const PENDING_FOCUS_TTL_MS = 5000;
-
 export function DataGrid<T extends object>({
   gridId,
   initialState,
@@ -297,7 +295,8 @@ export function DataGrid<T extends object>({
     const builtIn = index < defaultActions.length ? gridKeys[action.key as 'overview' | 'details' | 'edit' | 'delete'] : undefined;
     return action.hotkey ?? builtIn ?? false;
   });
-  const hotkeyOf = (action: ActionButton<T>) => actionHotkeys[finalActions.indexOf(action)];
+  const actionIndexes = new Map(finalActions.map((action, index) => [action, index]));
+  const hotkeyOf = (action: ActionButton<T>) => actionHotkeys[actionIndexes.get(action) ?? -1];
 
   const isMac = useIsMac();
   const withHotkey = (label: string, combo: string | false | undefined) =>
@@ -825,7 +824,7 @@ export function DataGrid<T extends object>({
                 variant={action.variant || 'light'}
                 color={action.color || 'gray'}
                 disabled={isDisabled}
-                data-action-index={finalActions.indexOf(action)}
+                data-action-index={actionIndexes.get(action)}
                 title={withHotkey(action.label, hotkeyOf(action))}
                 onClick={action.onClick ? () => action.onClick!(record) : undefined}
               >
@@ -838,7 +837,7 @@ export function DataGrid<T extends object>({
                 variant={action.variant || 'light'}
                 color={action.color || 'gray'}
                 disabled={isDisabled}
-                data-action-index={finalActions.indexOf(action)}
+                data-action-index={actionIndexes.get(action)}
                 onClick={() => action.onClick?.(record)}
                 title={withHotkey(action.label, hotkeyOf(action))}
               >
@@ -857,7 +856,7 @@ export function DataGrid<T extends object>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
-              data-action-index={finalActions.indexOf(action)}
+              data-action-index={actionIndexes.get(action)}
               title={hotkeyOf(action) ? withHotkey(action.label, hotkeyOf(action)) : undefined}
               leftSection={action.icon}
               onClick={action.onClick ? () => action.onClick!(record) : undefined}
@@ -871,7 +870,7 @@ export function DataGrid<T extends object>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
-              data-action-index={finalActions.indexOf(action)}
+              data-action-index={actionIndexes.get(action)}
               title={hotkeyOf(action) ? withHotkey(action.label, hotkeyOf(action)) : undefined}
               leftSection={action.icon}
               onClick={() => action.onClick?.(record)}
@@ -910,12 +909,11 @@ export function DataGrid<T extends object>({
   }, []);
 
   // Keyboard: one row is tabbable (roving focus) and the arrow keys move focus between rows.
-  // RULE RCT-21
   const keyboardEnabled = Object.values(gridKeys).some(Boolean) || actionHotkeys.some(Boolean);
   const rootRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pendingRowFocus = useRef<{ page: number; where: 'first' | 'last'; fromKeys: string; at: number } | null>(null);
+  const pendingRowFocus = useRef<{ page: number; fromPage: number; where: 'first' | 'last'; fromKeys: string } | null>(null);
   const [activeRowKey, setActiveRowKey] = useState<string | null>(null);
   const activeRowIndex = Math.max(0, activeRowKey === null ? 0 : data.findIndex(record => getRowKey(record) === activeRowKey));
 
@@ -935,16 +933,25 @@ export function DataGrid<T extends object>({
     const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
     const page = pagination.current + delta;
     if (page < 1 || page > lastPage) return false;
-    pendingRowFocus.current = { page, where, fromKeys: rowKeySignature(), at: Date.now() };
+    pendingRowFocus.current = { page, fromPage: pagination.current, where, fromKeys: rowKeySignature() };
     onPageChange(page, pagination.pageSize);
     return true;
   };
 
+  // The focus waits for the requested page's rows. It is dropped when the grid lands on another page (the change was refused or clamped),
+  // and when the user has moved focus elsewhere in the meantime (the pager), so it never steals focus later.
   useEffect(() => {
     const pending = pendingRowFocus.current;
-    if (pending && Date.now() - pending.at > PENDING_FOCUS_TTL_MS) { pendingRowFocus.current = null; return; }
-    if (!pending || loading || pagination?.current !== pending.page || data.length === 0 || rowKeySignature() === pending.fromKeys) return;
+    if (!pending) return;
+    const current = pagination?.current;
+    if (current !== pending.page) {
+      if (current !== pending.fromPage) pendingRowFocus.current = null;
+      return;
+    }
+    if (loading || data.length === 0 || rowKeySignature() === pending.fromKeys) return;
     pendingRowFocus.current = null;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
     focusRow(pending.where === 'first' ? 0 : data.length - 1);
   }, [data, loading, pagination?.current]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -958,6 +965,7 @@ export function DataGrid<T extends object>({
 
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
     if (!keyboardEnabled || event.defaultPrevented) return;
+    pendingRowFocus.current = null;
     // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
     if (!event.currentTarget.contains(event.target as Node)) return;
     const onRow = event.target === event.currentTarget;
@@ -966,6 +974,7 @@ export function DataGrid<T extends object>({
     const pressed = (combo: string | false | undefined) => matchesHotkey(native, combo);
 
     // A key the grid cannot act on is left to the browser, so the page still scrolls.
+    // RULE RCT-21
     if (pressed(gridKeys.nextRow)) {
       if (index < data.length - 1) { event.preventDefault(); focusRow(index + 1); }
       else if (goToPage(1, 'first')) event.preventDefault();
@@ -1023,7 +1032,13 @@ export function DataGrid<T extends object>({
   };
 
   // Create, refresh and search answer anywhere on the page, but never while typing, in a dialog or menu, or in another grid.
-  // RULE RCT-22
+  const createConfig = getButtonConfig('create');
+  const canCreate = keyboardEnabled && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
+  const canRefresh = keyboardEnabled && refreshable && !!gridKeys.refresh;
+  const canSearch = keyboardEnabled && searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false) && !!gridKeys.search;
+  // The page keys this grid answers, so a page with several grids hands each key to a grid that has a use for it.
+  const pageKeyCombos = [canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean).join(' ');
+
   const pageKeyHandler = useRef<(event: KeyboardEvent) => void>(() => {});
   useEffect(() => {
     pageKeyHandler.current = (event: KeyboardEvent) => {
@@ -1032,13 +1047,12 @@ export function DataGrid<T extends object>({
       if (!hasModifier && isTextEntry(event.target)) return;
 
       // Match the key before asking which grid owns it, so ordinary typing costs nothing.
-      const createConfig = getButtonConfig('create');
-      const wantsCreate = !!onCreate && createConfig.visible && !createConfig.disabled && matchesHotkey(event, gridKeys.create);
-      const wantsRefresh = !wantsCreate && refreshable && matchesHotkey(event, gridKeys.refresh);
-      const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
-      const wantsSearch = !wantsCreate && !wantsRefresh && searchShown && !!searchInputRef.current && matchesHotkey(event, gridKeys.search);
+      const wantsCreate = canCreate && matchesHotkey(event, gridKeys.create);
+      const wantsRefresh = !wantsCreate && canRefresh && matchesHotkey(event, gridKeys.refresh);
+      const wantsSearch = !wantsCreate && !wantsRefresh && canSearch && !!searchInputRef.current && matchesHotkey(event, gridKeys.search);
       if (!wantsCreate && !wantsRefresh && !wantsSearch) return;
-      if (!ownsPageKeys(rootRef.current, event.target)) return;
+      // RULE RCT-22
+      if (!ownsPageKeys(rootRef.current, event)) return;
 
       event.preventDefault();
       if (wantsCreate) onCreate?.();
@@ -1163,7 +1177,7 @@ export function DataGrid<T extends object>({
   };
 
   return (
-    <Box pos="relative" ref={rootRef} data-aq-grid="" onFocus={() => markGridActive(rootRef.current)} onPointerDown={() => markGridActive(rootRef.current)}>
+    <Box pos="relative" ref={rootRef} data-aq-grid="" data-aq-page-keys={pageKeyCombos} onFocus={() => markGridActive(rootRef.current)} onPointerDown={() => markGridActive(rootRef.current)}>
       <LoadingOverlay visible={loading} />
       
       {/* Toolbar */}

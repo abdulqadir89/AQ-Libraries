@@ -102,11 +102,13 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
   const typedWithShift = p.key.length === 1 && SHIFTED_CHARACTERS.includes(p.key);
   if (!typedWithShift && event.shiftKey !== p.shift) return false;
 
-  // Alt rewrites the typed character on some layouts (Option+N gives a tilde on a Mac) and a non-Latin layout types no Latin letter at all, so a letter is then matched by its physical key.
+  // A letter is matched by the character the layout types (so Alt+N is the key labelled N on Dvorak and AZERTY too). When Alt rewrites that character
+  // (Option+N types a tilde on a Mac) or the layout has no Latin letters, the physical key stands in.
   if (/^[a-z]$/.test(p.key)) {
     const typed = event.key.toLowerCase();
-    if (event.altKey || !/^[a-z]$/.test(typed)) return event.code === `Key${p.key.toUpperCase()}`;
-    return typed === p.key;
+    if (typed === p.key) return true;
+    if (/^[a-z]$/.test(typed)) return false;
+    return event.code === `Key${p.key.toUpperCase()}`;
   }
   return event.key.toLowerCase() === p.key;
 }
@@ -166,14 +168,17 @@ export function markGridActive(root: HTMLElement | null) {
 
 // Which mounted grid answers a page-wide key: the grid holding focus, else the one last used, else the first visible one.
 // Inside a dialog only the grids in that dialog count, so a grid behind it stays quiet and a grid in it works.
-export function ownsPageKeys(root: HTMLElement | null, target: EventTarget | null): boolean {
+export function ownsPageKeys(root: HTMLElement | null, event: KeyboardEvent): boolean {
   if (!root) return false;
-  const element = target instanceof Element ? target : null;
+  const element = event.target instanceof Element ? event.target : null;
   const overlay = element?.closest(PAGE_KEY_OVERLAYS) ?? null;
-  const grids = Array.from(document.querySelectorAll<HTMLElement>('[data-aq-grid]'))
-    .filter(grid => grid.getClientRects().length > 0 && (!overlay || overlay.contains(grid)));
+  // Only grids that answer this key (their data-aq-page-keys lists it) are candidates.
+  const grids = Array.from(document.querySelectorAll<HTMLElement>('[data-aq-grid]')).filter(grid =>
+    grid.getClientRects().length > 0
+    && (!overlay || overlay.contains(grid))
+    && (grid.dataset.aqPageKeys ?? '').split(' ').some(combo => matchesHotkey(event, combo)));
   if (!grids.includes(root)) return false;
-  const focusedGrid = element?.closest('[data-aq-grid]');
-  if (focusedGrid) return focusedGrid === root;
+  const focusedGrid = element?.closest<HTMLElement>('[data-aq-grid]');
+  if (focusedGrid && grids.includes(focusedGrid)) return focusedGrid === root;
   return (lastActiveGrid && grids.includes(lastActiveGrid) ? lastActiveGrid : grids[0]) === root;
 }
