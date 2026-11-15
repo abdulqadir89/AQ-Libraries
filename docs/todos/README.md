@@ -38,3 +38,11 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 | 001 | [Make the reserved service-account claim set configurable per app](001-reserved-claims-per-app.md) | 🔴 Open |
 | 002 | [Use native OpenIddict back-channel logout](002-native-backchannel-logout.md) | 🔴 Open |
 | 003 | [Remove the legacy column-filter compatibility](003-remove-legacy-filter-compat.md) | 🔴 Open |
+| 004 | [Let a hotkey combination name "+" and hold a space](004-hotkey-combo-grammar.md) | 🔴 Open |
+| 005 | [Hold the page-wide hotkeys back while a grid loads or the user types](005-page-key-guards.md) | 🔴 Open |
+| 006 | [Make the focus after a page change robust](006-pending-page-focus.md) | 🔴 Open |
+| 007 | [Translate the key names shown in hotkey tooltips](007-hotkey-labels-locale.md) | 🔴 Open |
+| 008 | [Memoise the hotkey work and tighten its conflict check](008-hotkey-resolution-cost.md) | 🔴 Open |
+| 009 | [Settle what Enter opens and how a link action is run](009-enter-open-and-link-actions.md) | 🔴 Open |
+| 010 | [Add keyboard navigation and hotkeys to the card grid](010-card-grid-keyboard.md) | 🔴 Open |
+| 011 | [Show the shortcuts in a dialog and handle layouts where "/" needs Shift](011-hotkey-help-and-layouts.md) | 🔴 Open |

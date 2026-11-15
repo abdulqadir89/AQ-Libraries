@@ -302,6 +302,7 @@ export function DataGrid<T extends object>({
   const withHotkey = (label: string, combo: string | false | undefined) =>
     combo ? `${label} (${formatHotkey(combo, isMac)})` : label;
 
+  // TODO-008: rebuilt on every render; the check also counts keys of actions that are not shown and misses custom-vs-custom clashes.
   const hotkeyConflicts = findDuplicateHotkeys([
     ...(Object.entries(gridKeys) as Array<[string, string | false]>),
     ...finalActions.slice(defaultActions.length).map((action): [string, string | false | undefined] => [`action "${action.key}"`, action.hotkey]),
@@ -940,6 +941,7 @@ export function DataGrid<T extends object>({
 
   // The focus waits for the requested page's rows. It is dropped when the grid lands on another page (the change was refused or clamped),
   // and when the user has moved focus elsewhere in the meantime (the pager), so it never steals focus later.
+  // TODO-006: a bare modifier key drops the wait, and identical row keys on the next page never release it.
   useEffect(() => {
     const pending = pendingRowFocus.current;
     if (!pending) return;
@@ -1026,6 +1028,7 @@ export function DataGrid<T extends object>({
         return;
       }
     }
+    // TODO-009: fixed order, silent when no action is shown, and a link action cannot open in a new tab.
     if (pressed(gridKeys.open)) {
       for (const name of ['details', 'overview', 'edit']) {
         const actionIndex = defaultActions.findIndex(action => action.key === name);
@@ -1050,6 +1053,7 @@ export function DataGrid<T extends object>({
       const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
       if (!hasModifier && isTextEntry(event.target)) return;
 
+      // TODO-005: ignores loading, and a modifier combination fires while the user types in a field.
       // Match the key before asking which grid owns it, so ordinary typing costs nothing.
       const wantsCreate = canCreate && matchesHotkey(event, gridKeys.create);
       const wantsRefresh = !wantsCreate && canRefresh && matchesHotkey(event, gridKeys.refresh);

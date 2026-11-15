@@ -20,6 +20,7 @@ export const defaultGridHotkeys: ResolvedGridHotkeys = {
   filter: 'F',
   create: 'alt+N',
   refresh: 'alt+R',
+  // TODO-011: '/' is typed with Shift on some layouts (German), so it does not match there.
   search: '/',
 };
 
@@ -63,6 +64,7 @@ const SHIFTED_CHARACTERS = '?!@#$%^&*()_+{}|:"<>~';
 
 const parsedCache = new Map<string, ParsedHotkey>();
 
+// TODO-004: a combination ending in "+" parses to an empty key, and the page-key list is split on spaces.
 function parseHotkey(combo: string): ParsedHotkey {
   const cached = parsedCache.get(combo);
   if (cached) return cached;
@@ -113,6 +115,7 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
   return event.key.toLowerCase() === p.key;
 }
 
+// TODO-007: key names are English; take them from the locale messages (RCT-2).
 export function formatHotkey(combo: string, isMac = false): string {
   const p = parseHotkey(combo);
   const keyLabel = p.key === ' ' ? 'Space' : p.key.length === 1 ? p.key.toUpperCase() : p.key.replace(/^arrow/, '').replace(/^./, c => c.toUpperCase());
