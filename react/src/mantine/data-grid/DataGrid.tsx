@@ -293,7 +293,7 @@ export function DataGrid<T extends object>({
   // Indexed like finalActions, because a custom action may reuse a built-in action's key.
   const actionHotkeys: Array<string | false> = finalActions.map((action, index) => {
     const builtIn = index < defaultActions.length ? gridKeys[action.key as 'overview' | 'details' | 'edit' | 'delete'] : undefined;
-    return action.hotkey ?? builtIn ?? false;
+    return hotkeys === false ? false : action.hotkey ?? builtIn ?? false;
   });
   const actionIndexes = new Map(finalActions.map((action, index) => [action, index]));
   const hotkeyOf = (action: ActionButton<T>) => actionHotkeys[actionIndexes.get(action) ?? -1];
@@ -964,7 +964,7 @@ export function DataGrid<T extends object>({
   };
 
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
-    if (!keyboardEnabled || event.defaultPrevented) return;
+    if (!keyboardEnabled || event.defaultPrevented || event.nativeEvent.isComposing) return;
     pendingRowFocus.current = null;
     // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
     if (!event.currentTarget.contains(event.target as Node)) return;
@@ -1005,6 +1005,8 @@ export function DataGrid<T extends object>({
 
     // Space, Enter and letters keep their native meaning on a checkbox, button or link inside the row.
     if (!onRow) return;
+    // Holding a key must not run an action again and again (a held Delete would stack confirmations).
+    if (event.repeat) return;
 
     if (selectable && pressed(gridKeys.select)) {
       event.preventDefault();
@@ -1044,7 +1046,7 @@ export function DataGrid<T extends object>({
   const pageKeyHandler = useRef<(event: KeyboardEvent) => void>(() => {});
   useEffect(() => {
     pageKeyHandler.current = (event: KeyboardEvent) => {
-      if (!keyboardEnabled || event.defaultPrevented) return;
+      if (!keyboardEnabled || event.defaultPrevented || event.repeat || event.isComposing) return;
       const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
       if (!hasModifier && isTextEntry(event.target)) return;
 

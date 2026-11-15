@@ -147,10 +147,11 @@ export function isTextEntry(element: EventTarget | null): boolean {
   return false;
 }
 
-// The grid's own controls inside a row, whose arrow keys carry no meaning of their own.
+// The grid's own controls inside a row (its action buttons and checkboxes), whose arrow keys carry no meaning of their own.
+// A button a cell renders itself (a menu trigger) is not one, and keeps its arrow keys.
 export function isRowControl(element: EventTarget | null): boolean {
-  if (element instanceof HTMLButtonElement || element instanceof HTMLAnchorElement) return true;
-  return element instanceof HTMLInputElement && element.type === 'checkbox';
+  if (element instanceof HTMLInputElement) return element.type === 'checkbox';
+  return element instanceof HTMLElement && element.dataset.actionIndex !== undefined;
 }
 
 const noopSubscribe = () => () => {};
