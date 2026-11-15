@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import styles from './DataGrid.module.css';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
   Table,
   ScrollArea,
@@ -29,6 +29,8 @@ import { ColumnFilter } from './ColumnFilter';
 import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
+import { useGridHotkeys } from './GridHotkeysProvider';
+import { findDuplicateHotkeys, formatHotkey, isTextEntry, matchesHotkey } from './gridHotkeys';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -129,8 +131,10 @@ export function DataGrid<T extends object>({
   bulkActions,
   actionButtonStyle = 'icon',
   emptyStateText,
+  hotkeys,
 }: DataGridProps<T>) {
   const { messages: aqMessages } = useAQLocale();
+  const gridKeys = useGridHotkeys(hotkeys);
   const m = aqMessages.dataGrid;
   const resolvedSearchPlaceholder = searchPlaceholder ?? m.searchPlaceholder;
   const resolvedCreateButtonText = createButtonText ?? m.create;
@@ -285,6 +289,26 @@ export function DataGrid<T extends object>({
   ];
 
   const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
+
+  const actionHotkeys = new Map<string, string | false>();
+  finalActions.forEach((action, index) => {
+    const builtIn = index < defaultActions.length ? gridKeys[action.key as 'overview' | 'details' | 'edit' | 'delete'] : undefined;
+    actionHotkeys.set(action.key, action.hotkey ?? builtIn ?? false);
+  });
+
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => { setIsMac(/Mac|iPhone|iPad/.test(navigator.platform)); }, []);
+  const withHotkey = (label: string, combo: string | false | undefined) =>
+    combo ? `${label} (${formatHotkey(combo, isMac)})` : label;
+
+  const hotkeyConflicts = findDuplicateHotkeys([
+    ...(Object.entries(gridKeys) as Array<[string, string | false]>),
+    ...finalActions.slice(defaultActions.length).map((action): [string, string | false | undefined] => [`action "${action.key}"`, action.hotkey]),
+  ]);
+  const hotkeyConflictText = hotkeyConflicts.join('; ');
+  useEffect(() => {
+    if (hotkeyConflictText) console.warn(`DataGrid hotkey conflict: ${hotkeyConflictText}`);
+  }, [hotkeyConflictText]);
 
   // Static estimate of visible action buttons for sizing the actions column — evaluated
   // without a record, so per-row `visible()` overrides (rare, row-data-dependent) are
@@ -799,7 +823,8 @@ export function DataGrid<T extends object>({
                 variant={action.variant || 'light'}
                 color={action.color || 'gray'}
                 disabled={isDisabled}
-                title={action.label}
+                data-action-key={action.key}
+                title={withHotkey(action.label, actionHotkeys.get(action.key))}
                 onClick={action.onClick ? () => action.onClick!(record) : undefined}
               >
                 {action.icon}
@@ -811,8 +836,9 @@ export function DataGrid<T extends object>({
                 variant={action.variant || 'light'}
                 color={action.color || 'gray'}
                 disabled={isDisabled}
+                data-action-key={action.key}
                 onClick={() => action.onClick?.(record)}
-                title={action.label}
+                title={withHotkey(action.label, actionHotkeys.get(action.key))}
               >
                 {action.icon}
               </ActionIcon>
@@ -829,6 +855,8 @@ export function DataGrid<T extends object>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
+              data-action-key={action.key}
+              title={actionHotkeys.get(action.key) ? withHotkey(action.label, actionHotkeys.get(action.key)) : undefined}
               leftSection={action.icon}
               onClick={action.onClick ? () => action.onClick!(record) : undefined}
             >
@@ -841,6 +869,8 @@ export function DataGrid<T extends object>({
               variant={action.variant || 'light'}
               color={action.color || 'gray'}
               disabled={isDisabled}
+              data-action-key={action.key}
+              title={actionHotkeys.get(action.key) ? withHotkey(action.label, actionHotkeys.get(action.key)) : undefined}
               leftSection={action.icon}
               onClick={() => action.onClick?.(record)}
             >
@@ -877,13 +907,150 @@ export function DataGrid<T extends object>({
     return rawValue == null ? '' : String(rawValue);
   }, []);
 
+  // Keyboard: one row is tabbable (roving focus) and the arrow keys move focus between rows.
+  // RULE RCT-21
+  const keyboardEnabled = hotkeys !== false;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const pendingRowFocus = useRef<{ page: number; where: 'first' | 'last'; from: T[] } | null>(null);
+  const [activeRowKey, setActiveRowKey] = useState<string | null>(null);
+  const activeRowIndex = Math.max(0, activeRowKey === null ? 0 : data.findIndex(record => getRowKey(record) === activeRowKey));
+
+  const focusRow = (index: number) => {
+    const record = data[index];
+    if (!record) return;
+    setActiveRowKey(getRowKey(record));
+    tbodyRef.current?.querySelector<HTMLElement>(`tr[data-row-index="${index}"]`)?.focus();
+  };
+
+  const goToPage = (delta: number, where: 'first' | 'last') => {
+    if (!pagination || !onPageChange) return;
+    const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+    const page = pagination.current + delta;
+    if (page < 1 || page > lastPage) return;
+    pendingRowFocus.current = { page, where, from: data };
+    onPageChange(page, pagination.pageSize);
+  };
+
+  useEffect(() => {
+    const pending = pendingRowFocus.current;
+    if (!pending || loading || data === pending.from || pagination?.current !== pending.page || data.length === 0) return;
+    pendingRowFocus.current = null;
+    focusRow(pending.where === 'first' ? 0 : data.length - 1);
+  }, [data, loading, pagination?.current]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Runs the row's own rendered button, so a hotkey does exactly what a click does (confirm dialog, link, disabled state).
+  const clickRowAction = (row: HTMLElement, actionKey: string): boolean => {
+    const element = Array.from(row.querySelectorAll<HTMLElement>('[data-action-key]')).find(el => el.dataset.actionKey === actionKey);
+    if (!element || element.hasAttribute('disabled') || element.hasAttribute('data-disabled')) return false;
+    element.click();
+    return true;
+  };
+
+  const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
+    if (!keyboardEnabled || event.defaultPrevented) return;
+    const onRow = event.target === event.currentTarget;
+    if (!onRow && isTextEntry(event.target)) return;
+    const native = event.nativeEvent;
+    const pressed = (combo: string | false | undefined) => matchesHotkey(native, combo);
+
+    if (pressed(gridKeys.nextRow)) {
+      event.preventDefault();
+      if (index < data.length - 1) focusRow(index + 1); else goToPage(1, 'first');
+      return;
+    }
+    if (pressed(gridKeys.prevRow)) {
+      event.preventDefault();
+      if (index > 0) focusRow(index - 1); else goToPage(-1, 'last');
+      return;
+    }
+    if (pressed(gridKeys.firstRow)) { event.preventDefault(); focusRow(0); return; }
+    if (pressed(gridKeys.lastRow)) { event.preventDefault(); focusRow(data.length - 1); return; }
+    if (pressed(gridKeys.nextPage)) { event.preventDefault(); goToPage(1, 'first'); return; }
+    if (pressed(gridKeys.prevPage)) { event.preventDefault(); goToPage(-1, 'first'); return; }
+
+    // Space, Enter and letters keep their native meaning on a checkbox, button or link inside the row.
+    if (!onRow) return;
+
+    if (selectable && pressed(gridKeys.select)) {
+      event.preventDefault();
+      handleRowSelection(key, !isSelected);
+      return;
+    }
+    if (selectable && pressed(gridKeys.selectAll)) {
+      event.preventDefault();
+      handleSelectAll(!data.every(record => state.selectedRows.includes(getRowKey(record))));
+      return;
+    }
+    if (advancedFilter && pressed(gridKeys.filter)) { event.preventDefault(); openBuilder('filter'); return; }
+
+    for (const action of finalActions) {
+      if (pressed(actionHotkeys.get(action.key)) && clickRowAction(event.currentTarget, action.key)) {
+        event.preventDefault();
+        return;
+      }
+    }
+    if (pressed(gridKeys.open)) {
+      for (const actionKey of ['details', 'overview', 'edit']) {
+        if (clickRowAction(event.currentTarget, actionKey)) { event.preventDefault(); return; }
+      }
+    }
+  };
+
+  // Create, refresh and search answer anywhere on the page, but never while typing, in a dialog or menu, or in another grid.
+  // RULE RCT-22
+  const pageKeyHandler = useRef<(event: KeyboardEvent) => void>(() => {});
+  useEffect(() => {
+    pageKeyHandler.current = (event: KeyboardEvent) => {
+      if (!keyboardEnabled || event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[role="dialog"], [role="menu"], [role="listbox"]')) return;
+      const owner = target?.closest('[data-aq-grid]');
+      if (owner && owner !== rootRef.current) return;
+      const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
+      if (!hasModifier && isTextEntry(event.target)) return;
+
+      const createConfig = getButtonConfig('create');
+      if (onCreate && createConfig.visible && !createConfig.disabled && matchesHotkey(event, gridKeys.create)) {
+        event.preventDefault();
+        onCreate();
+        return;
+      }
+      if (refreshable && matchesHotkey(event, gridKeys.refresh)) {
+        event.preventDefault();
+        handleRefresh();
+        return;
+      }
+      const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
+      if (searchShown && searchInputRef.current && matchesHotkey(event, gridKeys.search)) {
+        event.preventDefault();
+        searchInputRef.current.focus();
+        searchInputRef.current.select();
+      }
+    };
+  });
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => pageKeyHandler.current(event);
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  }, []);
+
   // Table rows
   const rows = data.map((record, index) => {
     const key = getRowKey(record);
     const isSelected = state.selectedRows.includes(key);
 
     return (
-      <Table.Tr key={key} bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}>
+      <Table.Tr
+        key={key}
+        bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
+        data-row-index={index}
+        className={keyboardEnabled ? styles.focusableRow : undefined}
+        tabIndex={keyboardEnabled ? (index === activeRowIndex ? 0 : -1) : undefined}
+        onFocus={keyboardEnabled ? () => setActiveRowKey(key) : undefined}
+        onKeyDown={keyboardEnabled ? (event: ReactKeyboardEvent<HTMLTableRowElement>) => handleRowKeyDown(event, key, index, isSelected) : undefined}
+      >
         {visibleColumns.map((column, colIndex) => (
           <Table.Td
             key={String(column.key)}
@@ -969,6 +1136,7 @@ export function DataGrid<T extends object>({
         leftSection={createButtonIcon || <IconPlus size={16} />}
         onClick={onCreate}
         disabled={createConfig.disabled}
+        title={keyboardEnabled && gridKeys.create ? withHotkey(resolvedCreateButtonText, gridKeys.create) : undefined}
       >
         {resolvedCreateButtonText}
       </Button>
@@ -976,7 +1144,7 @@ export function DataGrid<T extends object>({
   };
 
   return (
-    <Box pos="relative">
+    <Box pos="relative" ref={rootRef} data-aq-grid="">
       <LoadingOverlay visible={loading} />
       
       {/* Toolbar */}
@@ -1031,6 +1199,7 @@ export function DataGrid<T extends object>({
                 value={state.searchText}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleSearch(event.currentTarget.value)}
                 onKeyDown={handleKeyDown}
+                ref={searchInputRef}
                 style={{ width: 300, maxWidth: '100%', flex: '0 1 auto' }}
               />
             )}
@@ -1040,6 +1209,7 @@ export function DataGrid<T extends object>({
                 variant="light"
                 leftSection={<IconRefresh size={16} />}
                 onClick={handleRefresh}
+                title={keyboardEnabled && gridKeys.refresh ? withHotkey(m.refresh, gridKeys.refresh) : undefined}
               >
                 {m.refresh}
               </Button>
@@ -1217,7 +1387,7 @@ export function DataGrid<T extends object>({
                 )}
               </Table.Tr>
             </Table.Thead>
-            <Table.Tbody>
+            <Table.Tbody ref={tbodyRef}>
               {rows.length > 0 ? rows : (
                 <Table.Tr>
                   <Table.Td 

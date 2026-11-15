@@ -59,6 +59,15 @@
   padding: 0.2em 0.5em;
 }
 
+.focusableRow:focus {
+  outline: none;
+}
+
+.focusableRow:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-filled);
+  outline-offset: -2px;
+}
+
 .stickyActionsCell {
   position: sticky;
   right: 0;

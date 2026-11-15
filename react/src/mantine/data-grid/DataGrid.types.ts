@@ -68,7 +68,19 @@ export interface ActionButton<T = Record<string, unknown>> {
   href?: string | ((record: T) => string);
   visible?: (record: T) => boolean;
   disabled?: (record: T) => boolean;
+  // Key that runs this action on the focused row, e.g. 'shift+A' or 'mod+Enter'. Wins over the grid and app-wide maps; false = none.
+  hotkey?: string | false;
 }
+
+// Keys a grid answers to. Row keys work while a row has focus; create, refresh and search work anywhere on the page.
+export type GridHotkeyName =
+  | 'prevRow' | 'nextRow' | 'firstRow' | 'lastRow' | 'prevPage' | 'nextPage'
+  | 'open' | 'select' | 'selectAll'
+  | 'overview' | 'details' | 'edit' | 'delete' | 'filter'
+  | 'create' | 'refresh' | 'search';
+
+// A value is a combo like 'alt+N', 'mod+A' (mod = Ctrl, or Cmd on a Mac), 'Delete' or 'Space'; false turns the key off.
+export type GridHotkeyMap = Partial<Record<GridHotkeyName, string | false>>;
 
 export interface BulkAction {
   key: string;
@@ -238,6 +250,9 @@ export interface DataGridProps<T = Record<string, unknown>> {
 
   // Customizable empty-state message (default: 'No data available')
   emptyStateText?: string;
+
+  // Keyboard keys for this grid, merged over the app-wide AQGridHotkeysProvider and the defaults. false turns every key off.
+  hotkeys?: GridHotkeyMap | false;
 }
 
 export type GridViewMode = 'table' | 'card';
