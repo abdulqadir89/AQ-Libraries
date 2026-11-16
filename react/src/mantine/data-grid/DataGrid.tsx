@@ -39,13 +39,10 @@ import {
   applySlice,
   columnPath,
   columnSortPath,
-  conditionToLegacy,
+  conditionToText,
   countConditions,
   emptyGroup,
-  expressionFromLegacy,
-  legacyColumnFilters,
-  legacyConditions,
-  legacyToCondition,
+  textToCondition,
   parseFilter,
   pruneFilter,
   serializeFilter,
@@ -127,7 +124,6 @@ export function DataGrid<T extends object>({
   selectedRows,
   onSelectionChange,
   rowKey = 'id' as keyof T,
-  onFilterChange,
   onFilterExpressionChange,
   advancedFilter = false,
   filterBuilderHost,
@@ -154,7 +150,7 @@ export function DataGrid<T extends object>({
   // RULE RCT-5
   // ADR-002: one expression as the grid state, popovers and builder as views over it
   const [filter, setFilter] = useState<FilterGroup>(() =>
-    parseFilter(initialState?.filterExpression ?? expressionFromLegacy(initialState?.columnFilters ?? {}))
+    parseFilter(initialState?.filterExpression ?? '')
   );
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderTab, setBuilderTab] = useState<'filter' | 'sort'>('filter');
@@ -647,7 +643,6 @@ export function DataGrid<T extends object>({
       searchText: debouncedSearchText,
       sortExpression: currentSortExpression,
       filterExpression,
-      columnFilters: legacyColumnFilters(filter, columns as DataGridColumn[]),
       page: pagination?.current,
       pageSize: pagination?.pageSize,
     });
@@ -657,18 +652,14 @@ export function DataGrid<T extends object>({
     onRefresh?.();
   }, [onRefresh]);
 
-  const onFilterChangeRef = useRef(onFilterChange);
   const onFilterExpressionChangeRef = useRef(onFilterExpressionChange);
   useEffect(() => {
-    onFilterChangeRef.current = onFilterChange;
     onFilterExpressionChangeRef.current = onFilterExpressionChange;
   });
 
   const commitFilter = useCallback((next: FilterGroup) => {
     setFilter(next);
     onFilterExpressionChangeRef.current?.(serializeFilter(next));
-    // TODO-003: the flat condition list is all a legacy consumer can read; remove with onFilterChange.
-    onFilterChangeRef.current?.(legacyConditions(next), 'and');
   }, []);
 
   // Handle reset filters
@@ -743,7 +734,7 @@ export function DataGrid<T extends object>({
     if (column.multiValued) {
       replacement = parseFilter(expression);
     } else {
-      const condition = legacyToCondition(expression);
+      const condition = textToCondition(expression);
       replacement = condition ? { conditions: [condition], groups: [], operator: 'and' } : null;
     }
     commitFilter(applySlice(filter, columnPath(column), replacement));
@@ -1368,7 +1359,7 @@ export function DataGrid<T extends object>({
                           ? ''
                           : column.multiValued
                             ? serializeFilter(sliceAsGroup(slice))
-                            : slice.conditions[0] ? conditionToLegacy(slice.conditions[0]) : '';
+                            : slice.conditions[0] ? conditionToText(slice.conditions[0]) : '';
                         return (
                           <ColumnFilter
                             ref={(ref) => { columnFilterRefs.current[column.key] = ref; }}

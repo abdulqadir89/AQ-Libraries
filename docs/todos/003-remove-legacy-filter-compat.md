@@ -1,6 +1,6 @@
 # 003. Remove the legacy column-filter compatibility
 
-Status: Open
+Status: Done
 Date: 2026-10-25
 Location: `react/src/mantine/data-grid/DataGrid.tsx`, `react/src/mantine/data-grid/DataGrid.types.ts`
 
@@ -18,4 +18,6 @@ Every consuming grid that still builds its expression from `onFilterChange` or s
 2. Keep the compatibility behind a deprecation warning for a release: gentler, leaves the dual state longer.
 
 ## Done when
+Done: ELS and DQM no longer pass them and the compatibility code is gone. (Kept: the single-condition text the column popover reads, and `normalizeFilterText` for old URLs.)
+
 No consuming app passes `onFilterChange` or `initialState.columnFilters`, the compatibility code is removed, and every `TODO-003` comment is gone.

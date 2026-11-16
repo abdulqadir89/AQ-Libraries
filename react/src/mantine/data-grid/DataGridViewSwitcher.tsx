@@ -44,7 +44,6 @@ function toCardGridProps<T extends object>(
     selectedRows: tableProps.selectedRows,
     onSelectionChange: tableProps.onSelectionChange,
     rowKey: tableProps.rowKey,
-    onFilterChange: tableProps.onFilterChange,
     onFilterExpressionChange: tableProps.onFilterExpressionChange,
     advancedFilter: tableProps.advancedFilter,
     filterBuilderHost: tableProps.filterBuilderHost,

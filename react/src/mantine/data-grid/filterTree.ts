@@ -100,7 +100,7 @@ export function sliceAsGroup(slice: ColumnSlice): FilterGroup {
 const encodeComma = (value: unknown): string => String(value ?? '').replace(/,/g, '%2C');
 const decodeComma = (value: string): string => value.replace(/%2C/g, ',');
 
-export function conditionToLegacy(condition: FilterCondition): string {
+export function conditionToText(condition: FilterCondition): string {
   const { property, operator, value, secondValue } = condition;
   if (operator === 'isnull' || operator === 'isnotnull') return `${property},${operator},`;
   if (operator === 'between' || operator === 'notbetween') return `${property},${operator},${encodeComma(value)},${encodeComma(secondValue)}`;
@@ -108,7 +108,7 @@ export function conditionToLegacy(condition: FilterCondition): string {
   return `${property},${operator},${values.map(encodeComma).join(',')}`;
 }
 
-export function legacyToCondition(expression: string): FilterCondition | null {
+export function textToCondition(expression: string): FilterCondition | null {
   const parts = expression.split(',');
   if (parts.length < 2) return null;
 
@@ -124,31 +124,6 @@ export function legacyToCondition(expression: string): FilterCondition | null {
   return { property, operator, value: decodeComma(parts.slice(2).join(',')) };
 }
 
-// TODO-003: per-column legacy filters (initial state in, snapshot out); remove with the legacy callbacks.
-export function expressionFromLegacy(columnFilters: Record<string, string>): string {
-  const conditions = Object.values(columnFilters)
-    .map(legacyToCondition)
-    .filter((c): c is FilterCondition => c !== null);
-  return serializeFilter({ conditions, groups: [], operator: 'and' });
-}
-
-// TODO-003: see expressionFromLegacy.
-export function legacyColumnFilters(root: FilterGroup, columns: DataGridColumn[]): Record<string, string> {
-  const result: Record<string, string> = {};
-  columns.forEach(column => {
-    const slice = sliceForColumn(root, columnPath(column), column.multiValued === true);
-    if (slice.advanced) return;
-
-    if (column.multiValued) {
-      const text = serializeFilter(sliceAsGroup(slice));
-      if (text) result[column.key] = text;
-    } else if (slice.conditions.length === 1) {
-      result[column.key] = conditionToLegacy(slice.conditions[0]);
-    }
-  });
-  return result;
-}
-
 // Drops what the builder left unfinished: conditions without a value and groups with nothing in them.
 export function pruneFilter(group: FilterGroup): FilterGroup {
   const hasValue = (c: FilterCondition): boolean => {
@@ -161,17 +136,10 @@ export function pruneFilter(group: FilterGroup): FilterGroup {
   return { ...group, conditions: group.conditions.filter(hasValue), groups };
 }
 
-// TODO-003: the flat condition list the legacy onFilterChange callback receives (list values joined by commas).
-export function legacyConditions(root: FilterGroup): FilterCondition[] {
-  if (root.operator !== 'and' || root.negated) return [];
-  return root.conditions.map(c => ({ ...c, value: Array.isArray(c.value) ? c.value.join(',') : c.value }));
-}
-
 // A filter written in the URL or by an older grid may still be the single `property,operator,value` form with commas as %2C;
 // anything bracketed, quoted or combined is already a full expression.
-// TODO-003: drop the single-condition form with the legacy callbacks.
 export function normalizeFilterText(text: string): string {
   if (/[()"']|&&|\|\|/.test(text)) return text;
-  const condition = legacyToCondition(text);
+  const condition = textToCondition(text);
   return condition ? serializeFilter({ conditions: [condition], groups: [], operator: 'and' }) : text;
 }
