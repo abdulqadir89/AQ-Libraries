@@ -12,8 +12,10 @@ interface PageKeysOptions {
   canCreate: boolean;
   canRefresh: boolean;
   canSearch: boolean;
+  canHelp: boolean;
   onCreate?: () => void;
   onRefresh: () => void;
+  onHelp: () => void;
 }
 
 /**
@@ -21,8 +23,8 @@ interface PageKeysOptions {
  * Returns the value for the grid root's `data-aq-page-keys`, the keys this grid answers, so a page with
  * several grids hands each key to a grid that has a use for it.
  */
-export function usePageKeys({ enabled, rootRef, searchInputRef, keys, canCreate, canRefresh, canSearch, onCreate, onRefresh }: PageKeysOptions): string {
-  const combos = JSON.stringify([canCreate && keys.create, canRefresh && keys.refresh, canSearch && keys.search].filter(Boolean));
+export function usePageKeys({ enabled, rootRef, searchInputRef, keys, canCreate, canRefresh, canSearch, canHelp, onCreate, onRefresh, onHelp }: PageKeysOptions): string {
+  const combos = JSON.stringify([canCreate && keys.create, canRefresh && keys.refresh, canSearch && keys.search, canHelp && keys.help].filter(Boolean));
 
   const handler = useRef<(event: KeyboardEvent) => void>(() => {});
   useEffect(() => {
@@ -35,13 +37,16 @@ export function usePageKeys({ enabled, rootRef, searchInputRef, keys, canCreate,
       const wantsCreate = canCreate && matchesHotkey(event, keys.create);
       const wantsRefresh = !wantsCreate && canRefresh && matchesHotkey(event, keys.refresh);
       const wantsSearch = !wantsCreate && !wantsRefresh && canSearch && !!searchInputRef.current && matchesHotkey(event, keys.search);
-      if (!wantsCreate && !wantsRefresh && !wantsSearch) return;
+      const wantsHelp = !wantsCreate && !wantsRefresh && !wantsSearch && canHelp && matchesHotkey(event, keys.help);
+      if (!wantsCreate && !wantsRefresh && !wantsSearch && !wantsHelp) return;
       // RULE RCT-22
       if (!ownsPageKeys(rootRef.current, event)) return;
 
       event.preventDefault();
       if (wantsCreate) onCreate?.();
       else if (wantsRefresh) onRefresh();
+      // RULE RCT-23
+      else if (wantsHelp) onHelp();
       else {
         searchInputRef.current?.focus();
         searchInputRef.current?.select();

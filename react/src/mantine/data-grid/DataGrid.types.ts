@@ -78,7 +78,7 @@ export type GridHotkeyName =
   | 'prevRow' | 'nextRow' | 'prevCard' | 'nextCard' | 'firstRow' | 'lastRow' | 'prevPage' | 'nextPage'
   | 'open' | 'select' | 'selectAll'
   | 'overview' | 'details' | 'edit' | 'delete' | 'filter'
-  | 'create' | 'refresh' | 'search';
+  | 'create' | 'refresh' | 'search' | 'help';
 
 // A value is a combo like 'alt+N', 'mod+A' (mod = Ctrl, or Cmd on a Mac), 'Delete' or 'Space'; false turns the key off.
 export type GridHotkeyMap = Partial<Record<GridHotkeyName, string | false>>;

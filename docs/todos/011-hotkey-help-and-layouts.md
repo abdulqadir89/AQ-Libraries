@@ -1,6 +1,6 @@
 # 011. Show the shortcuts in a dialog and handle layouts where "/" needs Shift
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/gridHotkeys.ts` (default keys), `react/src/mantine/data-grid/DataGrid.tsx`
 

@@ -30,7 +30,8 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { MODIFIER_KEYS, findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, useIsMac } from './gridHotkeys';
+import { GridShortcutsDialog } from './GridShortcutsDialog';
+import { MODIFIER_KEYS, findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, pageKeyNames, rowKeyNames, useIsMac } from './gridHotkeys';
 import { usePageKeys, usePendingPageFocus } from './useGridKeyboard';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
@@ -78,7 +79,6 @@ import type {
   SortCondition,
   FilterGroup,
   FilterBuilderHost,
-  GridHotkeyName,
   SpecialModeConfig,
 } from './DataGrid.types';
 
@@ -324,13 +324,8 @@ export function DataGrid<T extends object>({
   const conflictInputs = [actionHotkeys.join('\u0001'), liveActions.join(), selectable, advancedFilter, !!onCreate, refreshable, searchShown].join('|');
   useEffect(() => {
     if (isProduction) return;
-    const rowNames: GridHotkeyName[] = ['prevRow', 'nextRow', 'firstRow', 'lastRow', 'prevPage', 'nextPage', 'open'];
-    if (selectable) rowNames.push('select', 'selectAll');
-    if (advancedFilter) rowNames.push('filter');
-    const pageNames: GridHotkeyName[] = [];
-    if (onCreate) pageNames.push('create');
-    if (refreshable) pageNames.push('refresh');
-    if (searchShown) pageNames.push('search');
+    const rowNames = rowKeyNames({ selectable, advancedFilter });
+    const pageNames = pageKeyNames({ create: !!onCreate, refresh: refreshable, search: searchShown });
 
     const rowEntries: Array<[string, string | false | undefined]> = rowNames.map(name => [name, gridKeys[name]]);
     finalActions.forEach((action, index) => {
@@ -1036,7 +1031,9 @@ export function DataGrid<T extends object>({
   const canCreate = keyboardEnabled && !loading && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
   const canRefresh = keyboardEnabled && !loading && refreshable && !!gridKeys.refresh;
   const canSearch = keyboardEnabled && searchShown && !!gridKeys.search;
-  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, onCreate, onRefresh: handleRefresh });
+  const canHelp = keyboardEnabled && !!gridKeys.help;
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, canHelp, onCreate, onRefresh: handleRefresh, onHelp: () => setShortcutsOpen(true) });
 
   // Table rows
   const rows = data.map((record, index) => {
@@ -1283,6 +1280,28 @@ export function DataGrid<T extends object>({
           />
         ) : null,
       })}
+
+      {shortcutsOpen && (
+        <GridShortcutsDialog
+          opened
+          onClose={() => setShortcutsOpen(false)}
+          title={m.shortcuts.title}
+          formatKey={(combo) => formatHotkey(combo, isMac, m.hotkeyKeys)}
+          sections={[
+            {
+              title: m.shortcuts.onRow,
+              items: [
+                ...rowKeyNames({ selectable, advancedFilter }).map(name => ({ label: m.shortcuts.names[name], combo: gridKeys[name] })),
+                ...finalActions.flatMap((action, index) => (liveActions[index] ? [{ label: action.label, combo: actionHotkeys[index] }] : [])),
+              ],
+            },
+            {
+              title: m.shortcuts.onPage,
+              items: pageKeyNames({ create: !!onCreate, refresh: refreshable, search: searchShown }).map(name => ({ label: m.shortcuts.names[name], combo: gridKeys[name] })),
+            },
+          ]}
+        />
+      )}
 
       {/* Table */}
       <Paper withBorder ref={scrollAreaRef}>

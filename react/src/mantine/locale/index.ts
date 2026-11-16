@@ -3,6 +3,7 @@ export type {
   DeepPartial,
   DataGridMessages,
   HotkeyKeyMessages,
+  GridShortcutsMessages,
   ColumnFilterMessages,
   CardDataGridMessages,
   RichTextEditorMessages,

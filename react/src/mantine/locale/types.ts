@@ -1,3 +1,5 @@
+import type { GridHotkeyName } from '../data-grid/DataGrid.types';
+
 /**
  * Typed message shape for every localizable string in @AQ/react-components.
  *
@@ -34,6 +36,15 @@ export interface DataGridMessages {
   removeFilter: string;
   removeSort: string;
   hotkeyKeys: HotkeyKeyMessages;
+  shortcuts: GridShortcutsMessages;
+}
+
+// The dialog that lists a grid's keyboard shortcuts.
+export interface GridShortcutsMessages {
+  title: string;
+  onRow: string;
+  onPage: string;
+  names: Record<GridHotkeyName, string>;
 }
 
 // Names of the modifiers and keys shown next to a button's hotkey, e.g. "Edit (Alt+E)".
