@@ -300,7 +300,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
     function isUnchangedSingle(selection: string[]) {
       const loaded = loadedSingle.current;
-      return !!loaded && selection.length === 1 && selection[0] === loaded.value && (loaded.operator === 'ne') === (operator === 'notin');
+      const isNullOperator = operator === 'isnull' || operator === 'isnotnull';
+      return !!loaded && !isNullOperator && selection.length === 1 && selection[0] === loaded.value && (loaded.operator === 'ne') === (operator === 'notin');
     }
 
     // RULE RCT-6

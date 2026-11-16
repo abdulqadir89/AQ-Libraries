@@ -19,5 +19,5 @@ It keeps what the popover was meant to do (close and apply on a click outside) f
 
 ## Consequences
 - The check is by kind of element, not by owner: a click inside an unrelated open dropdown elsewhere on the page also leaves the filter open.
-- The filter relies on `onDismiss` and the click-outside hook's list of nodes, which Mantine 9 provides.
+- The filter relies on `onDismiss` (Mantine 7.17 and later) and the click-outside hook's list of nodes, so the package's Mantine 8 floor holds.
 - `closeOnEscape` keeps working through `onDismiss`.

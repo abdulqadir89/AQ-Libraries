@@ -17,6 +17,8 @@ function toSortConditions(expression?: string): SortCondition[] {
     .map(([property, direction], priority) => ({ property, direction: direction === 'desc' ? 'desc' as const : 'asc' as const, priority }));
 }
 
+// The card grid starts from the table grid's initial state (search, sort, filter), as it was seeded, not from what the user has typed since;
+// an app that wants the live values keeps them itself and passes them as `initialState`.
 function toCardGridProps<T extends object>(
   tableProps: DataGridProps<T>,
   cardOverrides?: Partial<CardDataGridProps<T>>
