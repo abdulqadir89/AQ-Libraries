@@ -30,7 +30,7 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { findDuplicateHotkeys, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, useIsMac } from './gridHotkeys';
+import { findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, registerPageKeyHandler, useIsMac } from './gridHotkeys';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -77,6 +77,7 @@ import type {
   SortCondition,
   FilterGroup,
   FilterBuilderHost,
+  GridHotkeyName,
   SpecialModeConfig,
 } from './DataGrid.types';
 
@@ -292,9 +293,11 @@ export function DataGrid<T extends object>({
 
   const finalActions = actions ? [...defaultActions, ...actions] : defaultActions;
 
+  const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
+
   // Indexed like finalActions, because a custom action may reuse a built-in action's key.
   const actionHotkeys: Array<string | false> = finalActions.map((action, index) => {
-    const builtIn = index < defaultActions.length ? gridKeys[action.key as 'overview' | 'details' | 'edit' | 'delete'] : undefined;
+    const builtIn = index < defaultActions.length && isBuiltInActionHotkey(action.key) ? gridKeys[action.key] : undefined;
     return hotkeys === false ? false : action.hotkey ?? builtIn ?? false;
   });
   const actionIndexes = new Map(finalActions.map((action, index) => [action, index]));
@@ -305,26 +308,41 @@ export function DataGrid<T extends object>({
   const withHotkey = (label: string, combo: string | false | undefined) =>
     combo ? `${label} (${formatHotkey(combo, isMac, m.hotkeyKeys)})` : label;
 
-  // TODO-008: rebuilt on every render; the check also counts keys of actions that are not shown and misses custom-vs-custom clashes.
-  const hotkeyConflicts = findDuplicateHotkeys([
-    ...(Object.entries(gridKeys) as Array<[string, string | false]>),
-    ...finalActions.slice(defaultActions.length).map((action): [string, string | false | undefined] => [`action "${action.key}"`, action.hotkey]),
-  ]);
-  const hotkeyConflictText = hotkeyConflicts.join('; ');
-  useEffect(() => {
-    if (hotkeyConflictText) console.warn(`DataGrid hotkey conflict: ${hotkeyConflictText}`);
-  }, [hotkeyConflictText]);
-
-  // Static estimate of visible action buttons for sizing the actions column — evaluated
-  // without a record, so per-row `visible()` overrides (rare, row-data-dependent) are
-  // assumed visible here; this matches the precision the previous flat default had.
-  const visibleActionCount = finalActions.filter(action => {
+  // Static view of which actions are shown — evaluated without a record, so per-row `visible()`
+  // overrides (rare, row-data-dependent) are assumed visible here; this matches the precision the
+  // previous flat default had.
+  const liveActions = finalActions.map(action => {
     try {
-      return !action.visible || action.visible({} as T);
+      return !action.visible || !!action.visible({} as T);
     } catch {
       return true;
     }
-  }).length;
+  });
+  const visibleActionCount = liveActions.filter(Boolean).length;
+
+  // Two keys that can act at the same time on one combination are reported while building: the row keys and the keys of shown
+  // actions share a scope, and so do create, refresh and search. The check only runs when its inputs change.
+  const conflictInputs = [actionHotkeys.join('\u0001'), liveActions.join(), selectable, advancedFilter, !!onCreate, refreshable, searchShown].join('|');
+  useEffect(() => {
+    if (isProduction) return;
+    const rowNames: GridHotkeyName[] = ['prevRow', 'nextRow', 'firstRow', 'lastRow', 'prevPage', 'nextPage', 'open'];
+    if (selectable) rowNames.push('select', 'selectAll');
+    if (advancedFilter) rowNames.push('filter');
+    const pageNames: GridHotkeyName[] = [];
+    if (onCreate) pageNames.push('create');
+    if (refreshable) pageNames.push('refresh');
+    if (searchShown) pageNames.push('search');
+
+    const rowEntries: Array<[string, string | false | undefined]> = rowNames.map(name => [name, gridKeys[name]]);
+    finalActions.forEach((action, index) => {
+      if (liveActions[index]) rowEntries.push([`action "${action.key}"`, actionHotkeys[index]]);
+    });
+    const conflicts = [
+      ...findDuplicateHotkeys(rowEntries),
+      ...findDuplicateHotkeys(pageNames.map((name): [string, string | false | undefined] => [name, gridKeys[name]])),
+    ];
+    if (conflicts.length > 0) console.warn(`DataGrid hotkey conflict: ${conflicts.join('; ')}`);
+  }, [gridKeys, conflictInputs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Icon ActionIcon (size="md") is 36px, Group gap="xs" is 10px, plus ~24px of cell
   // padding — computed so grids with fewer/more buttons than the old flat 120px default
@@ -1044,7 +1062,6 @@ export function DataGrid<T extends object>({
   };
 
   // Create, refresh and search answer anywhere on the page, but never while typing, in a dialog or menu, or in another grid.
-  const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
   const createConfig = getButtonConfig('create');
   const canCreate = keyboardEnabled && !loading && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
   const canRefresh = keyboardEnabled && !loading && refreshable && !!gridKeys.refresh;
@@ -1076,11 +1093,7 @@ export function DataGrid<T extends object>({
       }
     };
   });
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => pageKeyHandler.current(event);
-    document.addEventListener('keydown', listener);
-    return () => document.removeEventListener('keydown', listener);
-  }, []);
+  useEffect(() => registerPageKeyHandler(pageKeyHandler), []);
 
   // Table rows
   const rows = data.map((record, index) => {

@@ -1,6 +1,6 @@
 # 008. Memoise the hotkey work and tighten its conflict check
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/DataGrid.tsx` (hotkey resolution, conflict check, page key listener)
 

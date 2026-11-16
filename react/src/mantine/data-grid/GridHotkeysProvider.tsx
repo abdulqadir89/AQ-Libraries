@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { resolveGridHotkeys } from './gridHotkeys';
 import type { ResolvedGridHotkeys } from './gridHotkeys';
@@ -15,7 +15,9 @@ export interface AQGridHotkeysProviderProps {
 }
 
 export function AQGridHotkeysProvider({ hotkeys, children }: AQGridHotkeysProviderProps) {
-  return <GridHotkeysContext.Provider value={hotkeys ?? null}>{children}</GridHotkeysContext.Provider>;
+  // An inline object changes identity every render; its content is what matters, so the grids below only update when it changes.
+  const stable = useMemo(() => hotkeys ?? null, [JSON.stringify(hotkeys ?? null)]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <GridHotkeysContext.Provider value={stable}>{children}</GridHotkeysContext.Provider>;
 }
 
 /**
@@ -24,6 +26,7 @@ export function AQGridHotkeysProvider({ hotkeys, children }: AQGridHotkeysProvid
  */
 export function useGridHotkeys(gridHotkeys?: GridHotkeyMap | false): ResolvedGridHotkeys {
   const appHotkeys = useContext(GridHotkeysContext);
+  const gridKey = JSON.stringify(gridHotkeys ?? null);
   // RULE RCT-20
-  return resolveGridHotkeys(appHotkeys, gridHotkeys);
+  return useMemo(() => resolveGridHotkeys(appHotkeys, gridHotkeys), [appHotkeys, gridKey]); // eslint-disable-line react-hooks/exhaustive-deps
 }

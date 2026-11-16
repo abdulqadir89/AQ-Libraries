@@ -5,6 +5,24 @@ import type { GridHotkeyMap, GridHotkeyName } from './DataGrid.types';
 
 export type ResolvedGridHotkeys = Record<GridHotkeyName, string | false>;
 
+// The grid names whose key belongs to a built-in row action; the compiler checks each against GridHotkeyName.
+const BUILT_IN_ACTION_HOTKEYS = ['overview', 'details', 'edit', 'delete'] as const satisfies readonly GridHotkeyName[];
+export type BuiltInActionHotkey = typeof BUILT_IN_ACTION_HOTKEYS[number];
+
+export function isBuiltInActionHotkey(name: string): name is BuiltInActionHotkey {
+  return (BUILT_IN_ACTION_HOTKEYS as readonly string[]).includes(name);
+}
+
+declare const process: { env: { NODE_ENV?: string } };
+// Hotkey conflicts are a mistake to fix while building, so they are only reported outside production.
+export const isProduction = (() => {
+  try {
+    return process.env.NODE_ENV === 'production';
+  } catch {
+    return false;
+  }
+})();
+
 export const defaultGridHotkeys: ResolvedGridHotkeys = {
   prevRow: 'ArrowUp',
   nextRow: 'ArrowDown',
@@ -166,6 +184,22 @@ export function findDuplicateHotkeys(entries: Array<[label: string, combo: strin
     else seen.set(normalized, label);
   }
   return duplicates;
+}
+
+type PageKeyHandler = { current: (event: KeyboardEvent) => void };
+const pageKeyHandlers = new Set<PageKeyHandler>();
+const onDocumentKeyDown = (event: KeyboardEvent) => {
+  pageKeyHandlers.forEach(handler => handler.current(event));
+};
+
+// One keydown listener on the document serves every mounted grid, however many the page holds.
+export function registerPageKeyHandler(handler: PageKeyHandler): () => void {
+  if (pageKeyHandlers.size === 0) document.addEventListener('keydown', onDocumentKeyDown);
+  pageKeyHandlers.add(handler);
+  return () => {
+    pageKeyHandlers.delete(handler);
+    if (pageKeyHandlers.size === 0) document.removeEventListener('keydown', onDocumentKeyDown);
+  };
 }
 
 export function isTextEntry(element: EventTarget | null): boolean {
