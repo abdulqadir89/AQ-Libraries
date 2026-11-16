@@ -71,7 +71,7 @@ consumer that doesn't opt in sees unchanged English behavior.
 
 - Message shape is a typed `AQMessages` object grouped by component (`dataGrid`, `columnFilter`,
   `richTextEditor`, `dateTimeRange`, `address`, `attachments`, `themeSwitcher`, `masterDetail`,
-  `splitButton`, `autocomplete`, `cardDataGrid`). Strings with counts/values are **functions**, not
+  `splitButton`, `autocomplete`, `cardDataGrid`). The names of modifiers and keys in a grid's hotkey tooltips are `dataGrid.hotkeyKeys`. Strings with counts/values are **functions**, not
   ICU templates — e.g. `rowsSelected: (n: number) => string` — because this library doesn't depend
   on next-intl/ICU; the consuming app's own i18n layer supplies the function bodies.
 - A component prop that already sets a label always wins over the context message for that string.

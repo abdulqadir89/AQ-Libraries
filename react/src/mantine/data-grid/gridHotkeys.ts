@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from 'react';
+import { defaultMessages } from '../locale/defaultMessages';
+import type { HotkeyKeyMessages } from '../locale/types';
 import type { GridHotkeyMap, GridHotkeyName } from './DataGrid.types';
 
 export type ResolvedGridHotkeys = Record<GridHotkeyName, string | false>;
@@ -133,16 +135,22 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
   return event.key.toLowerCase() === p.key;
 }
 
-// TODO-007: key names are English; take them from the locale messages (RCT-2).
-export function formatHotkey(combo: string, isMac = false): string {
+const KEY_NAME_FIELDS: Record<string, keyof HotkeyKeyMessages> = {
+  ' ': 'space', enter: 'enter', delete: 'delete', escape: 'escape', tab: 'tab', backspace: 'backspace',
+  home: 'home', end: 'end', pageup: 'pageUp', pagedown: 'pageDown',
+  arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right',
+};
+
+export function formatHotkey(combo: string, isMac = false, names: HotkeyKeyMessages = defaultMessages.dataGrid.hotkeyKeys): string {
   const p = parseHotkey(combo);
-  const keyLabel = p.key === ' ' ? 'Space' : p.key.length === 1 ? p.key.toUpperCase() : p.key.replace(/^arrow/, '').replace(/^./, c => c.toUpperCase());
+  const field = KEY_NAME_FIELDS[p.key];
+  const keyLabel = field ? names[field] : p.key.length === 1 ? p.key.toUpperCase() : p.key.replace(/^./, c => c.toUpperCase());
   const parts: string[] = [];
-  if (p.mod) parts.push(isMac ? 'Cmd' : 'Ctrl');
-  if (p.ctrl) parts.push('Ctrl');
-  if (p.meta) parts.push(isMac ? 'Cmd' : 'Win');
-  if (p.alt) parts.push(isMac ? 'Option' : 'Alt');
-  if (p.shift) parts.push('Shift');
+  if (p.mod) parts.push(isMac ? names.cmd : names.ctrl);
+  if (p.ctrl) parts.push(names.ctrl);
+  if (p.meta) parts.push(isMac ? names.cmd : names.win);
+  if (p.alt) parts.push(isMac ? names.option : names.alt);
+  if (p.shift) parts.push(names.shift);
   parts.push(keyLabel);
   return parts.join('+');
 }

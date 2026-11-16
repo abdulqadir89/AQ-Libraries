@@ -2,6 +2,7 @@ export type {
   AQMessages,
   DeepPartial,
   DataGridMessages,
+  HotkeyKeyMessages,
   ColumnFilterMessages,
   CardDataGridMessages,
   RichTextEditorMessages,

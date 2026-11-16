@@ -41,7 +41,7 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 | 004 | [Let a hotkey combination name "+" and hold a space](004-hotkey-combo-grammar.md) | 🟢 Done |
 | 005 | [Hold the page-wide hotkeys back while a grid loads or the user types](005-page-key-guards.md) | 🟢 Done |
 | 006 | [Make the focus after a page change robust](006-pending-page-focus.md) | 🟢 Done |
-| 007 | [Translate the key names shown in hotkey tooltips](007-hotkey-labels-locale.md) | 🔴 Open |
+| 007 | [Translate the key names shown in hotkey tooltips](007-hotkey-labels-locale.md) | 🟢 Done |
 | 008 | [Memoise the hotkey work and tighten its conflict check](008-hotkey-resolution-cost.md) | 🔴 Open |
 | 009 | [Settle what Enter opens and how a link action is run](009-enter-open-and-link-actions.md) | 🔴 Open |
 | 010 | [Add keyboard navigation and hotkeys to the card grid](010-card-grid-keyboard.md) | 🔴 Open |
