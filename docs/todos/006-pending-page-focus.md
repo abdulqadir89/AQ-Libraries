@@ -1,6 +1,6 @@
 # 006. Make the focus after a page change robust
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/DataGrid.tsx` (pending row focus)
 
