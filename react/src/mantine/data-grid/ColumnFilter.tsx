@@ -15,6 +15,7 @@ import {
   Checkbox,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
+import { useClickOutside } from '@mantine/hooks';
 import { IconFilter, IconX } from '@tabler/icons-react';
 import type { DataGridColumn } from './DataGrid.types';
 import { useAQLocale } from '../locale';
@@ -191,11 +192,12 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     const property = column.filterPath ?? column.key;
     const isMultiValue = column.type === 'lookup' && column.multiValued === true;
     const [opened, setOpened] = useState(false);
+    const [targetNode, setTargetNode] = useState<HTMLElement | null>(null);
+    const [dropdownNode, setDropdownNode] = useState<HTMLElement | null>(null);
     const [hasActiveFilter, setHasActiveFilter] = useState(false);
-    // Popover's onClose also fires for our own programmatic close (setOpened(false) in
-    // handleApply/handleClear), which would otherwise re-run handlePopoverClose and
-    // double-apply/clear the filter. Suppress that one follow-up call.
-    const suppressNextClose = useRef(false);
+    // An equals / does-not-equal filter loaded into a pick-list column (set by the builder or a link) is shown as a one-item selection;
+    // this remembers it, so closing the popover without a change leaves the filter as it was.
+    const loadedSingle = useRef<{ operator: string; value: string } | null>(null);
     
     // Local state for form inputs - store as strings but convert for display
     const [operator, setOperator] = useState(getDefaultOperator(column.type));
@@ -229,12 +231,15 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
     const formatValueToString = (val: string | number | Date | boolean): string => {
       if (val === null || val === undefined) return '';
-      if (val instanceof Date) return val.toISOString().split('T')[0];
+      // The calendar day the user sees, not the UTC day, which is another day east or west of Greenwich.
+      // RULE RCT-26
+      if (val instanceof Date) return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`;
       if (typeof val === 'boolean') return val.toString();
       return String(val);
     };
 
     function loadExpression(source: string) {
+      loadedSingle.current = null;
       if (!source) {
         setOperator(getDefaultOperator(column.type));
         setValue('');
@@ -278,7 +283,24 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         setSelectedLookupValues([]);
       }
 
+      // The popover of a pick-list column only offers a selection, so an equals / does-not-equal filter appears as one selected item
+      // that can be changed; the popover itself writes in / not in.
+      loadedSingle.current = null;
+      // RULE RCT-25
+      const isSingle = (parsed.operator === 'eq' || parsed.operator === 'ne') && !!parsed.value;
+      if (isSingle && !isMultiValue && (column.type === 'enum' || column.type === 'lookup')) {
+        if (column.type === 'enum') setSelectedEnumValues([parsed.value]);
+        else setSelectedLookupValues([parsed.value]);
+        setOperator(parsed.operator === 'ne' ? 'notin' : 'in');
+        loadedSingle.current = { operator: parsed.operator, value: parsed.value };
+      }
+
       setHasActiveFilter(true);
+    }
+
+    function isUnchangedSingle(selection: string[]) {
+      const loaded = loadedSingle.current;
+      return !!loaded && selection.length === 1 && selection[0] === loaded.value && (loaded.operator === 'ne') === (operator === 'notin');
     }
 
     // RULE RCT-6
@@ -290,6 +312,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
       reset: () => {
+        loadedSingle.current = null;
         setOperator(getDefaultOperator(column.type));
         setValue('');
         setSecondValue('');
@@ -301,7 +324,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       },
       setFilterExpression: (value: string) => loadExpression(value),
       close: () => {
-        suppressNextClose.current = true;
         setOpened(false);
       },
       isOpen: () => {
@@ -342,20 +364,45 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       setOpened(true);
     }
 
+    // RULE RCT-24
+    useClickOutside(
+      event => {
+        if (!opened) return;
+        const path = event.composedPath();
+        const insideAnotherDropdown = path.some(node =>
+          node instanceof HTMLElement && (node.classList.contains('mantine-Popover-dropdown') || node.hasAttribute('data-dates-dropdown') || node.getAttribute('role') === 'listbox')
+        );
+        if (!insideAnotherDropdown) handlePopoverClose();
+      },
+      ['mousedown', 'touchstart'],
+      [targetNode, dropdownNode],
+      opened
+    );
+
     function handlePopoverClose() {
-      if (suppressNextClose.current) {
-        suppressNextClose.current = false;
+      // Nothing is selected in a pick-list popover, so there is nothing to apply: the unapplied edit is dropped and the popover closes.
+      if ((column.type === 'enum' && selectedEnumValues.length === 0) || (column.type === 'lookup' && selectedLookupValues.length === 0)) {
+        loadExpression(expression ?? '');
+        setOpened(false);
         return;
       }
 
       // Auto-apply enum selections on close
       if (column.type === 'enum' && selectedEnumValues.length > 0) {
+        if (isUnchangedSingle(selectedEnumValues)) {
+          setOpened(false);
+          return;
+        }
         handleApply();
         return;
       }
 
       // Auto-apply lookup selections on close
       if (column.type === 'lookup' && selectedLookupValues.length > 0) {
+        if (isUnchangedSingle(selectedLookupValues)) {
+          setOpened(false);
+          return;
+        }
         handleApply();
         return;
       }
@@ -379,7 +426,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         return;
       }
 
-      suppressNextClose.current = true;
       setOpened(false);
     }
 
@@ -389,7 +435,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const nullExpression = `${property},${operator},`;
         onApplyFilter(nullExpression);
         setHasActiveFilter(true);
-        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -403,7 +448,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const expression = `${property},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
-        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -415,7 +459,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         }
         onApplyFilter(buildMultiValueExpression(property, operator, selectedLookupValues));
         setHasActiveFilter(true);
-        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -428,7 +471,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
         const expression = `${property},${operator},${values}`;
         onApplyFilter(expression);
         setHasActiveFilter(true);
-        suppressNextClose.current = true;
         setOpened(false);
         return;
       }
@@ -470,11 +512,11 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
       onApplyFilter(expression);
       setHasActiveFilter(true);
-      suppressNextClose.current = true;
       setOpened(false);
     }
 
     function handleClear() {
+      loadedSingle.current = null;
       setOperator(getDefaultOperator(column.type));
       setValue('');
       setSecondValue('');
@@ -483,7 +525,6 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
       setHasActiveFilter(false);
       setRangeError('');
       onClearFilter(column.key);
-      suppressNextClose.current = true;
       setOpened(false);
     }
 
@@ -586,9 +627,10 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <NumberInput
               label={operator === 'between' ? m.from : m.value}
-              value={value ? parseValue(value, 'number') as number : undefined}
+              value={value ? parseValue(value, 'number') as number : ''}
               onChange={(val) => {
-                setValue(formatValueToString(val || 0));
+                // An emptied field stays empty; only a real number is kept.
+                setValue(val === '' || val == null ? '' : formatValueToString(val));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
@@ -601,7 +643,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <DateInput
               label={operator === 'between' ? m.from : m.value}
-              value={value ? parseValue(value, 'date') as Date : null}
+              value={value || null}
               onChange={(val) => {
                 setValue(val ? formatValueToString(val) : '');
                 setRangeError('');
@@ -616,7 +658,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <DateInput
               label={m.from}
-              value={value ? parseValue(value, 'date') as Date : null}
+              value={value || null}
               onChange={(val) => setValue(val ? formatValueToString(val) : '')}
               onKeyDown={handleKeyDown}
               placeholder={m.selectStartDate}
@@ -664,9 +706,9 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <NumberInput
               label={m.to}
-              value={secondValue ? parseValue(secondValue, 'number') as number : undefined}
+              value={secondValue ? parseValue(secondValue, 'number') as number : ''}
               onChange={(val) => {
-                setSecondValue(formatValueToString(val || 0));
+                setSecondValue(val === '' || val == null ? '' : formatValueToString(val));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
@@ -680,7 +722,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <DateInput
               label={m.to}
-              value={secondValue ? parseValue(secondValue, 'date') as Date : null}
+              value={secondValue || null}
               onChange={(val) => {
                 setSecondValue(val ? formatValueToString(val) : '');
                 setRangeError('');
@@ -707,15 +749,16 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     return (
       <Popover 
         opened={opened} 
-        onClose={handlePopoverClose}
+        onDismiss={handlePopoverClose}
         position="bottom-start"
         withArrow
         shadow="md"
-        closeOnClickOutside
+        closeOnClickOutside={false}
         closeOnEscape
       >
         <Popover.Target>
           <ActionIcon
+            ref={setTargetNode}
             variant={hasActiveFilter ? 'filled' : 'subtle'}
             color={hasActiveFilter ? 'blue' : 'gray'}
             size="sm"
@@ -731,7 +774,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           </ActionIcon>
         </Popover.Target>
         
-        <Popover.Dropdown>
+        <Popover.Dropdown ref={setDropdownNode}>
           <FocusTrap active={opened}>
             <Stack gap="md" style={{ minWidth: 250 }}>
               <Text size="sm" fw={500}>{m.filterByLabel(columnLabel(column))}</Text>
@@ -744,7 +787,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
                 <Stack gap="xs">
                   <Text size="sm" c="dimmed">{m.multiValue.advanced}</Text>
                   {onOpenBuilder && (
-                    <Button variant="light" onClick={() => { suppressNextClose.current = true; setOpened(false); onOpenBuilder(); }}>
+                    <Button variant="light" onClick={() => { setOpened(false); onOpenBuilder(); }}>
                       {m.multiValue.openBuilder}
                     </Button>
                   )}

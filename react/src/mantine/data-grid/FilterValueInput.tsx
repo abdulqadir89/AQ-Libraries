@@ -20,7 +20,8 @@ const asList = (value: unknown): string[] => (Array.isArray(value) ? value.map(S
 
 const toDateText = (value: Date | string | null): string => {
   if (!value) return '';
-  return typeof value === 'string' ? value.slice(0, 10) : value.toISOString().split('T')[0];
+  if (typeof value === 'string') return value.slice(0, 10);
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 };
 
 // The one value editor behind the filter builder; the column type and the operator decide what is shown.
@@ -109,7 +110,7 @@ export function FilterValueInput({ column, operator, value, secondValue, onChang
           <DateInput
             size="xs"
             label={operator === 'between' || operator === 'notbetween' ? m.from : m.value}
-            value={asText(value) ? new Date(asText(value)) : null}
+            value={asText(value) || null}
             onChange={next => onChange(toDateText(next as Date | string | null), secondValue)}
             placeholder={m.selectDate}
           />
@@ -117,7 +118,7 @@ export function FilterValueInput({ column, operator, value, secondValue, onChang
             <DateInput
               size="xs"
               label={m.to}
-              value={asText(secondValue) ? new Date(asText(secondValue)) : null}
+              value={asText(secondValue) || null}
               onChange={next => onChange(value, toDateText(next as Date | string | null))}
               placeholder={m.selectEndDate}
             />
