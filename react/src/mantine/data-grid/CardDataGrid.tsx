@@ -45,7 +45,8 @@ import type { CardDataGridMessages } from '../locale';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { MODIFIER_KEYS, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, useIsMac } from './gridHotkeys';
+import { GridShortcutsDialog } from './GridShortcutsDialog';
+import { MODIFIER_KEYS, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, pageKeyNames, rowKeyNames, useIsMac } from './gridHotkeys';
 import { usePageKeys, usePendingPageFocus } from './useGridKeyboard';
 import { countConditions, emptyGroup, legacyConditions, parseFilter, pruneFilter, serializeFilter } from './filterTree';
 import type {
@@ -715,7 +716,9 @@ export function CardDataGrid<T extends object>({
   const canCreate = keyboardEnabled && !loading && toolbar.showCreate && !!onCreate && !!gridKeys.create;
   const canRefresh = keyboardEnabled && !loading && toolbar.showRefresh && !!gridKeys.refresh;
   const canSearch = keyboardEnabled && toolbar.showSearch && !!gridKeys.search;
-  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, onCreate, onRefresh: handleRefresh });
+  const canHelp = keyboardEnabled && !!gridKeys.help;
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, canHelp, onCreate, onRefresh: handleRefresh, onHelp: () => setShortcutsOpen(true) });
 
   const cardKeyboardProps = (key: string, index: number, isSelected: boolean) => ({
     'data-row-index': index,
@@ -982,6 +985,25 @@ export function CardDataGrid<T extends object>({
           />
         ) : null,
       })}
+
+      {shortcutsOpen && (
+        <GridShortcutsDialog
+          opened
+          onClose={() => setShortcutsOpen(false)}
+          title={aqMessages.dataGrid.shortcuts.title}
+          formatKey={(combo) => formatHotkey(combo, isMac, aqMessages.dataGrid.hotkeyKeys)}
+          sections={[
+            {
+              title: aqMessages.dataGrid.shortcuts.onRow,
+              items: rowKeyNames({ selectable, advancedFilter, cards: true }).map(name => ({ label: aqMessages.dataGrid.shortcuts.names[name], combo: gridKeys[name] })),
+            },
+            {
+              title: aqMessages.dataGrid.shortcuts.onPage,
+              items: pageKeyNames({ create: canCreate, refresh: canRefresh, search: canSearch }).map(name => ({ label: aqMessages.dataGrid.shortcuts.names[name], combo: gridKeys[name] })),
+            },
+          ]}
+        />
+      )}
 
       <SimpleGrid cols={gridCols} ref={cardsRef}>
         {cards.length > 0 ? cards : (

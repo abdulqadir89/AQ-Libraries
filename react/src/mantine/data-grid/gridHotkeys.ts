@@ -42,8 +42,8 @@ export const defaultGridHotkeys: ResolvedGridHotkeys = {
   filter: 'F',
   create: 'alt+N',
   refresh: 'alt+R',
-  // TODO-011: '/' is typed with Shift on some layouts (German), so it does not match there.
   search: '/',
+  help: '?',
 };
 
 export function resolveGridHotkeys(...layers: Array<GridHotkeyMap | false | null | undefined>): ResolvedGridHotkeys {
@@ -82,10 +82,27 @@ interface ParsedHotkey {
 
 const KEY_ALIASES: Record<string, string> = { space: ' ', esc: 'escape', del: 'delete', up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright' };
 
+// The keys that act on the focused row or card, and those that act anywhere on the page, for the grid as it is configured.
+export function rowKeyNames({ selectable, advancedFilter, cards = false }: { selectable: boolean; advancedFilter: boolean; cards?: boolean }): GridHotkeyName[] {
+  const names: GridHotkeyName[] = ['prevRow', 'nextRow'];
+  if (cards) names.push('prevCard', 'nextCard');
+  names.push('firstRow', 'lastRow', 'prevPage', 'nextPage', 'open');
+  if (selectable) names.push('select', 'selectAll');
+  if (advancedFilter) names.push('filter');
+  return names;
+}
+
+export function pageKeyNames({ create, refresh, search }: { create: boolean; refresh: boolean; search: boolean }): GridHotkeyName[] {
+  const names: GridHotkeyName[] = [];
+  if (create) names.push('create');
+  if (refresh) names.push('refresh');
+  if (search) names.push('search');
+  names.push('help');
+  return names;
+}
+
 // Pressing one of these alone changes no key, so it does not interrupt what a grid is waiting for.
 export const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']);
-
-const SHIFTED_CHARACTERS = '?!@#$%^&*()_+{}|:"<>~';
 
 const parsedCache = new Map<string, ParsedHotkey>();
 
@@ -143,9 +160,9 @@ export function matchesHotkey(event: HotkeyEventLike, combo: string | false | un
     : event.ctrlKey === p.ctrl && event.metaKey === p.meta && event.altKey === p.alt;
   if (!modifiersMatch) return false;
 
-  // A character that is itself typed with Shift (?, :) cannot be told apart by the Shift state; every other key must match it exactly, so '/' is not Shift+7 on a German layout.
-  const typedWithShift = p.key.length === 1 && SHIFTED_CHARACTERS.includes(p.key);
-  if (!typedWithShift && event.shiftKey !== p.shift) return false;
+  // A punctuation key is the character it types, whatever Shift the user's layout needs for it ('/' is Shift+7 on a German layout), so Shift is not compared.
+  const isPunctuation = p.key.length === 1 && !/[a-z0-9 ]/.test(p.key);
+  if (!isPunctuation && event.shiftKey !== p.shift) return false;
 
   // A letter is matched by the character the layout types (so Alt+N is the key labelled N on Dvorak and AZERTY too). When Alt rewrites that character
   // (Option+N types a tilde on a Mac) or the layout has no Latin letters, the physical key stands in.
