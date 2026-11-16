@@ -30,7 +30,7 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, ownsPageKeys, registerPageKeyHandler, useIsMac } from './gridHotkeys';
+import { findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, ownsPageKeys, registerPageKeyHandler, useIsMac } from './gridHotkeys';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -981,10 +981,12 @@ export function DataGrid<T extends object>({
   }, [data, loading, pagination?.current]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Runs the row's own rendered button, so a hotkey does exactly what a click does (confirm dialog, link, disabled state).
-  const clickRowAction = (row: HTMLElement, actionIndex: number): boolean => {
+  // Mantine marks a disabled button or link with data-disabled, whatever the element. A link action asked for in a new tab is opened as one.
+  const clickRowAction = (row: HTMLElement, actionIndex: number, inNewTab = false): boolean => {
     const element = Array.from(row.querySelectorAll<HTMLElement>('[data-action-index]')).find(el => el.dataset.actionIndex === String(actionIndex));
-    if (!element || element.hasAttribute('disabled') || element.hasAttribute('data-disabled')) return false;
-    element.click();
+    if (!element || element.hasAttribute('disabled') || element.hasAttribute('data-disabled') || element.getAttribute('aria-disabled') === 'true') return false;
+    if (inNewTab && element instanceof HTMLAnchorElement && element.href) window.open(element.href, '_blank', 'noopener,noreferrer');
+    else element.click();
     return true;
   };
 
@@ -1052,11 +1054,13 @@ export function DataGrid<T extends object>({
         return;
       }
     }
-    // TODO-009: fixed order, silent when no action is shown, and a link action cannot open in a new tab.
-    if (pressed(gridKeys.open)) {
+    // Enter runs the first of Details, Overview and Edit that is shown and enabled, and with none shown it is left to the browser.
+    // With Ctrl (Cmd on a Mac) held, a link action opens in a new tab.
+    const opensInNewTab = matchesWithNewTab(native, gridKeys.open);
+    if (pressed(gridKeys.open) || opensInNewTab) {
       for (const name of ['details', 'overview', 'edit']) {
         const actionIndex = defaultActions.findIndex(action => action.key === name);
-        if (actionIndex >= 0 && clickRowAction(event.currentTarget, actionIndex)) { event.preventDefault(); return; }
+        if (actionIndex >= 0 && clickRowAction(event.currentTarget, actionIndex, opensInNewTab)) { event.preventDefault(); return; }
       }
     }
   };
