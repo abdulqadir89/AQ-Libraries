@@ -30,7 +30,8 @@ import type { ColumnFilterRef } from './ColumnFilter';
 import { ColumnVisibilityStorage } from './columnVisibilityStorage';
 import { useAQLocale } from '../locale';
 import { useGridHotkeys } from './GridHotkeysProvider';
-import { findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, ownsPageKeys, registerPageKeyHandler, useIsMac } from './gridHotkeys';
+import { MODIFIER_KEYS, findDuplicateHotkeys, formatHotkey, isBuiltInActionHotkey, isProduction, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, useIsMac } from './gridHotkeys';
+import { usePageKeys, usePendingPageFocus } from './useGridKeyboard';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
 import {
@@ -80,8 +81,6 @@ import type {
   GridHotkeyName,
   SpecialModeConfig,
 } from './DataGrid.types';
-
-const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']);
 
 export function DataGrid<T extends object>({
   gridId,
@@ -935,50 +934,17 @@ export function DataGrid<T extends object>({
   const rootRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pendingRowFocus = useRef<{ page: number; fromPage: number; where: 'first' | 'last'; fromKeys: string; sawLoading: boolean } | null>(null);
   const [activeRowKey, setActiveRowKey] = useState<string | null>(null);
   const activeRowIndex = Math.max(0, activeRowKey === null ? 0 : data.findIndex(record => getRowKey(record) === activeRowKey));
 
   const focusRow = (index: number) => {
     const record = data[index];
     if (!record) return;
-    pendingRowFocus.current = null;
     setActiveRowKey(getRowKey(record));
     tbodyRef.current?.querySelector<HTMLElement>(`tr[data-row-index="${index}"]`)?.focus();
   };
 
-  // Row keys tell the pages apart where the data array's identity cannot (a consumer may rebuild it on every render).
-  const rowKeySignature = () => data.map(getRowKey).join('\u0001');
-
-  const goToPage = (delta: number, where: 'first' | 'last'): boolean => {
-    if (!pagination || !onPageChange) return false;
-    const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
-    const page = pagination.current + delta;
-    if (page < 1 || page > lastPage) return false;
-    pendingRowFocus.current = { page, fromPage: pagination.current, where, fromKeys: rowKeySignature(), sawLoading: false };
-    onPageChange(page, pagination.pageSize);
-    return true;
-  };
-
-  // The focus waits for the requested page's rows. It is dropped when the grid lands on another page (the change was refused or clamped),
-  // and when the user has moved focus elsewhere in the meantime (the pager), so it never steals focus later.
-  // The rows have arrived when the grid has gone through loading, or, for a consumer that does not report loading, when the row keys differ.
-  useEffect(() => {
-    const pending = pendingRowFocus.current;
-    if (!pending) return;
-    if (loading) pending.sawLoading = true;
-    const current = pagination?.current;
-    if (current !== pending.page) {
-      if (current !== pending.fromPage) pendingRowFocus.current = null;
-      return;
-    }
-    if (loading || data.length === 0) return;
-    if (!pending.sawLoading && rowKeySignature() === pending.fromKeys) return;
-    pendingRowFocus.current = null;
-    const active = document.activeElement;
-    if (active && active !== document.body) return;
-    focusRow(pending.where === 'first' ? 0 : data.length - 1);
-  }, [data, loading, pagination?.current]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { goToPage, cancelPendingFocus } = usePendingPageFocus({ data, loading, pagination, onPageChange, getRowKey, focusItem: focusRow });
 
   // Runs the row's own rendered button, so a hotkey does exactly what a click does (confirm dialog, link, disabled state).
   // Mantine marks a disabled button or link with data-disabled, whatever the element. A link action asked for in a new tab is opened as one.
@@ -993,7 +959,7 @@ export function DataGrid<T extends object>({
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
     if (!keyboardEnabled || event.defaultPrevented || event.nativeEvent.isComposing) return;
     // Tapping a modifier while the next page loads must not cancel the focus that is waiting for it.
-    if (!MODIFIER_KEYS.has(event.key)) pendingRowFocus.current = null;
+    if (!MODIFIER_KEYS.has(event.key)) cancelPendingFocus();
     // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
     if (!event.currentTarget.contains(event.target as Node)) return;
     const onRow = event.target === event.currentTarget;
@@ -1070,34 +1036,7 @@ export function DataGrid<T extends object>({
   const canCreate = keyboardEnabled && !loading && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
   const canRefresh = keyboardEnabled && !loading && refreshable && !!gridKeys.refresh;
   const canSearch = keyboardEnabled && searchShown && !!gridKeys.search;
-  // The page keys this grid answers, so a page with several grids hands each key to a grid that has a use for it.
-  const pageKeyCombos = JSON.stringify([canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean));
-
-  const pageKeyHandler = useRef<(event: KeyboardEvent) => void>(() => {});
-  useEffect(() => {
-    pageKeyHandler.current = (event: KeyboardEvent) => {
-      if (!keyboardEnabled || event.defaultPrevented || event.repeat || event.isComposing) return;
-      // Whatever keys are held, a shortcut never fires while the user types, so it cannot drop a half-written form.
-      if (isTextEntry(event.target)) return;
-
-      // Match the key before asking which grid owns it, so ordinary typing costs nothing.
-      const wantsCreate = canCreate && matchesHotkey(event, gridKeys.create);
-      const wantsRefresh = !wantsCreate && canRefresh && matchesHotkey(event, gridKeys.refresh);
-      const wantsSearch = !wantsCreate && !wantsRefresh && canSearch && !!searchInputRef.current && matchesHotkey(event, gridKeys.search);
-      if (!wantsCreate && !wantsRefresh && !wantsSearch) return;
-      // RULE RCT-22
-      if (!ownsPageKeys(rootRef.current, event)) return;
-
-      event.preventDefault();
-      if (wantsCreate) onCreate?.();
-      else if (wantsRefresh) handleRefresh();
-      else {
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-    };
-  });
-  useEffect(() => registerPageKeyHandler(pageKeyHandler), []);
+  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, onCreate, onRefresh: handleRefresh });
 
   // Table rows
   const rows = data.map((record, index) => {

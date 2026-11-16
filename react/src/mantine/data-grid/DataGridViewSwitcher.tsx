@@ -39,6 +39,7 @@ function toCardGridProps<T extends object>(
     filterBuilderHost: tableProps.filterBuilderHost,
     initialFilterExpression: tableProps.initialState?.filterExpression,
     bulkActions: tableProps.bulkActions,
+    hotkeys: tableProps.hotkeys,
     ...cardOverrides,
   };
 }

@@ -26,6 +26,8 @@ export const isProduction = (() => {
 export const defaultGridHotkeys: ResolvedGridHotkeys = {
   prevRow: 'ArrowUp',
   nextRow: 'ArrowDown',
+  prevCard: 'ArrowLeft',
+  nextCard: 'ArrowRight',
   firstRow: 'Home',
   lastRow: 'End',
   prevPage: 'PageUp',
@@ -79,6 +81,9 @@ interface ParsedHotkey {
 }
 
 const KEY_ALIASES: Record<string, string> = { space: ' ', esc: 'escape', del: 'delete', up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright' };
+
+// Pressing one of these alone changes no key, so it does not interrupt what a grid is waiting for.
+export const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']);
 
 const SHIFTED_CHARACTERS = '?!@#$%^&*()_+{}|:"<>~';
 

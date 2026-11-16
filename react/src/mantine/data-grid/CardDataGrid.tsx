@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './DataGrid.module.css';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -44,6 +44,9 @@ import { useAQLocale } from '../locale';
 import type { CardDataGridMessages } from '../locale';
 import { FilterBuilderPanel } from './FilterBuilder';
 import { FilterChips } from './FilterChips';
+import { useGridHotkeys } from './GridHotkeysProvider';
+import { MODIFIER_KEYS, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, useIsMac } from './gridHotkeys';
+import { usePageKeys, usePendingPageFocus } from './useGridKeyboard';
 import { countConditions, emptyGroup, legacyConditions, parseFilter, pruneFilter, serializeFilter } from './filterTree';
 import type {
   BulkAction,
@@ -173,7 +176,6 @@ function toFilterDraft(condition: FilterCondition, index: number): FilterDraft {
   };
 }
 
-// TODO-010: no keyboard navigation or hotkeys here; the table grid has both (RCT-21, RCT-22).
 export function CardDataGrid<T extends object>({
   data = [],
   loading = false,
@@ -213,8 +215,10 @@ export function CardDataGrid<T extends object>({
   onCardClick,
   cardHref,
   bulkActions,
+  hotkeys,
 }: CardDataGridProps<T>) {
   const { messages: aqMessages } = useAQLocale();
+  const gridKeys = useGridHotkeys(hotkeys);
   const m = aqMessages.cardDataGrid;
   const resolvedSearchPlaceholder = searchPlaceholder ?? m.searchPlaceholder;
   const resolvedCreateButtonText = createButtonText ?? m.create;
@@ -603,6 +607,123 @@ export function CardDataGrid<T extends object>({
     [handleFilterDraftChange, m]
   );
 
+  // Keyboard: one card is tabbable (roving focus). Left and Right walk the cards, Up and Down move by a row of cards.
+  const keyboardEnabled = Object.values(gridKeys).some(Boolean);
+  const isMac = useIsMac();
+  // RULE RCT-2
+  const withHotkey = (label: string, combo: string | false | undefined) =>
+    combo ? `${label} (${formatHotkey(combo, isMac, aqMessages.dataGrid.hotkeyKeys)})` : label;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const activeIndex = Math.max(0, activeKey === null ? 0 : data.findIndex((record) => getRowKey(record) === activeKey));
+
+  const focusCard = (index: number) => {
+    const record = data[index];
+    if (!record) return;
+    setActiveKey(getRowKey(record));
+    cardsRef.current?.querySelector<HTMLElement>(`[data-row-index="${index}"]`)?.focus();
+  };
+
+  // How many cards sit on one row now, whatever the breakpoint: the cards that share the first one's top edge.
+  const cardsPerRow = () => {
+    const items = Array.from(cardsRef.current?.querySelectorAll<HTMLElement>('[data-row-index]') ?? []);
+    if (items.length === 0) return 1;
+    const wrapped = items.findIndex((item) => item.offsetTop !== items[0].offsetTop);
+    return wrapped === -1 ? items.length : wrapped;
+  };
+
+  const { goToPage, cancelPendingFocus } = usePendingPageFocus({ data, loading, pagination, onPageChange, getRowKey, focusItem: focusCard });
+
+  const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLElement>, key: string, index: number, isSelected: boolean) => {
+    if (!keyboardEnabled || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (!MODIFIER_KEYS.has(event.key)) cancelPendingFocus();
+    // A dialog or menu a card renders bubbles its keys here through React, not through the DOM.
+    if (!event.currentTarget.contains(event.target as Node)) return;
+    const onCard = event.target === event.currentTarget;
+    // A widget in a card keeps its own arrow keys; only the card and its checkbox navigate.
+    if (!onCard && (isTextEntry(event.target) || !isRowControl(event.target))) return;
+    const native = event.nativeEvent;
+    const pressed = (combo: string | false | undefined) => matchesHotkey(native, combo);
+    const perRow = cardsPerRow();
+    const lastRowStart = data.length - (data.length % perRow || perRow);
+    const move = (target: number) => { event.preventDefault(); focusCard(target); };
+    const turnPage = (delta: number, where: 'first' | 'last') => { if (goToPage(delta, where)) event.preventDefault(); };
+
+    // A key the grid cannot act on is left to the browser, so the page still scrolls.
+    // RULE RCT-21
+    if (pressed(gridKeys.nextRow)) {
+      if (index + perRow < data.length) move(index + perRow);
+      else if (index < lastRowStart) move(data.length - 1);
+      else turnPage(1, 'first');
+      return;
+    }
+    if (pressed(gridKeys.prevRow)) {
+      if (index - perRow >= 0) move(index - perRow);
+      else turnPage(-1, 'last');
+      return;
+    }
+    if (pressed(gridKeys.nextCard)) {
+      if (index < data.length - 1) move(index + 1);
+      else turnPage(1, 'first');
+      return;
+    }
+    if (pressed(gridKeys.prevCard)) {
+      if (index > 0) move(index - 1);
+      else turnPage(-1, 'last');
+      return;
+    }
+    if (pressed(gridKeys.firstRow)) {
+      if (index > 0) move(0);
+      return;
+    }
+    if (pressed(gridKeys.lastRow)) {
+      if (index < data.length - 1) move(data.length - 1);
+      return;
+    }
+    if (pressed(gridKeys.nextPage)) { turnPage(1, 'first'); return; }
+    if (pressed(gridKeys.prevPage)) { turnPage(-1, 'first'); return; }
+
+    // Space, Enter and letters keep their native meaning on a checkbox inside the card.
+    if (!onCard) return;
+    // Holding a key must not run an action again and again.
+    if (event.repeat) return;
+
+    if (selectable && pressed(gridKeys.select)) {
+      event.preventDefault();
+      handleRowSelection(key, !isSelected);
+      return;
+    }
+    if (selectable && pressed(gridKeys.selectAll)) {
+      event.preventDefault();
+      handleSelectAll(!data.every((record) => internalSelection.includes(getRowKey(record))));
+      return;
+    }
+    if (advancedFilter && pressed(gridKeys.filter)) { event.preventDefault(); openBuilder('filter'); return; }
+
+    // Enter follows or clicks the card; with Ctrl (Cmd on a Mac) held a link card opens in a new tab.
+    const inNewTab = matchesWithNewTab(native, gridKeys.open);
+    if ((pressed(gridKeys.open) || inNewTab) && (onCardClick || cardHref?.(data[index]))) {
+      event.preventDefault();
+      const card = event.currentTarget;
+      if (inNewTab && card instanceof HTMLAnchorElement && card.href) window.open(card.href, '_blank', 'noopener,noreferrer');
+      else card.click();
+    }
+  };
+
+  const canCreate = keyboardEnabled && !loading && toolbar.showCreate && !!onCreate && !!gridKeys.create;
+  const canRefresh = keyboardEnabled && !loading && toolbar.showRefresh && !!gridKeys.refresh;
+  const canSearch = keyboardEnabled && toolbar.showSearch && !!gridKeys.search;
+  const pageKeyCombos = usePageKeys({ enabled: keyboardEnabled, rootRef, searchInputRef, keys: gridKeys, canCreate, canRefresh, canSearch, onCreate, onRefresh: handleRefresh });
+
+  const cardKeyboardProps = (key: string, index: number, isSelected: boolean) => ({
+    'data-row-index': index,
+    tabIndex: keyboardEnabled ? (index === activeIndex ? 0 : -1) : undefined,
+    onFocus: keyboardEnabled ? () => setActiveKey(key) : undefined,
+    onKeyDown: keyboardEnabled ? (event: ReactKeyboardEvent<HTMLElement>) => handleCardKeyDown(event, key, index, isSelected) : undefined,
+  });
+
   const cards = data.map((record, index) => {
     const key = getRowKey(record);
     const isSelected = internalSelection.includes(key);
@@ -610,7 +731,7 @@ export function CardDataGrid<T extends object>({
 
     if (renderCard) {
       return (
-        <Box key={key}>
+        <Box key={key} {...cardKeyboardProps(key, index, isSelected)} className={keyboardEnabled ? styles.focusableCard : undefined}>
           {renderCard(record, index)}
         </Box>
       );
@@ -626,7 +747,8 @@ export function CardDataGrid<T extends object>({
         radius="md"
         shadow="sm"
         onClick={onCardClick ? () => onCardClick(record) : undefined}
-        className={onCardClick || resolvedCardHref ? styles.clickableCard : undefined}
+        {...cardKeyboardProps(key, index, isSelected)}
+        className={[onCardClick || resolvedCardHref ? styles.clickableCard : '', keyboardEnabled ? styles.focusableCard : ''].filter(Boolean).join(' ') || undefined}
         style={{
           height: '100%',
           borderColor: isSelected ? 'var(--mantine-color-blue-5)' : undefined,
@@ -707,7 +829,7 @@ export function CardDataGrid<T extends object>({
   });
 
   return (
-    <Box pos="relative">
+    <Box pos="relative" ref={rootRef} data-aq-grid="" data-aq-page-keys={pageKeyCombos} onFocus={() => markGridActive(rootRef.current)} onPointerDown={() => markGridActive(rootRef.current)}>
       <LoadingOverlay visible={loading} />
 
       <Paper p="md" mb="md" withBorder>
@@ -717,6 +839,7 @@ export function CardDataGrid<T extends object>({
               <Button
                 leftSection={createButtonIcon || <IconPlus size={16} />}
                 onClick={onCreate}
+                title={keyboardEnabled && gridKeys.create ? withHotkey(resolvedCreateButtonText, gridKeys.create) : undefined}
               >
                 {resolvedCreateButtonText}
               </Button>
@@ -777,12 +900,13 @@ export function CardDataGrid<T extends object>({
                 }
                 value={searchText}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchText(event.currentTarget.value)}
+                ref={searchInputRef}
                 style={{ minWidth: 280 }}
               />
             )}
 
             {toolbar.showRefresh && (
-              <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={handleRefresh}>
+              <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={handleRefresh} title={keyboardEnabled && gridKeys.refresh ? withHotkey(m.refresh, gridKeys.refresh) : undefined}>
                 {m.refresh}
               </Button>
             )}
@@ -859,7 +983,7 @@ export function CardDataGrid<T extends object>({
         ) : null,
       })}
 
-      <SimpleGrid cols={gridCols}>
+      <SimpleGrid cols={gridCols} ref={cardsRef}>
         {cards.length > 0 ? cards : (
           <Paper withBorder p="xl">
             <Text c="dimmed" ta="center">

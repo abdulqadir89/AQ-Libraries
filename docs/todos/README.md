@@ -44,5 +44,5 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 | 007 | [Translate the key names shown in hotkey tooltips](007-hotkey-labels-locale.md) | 🟢 Done |
 | 008 | [Memoise the hotkey work and tighten its conflict check](008-hotkey-resolution-cost.md) | 🟢 Done |
 | 009 | [Settle what Enter opens and how a link action is run](009-enter-open-and-link-actions.md) | 🟢 Done |
-| 010 | [Add keyboard navigation and hotkeys to the card grid](010-card-grid-keyboard.md) | 🔴 Open |
+| 010 | [Add keyboard navigation and hotkeys to the card grid](010-card-grid-keyboard.md) | 🟢 Done |
 | 011 | [Show the shortcuts in a dialog and handle layouts where "/" needs Shift](011-hotkey-help-and-layouts.md) | 🔴 Open |
