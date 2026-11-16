@@ -159,6 +159,13 @@ const KEY_NAME_FIELDS: Record<string, keyof HotkeyKeyMessages> = {
   arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right',
 };
 
+// The combination with Ctrl (Cmd on a Mac) held on top of it, which asks for the same thing in a new tab.
+export function matchesWithNewTab(event: HotkeyEventLike, combo: string | false | undefined): boolean {
+  const held = detectMac() ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+  if (!held) return false;
+  return matchesHotkey({ key: event.key, code: event.code, ctrlKey: false, metaKey: false, altKey: event.altKey, shiftKey: event.shiftKey }, combo);
+}
+
 export function formatHotkey(combo: string, isMac = false, names: HotkeyKeyMessages = defaultMessages.dataGrid.hotkeyKeys): string {
   const p = parseHotkey(combo);
   const field = KEY_NAME_FIELDS[p.key];
