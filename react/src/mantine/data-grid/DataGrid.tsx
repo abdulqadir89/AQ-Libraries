@@ -80,6 +80,8 @@ import type {
   SpecialModeConfig,
 } from './DataGrid.types';
 
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']);
+
 export function DataGrid<T extends object>({
   gridId,
   initialState,
@@ -914,7 +916,7 @@ export function DataGrid<T extends object>({
   const rootRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pendingRowFocus = useRef<{ page: number; fromPage: number; where: 'first' | 'last'; fromKeys: string } | null>(null);
+  const pendingRowFocus = useRef<{ page: number; fromPage: number; where: 'first' | 'last'; fromKeys: string; sawLoading: boolean } | null>(null);
   const [activeRowKey, setActiveRowKey] = useState<string | null>(null);
   const activeRowIndex = Math.max(0, activeRowKey === null ? 0 : data.findIndex(record => getRowKey(record) === activeRowKey));
 
@@ -934,23 +936,25 @@ export function DataGrid<T extends object>({
     const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
     const page = pagination.current + delta;
     if (page < 1 || page > lastPage) return false;
-    pendingRowFocus.current = { page, fromPage: pagination.current, where, fromKeys: rowKeySignature() };
+    pendingRowFocus.current = { page, fromPage: pagination.current, where, fromKeys: rowKeySignature(), sawLoading: false };
     onPageChange(page, pagination.pageSize);
     return true;
   };
 
   // The focus waits for the requested page's rows. It is dropped when the grid lands on another page (the change was refused or clamped),
   // and when the user has moved focus elsewhere in the meantime (the pager), so it never steals focus later.
-  // TODO-006: a bare modifier key drops the wait, and identical row keys on the next page never release it.
+  // The rows have arrived when the grid has gone through loading, or, for a consumer that does not report loading, when the row keys differ.
   useEffect(() => {
     const pending = pendingRowFocus.current;
     if (!pending) return;
+    if (loading) pending.sawLoading = true;
     const current = pagination?.current;
     if (current !== pending.page) {
       if (current !== pending.fromPage) pendingRowFocus.current = null;
       return;
     }
-    if (loading || data.length === 0 || rowKeySignature() === pending.fromKeys) return;
+    if (loading || data.length === 0) return;
+    if (!pending.sawLoading && rowKeySignature() === pending.fromKeys) return;
     pendingRowFocus.current = null;
     const active = document.activeElement;
     if (active && active !== document.body) return;
@@ -967,7 +971,8 @@ export function DataGrid<T extends object>({
 
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>, key: string, index: number, isSelected: boolean) => {
     if (!keyboardEnabled || event.defaultPrevented || event.nativeEvent.isComposing) return;
-    pendingRowFocus.current = null;
+    // Tapping a modifier while the next page loads must not cancel the focus that is waiting for it.
+    if (!MODIFIER_KEYS.has(event.key)) pendingRowFocus.current = null;
     // A dialog or menu an action renders inside the row bubbles its keys here through React, not through the DOM.
     if (!event.currentTarget.contains(event.target as Node)) return;
     const onRow = event.target === event.currentTarget;
