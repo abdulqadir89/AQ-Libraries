@@ -39,7 +39,7 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 | 002 | [Use native OpenIddict back-channel logout](002-native-backchannel-logout.md) | 🔴 Open |
 | 003 | [Remove the legacy column-filter compatibility](003-remove-legacy-filter-compat.md) | 🔴 Open |
 | 004 | [Let a hotkey combination name "+" and hold a space](004-hotkey-combo-grammar.md) | 🟢 Done |
-| 005 | [Hold the page-wide hotkeys back while a grid loads or the user types](005-page-key-guards.md) | 🔴 Open |
+| 005 | [Hold the page-wide hotkeys back while a grid loads or the user types](005-page-key-guards.md) | 🟢 Done |
 | 006 | [Make the focus after a page change robust](006-pending-page-focus.md) | 🔴 Open |
 | 007 | [Translate the key names shown in hotkey tooltips](007-hotkey-labels-locale.md) | 🔴 Open |
 | 008 | [Memoise the hotkey work and tighten its conflict check](008-hotkey-resolution-cost.md) | 🔴 Open |

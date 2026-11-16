@@ -1,6 +1,6 @@
 # 005. Hold the page-wide hotkeys back while a grid loads or the user types
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/DataGrid.tsx` (page key handler)
 

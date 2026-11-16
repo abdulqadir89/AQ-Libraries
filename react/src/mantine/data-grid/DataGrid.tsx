@@ -1040,8 +1040,8 @@ export function DataGrid<T extends object>({
   // Create, refresh and search answer anywhere on the page, but never while typing, in a dialog or menu, or in another grid.
   const searchShown = searchable && (mode !== 'special' || specialModeConfig?.search?.enabled !== false);
   const createConfig = getButtonConfig('create');
-  const canCreate = keyboardEnabled && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
-  const canRefresh = keyboardEnabled && refreshable && !!gridKeys.refresh;
+  const canCreate = keyboardEnabled && !loading && !!onCreate && createConfig.visible && !createConfig.disabled && !!gridKeys.create;
+  const canRefresh = keyboardEnabled && !loading && refreshable && !!gridKeys.refresh;
   const canSearch = keyboardEnabled && searchShown && !!gridKeys.search;
   // The page keys this grid answers, so a page with several grids hands each key to a grid that has a use for it.
   const pageKeyCombos = JSON.stringify([canCreate && gridKeys.create, canRefresh && gridKeys.refresh, canSearch && gridKeys.search].filter(Boolean));
@@ -1050,10 +1050,9 @@ export function DataGrid<T extends object>({
   useEffect(() => {
     pageKeyHandler.current = (event: KeyboardEvent) => {
       if (!keyboardEnabled || event.defaultPrevented || event.repeat || event.isComposing) return;
-      const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
-      if (!hasModifier && isTextEntry(event.target)) return;
+      // Whatever keys are held, a shortcut never fires while the user types, so it cannot drop a half-written form.
+      if (isTextEntry(event.target)) return;
 
-      // TODO-005: ignores loading, and a modifier combination fires while the user types in a field.
       // Match the key before asking which grid owns it, so ordinary typing costs nothing.
       const wantsCreate = canCreate && matchesHotkey(event, gridKeys.create);
       const wantsRefresh = !wantsCreate && canRefresh && matchesHotkey(event, gridKeys.refresh);
