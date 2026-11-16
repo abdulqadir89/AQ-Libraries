@@ -247,6 +247,7 @@ export function CardDataGrid<T extends object>({
   }, [onSearch]);
 
   // One onSearch per search: what was just sent is remembered, so the debounce does not send it again.
+  // RULE RCT-27
   const sendSearch = useCallback((text: string) => {
     lastSentSearch.current = text;
     onSearchRef.current?.(text);
@@ -581,7 +582,7 @@ export function CardDataGrid<T extends object>({
       if (column.type === 'date') {
         return (
           <DateInput
-            value={draft.value ? new Date(String(draft.value)) : null}
+            value={draft.value ? String(draft.value) : null}
             placeholder={m.pickDate}
             onChange={(value) => {
               handleFilterDraftChange(draft.id, (current) => ({

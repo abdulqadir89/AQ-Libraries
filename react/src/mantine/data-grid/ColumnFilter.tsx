@@ -365,6 +365,7 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
     }
 
     // RULE RCT-24
+    // ADR-009: handled here, not by Popover's own click-outside, which counts a dropdown opened from inside the popover as outside
     useClickOutside(
       event => {
         if (!opened) return;
@@ -381,7 +382,8 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
 
     function handlePopoverClose() {
       // Nothing is selected in a pick-list popover, so there is nothing to apply: the unapplied edit is dropped and the popover closes.
-      if ((column.type === 'enum' && selectedEnumValues.length === 0) || (column.type === 'lookup' && selectedLookupValues.length === 0)) {
+      const isNullOperator = operator === 'isnull' || operator === 'isnotnull';
+      if (expression !== undefined && !isNullOperator && ((column.type === 'enum' && selectedEnumValues.length === 0) || (column.type === 'lookup' && selectedLookupValues.length === 0))) {
         loadExpression(expression ?? '');
         setOpened(false);
         return;
@@ -627,10 +629,10 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <NumberInput
               label={operator === 'between' ? m.from : m.value}
-              value={value ? parseValue(value, 'number') as number : ''}
+              value={value}
               onChange={(val) => {
                 // An emptied field stays empty; only a real number is kept.
-                setValue(val === '' || val == null ? '' : formatValueToString(val));
+                setValue(val === '' || val == null ? '' : String(val));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}
@@ -706,9 +708,9 @@ export const ColumnFilter = forwardRef<ColumnFilterRef, ColumnFilterProps>(
           return (
             <NumberInput
               label={m.to}
-              value={secondValue ? parseValue(secondValue, 'number') as number : ''}
+              value={secondValue}
               onChange={(val) => {
-                setSecondValue(val === '' || val == null ? '' : formatValueToString(val));
+                setSecondValue(val === '' || val == null ? '' : String(val));
                 setRangeError('');
               }}
               onKeyDown={handleKeyDown}

@@ -323,14 +323,8 @@ export function DataGrid<T extends object>({
 
   // An action disabled for every row (special mode, a fixed `disabled`) does nothing when its key is pressed, so the shortcuts dialog leaves it out.
   // Only the built-in actions are judged: their disabled state comes from the mode, not from the row; a custom action's may depend on the row.
-  const isDisabledStatically = (action: ActionButton<T>, index: number) => {
-    if (index >= defaultActions.length) return false;
-    try {
-      return !!action.disabled?.({} as T);
-    } catch {
-      return false;
-    }
-  };
+  const isDisabledStatically = (action: ActionButton<T>, index: number) =>
+    index < defaultActions.length && getButtonConfig(action.key).disabled;
 
   // Two keys that can act at the same time on one combination are reported while building: the row keys and the keys of shown
   // actions share a scope, and so do create, refresh and search. The check only runs when its inputs change.

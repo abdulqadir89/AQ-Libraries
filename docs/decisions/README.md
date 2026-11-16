@@ -32,3 +32,4 @@ Reference an ADR from code with a one-line comment at the site: `// ADR-NNN: why
 - [001 Version groups replace data-copy versioning](001-version-groups-replace-data-copy-versioning.md) - accepted
 - [004 Grid and select types accept what the applications pass](004-grid-types-accept-what-apps-use.md) - accepted
 - [007 Comment depth is configurable; review comments carry resolve and votes](007-comment-depth-resolve-and-votes.md) - accepted
+- [009 A column filter handles its own click-outside](009-column-filter-handles-its-own-click-outside.md) - accepted
