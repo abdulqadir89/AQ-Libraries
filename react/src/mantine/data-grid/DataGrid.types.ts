@@ -75,7 +75,7 @@ export interface ActionButton<T = Record<string, unknown>> {
 
 // Keys a grid answers to. Row keys work while a row has focus; create, refresh and search work anywhere on the page.
 export type GridHotkeyName =
-  | 'prevRow' | 'nextRow' | 'firstRow' | 'lastRow' | 'prevPage' | 'nextPage'
+  | 'prevRow' | 'nextRow' | 'prevCard' | 'nextCard' | 'firstRow' | 'lastRow' | 'prevPage' | 'nextPage'
   | 'open' | 'select' | 'selectAll'
   | 'overview' | 'details' | 'edit' | 'delete' | 'filter'
   | 'create' | 'refresh' | 'search';
@@ -329,6 +329,9 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
 
   // Bulk actions (shown in toolbar when records are selected)
   bulkActions?: BulkAction[];
+
+  // Keyboard keys for this grid, merged over the app-wide AQGridHotkeysProvider and the defaults. false turns every key off.
+  hotkeys?: GridHotkeyMap | false;
 }
 
 export interface DataGridSwitchProps {
