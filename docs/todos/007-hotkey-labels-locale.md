@@ -1,6 +1,6 @@
 # 007. Translate the key names shown in hotkey tooltips
 
-Status: Open
+Status: Done
 Date: 2026-11-16
 Location: `react/src/mantine/data-grid/gridHotkeys.ts` (`formatHotkey`)
 

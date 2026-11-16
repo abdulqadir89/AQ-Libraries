@@ -33,6 +33,31 @@ export interface DataGridMessages {
   rowsPerPage: string;
   removeFilter: string;
   removeSort: string;
+  hotkeyKeys: HotkeyKeyMessages;
+}
+
+// Names of the modifiers and keys shown next to a button's hotkey, e.g. "Edit (Alt+E)".
+export interface HotkeyKeyMessages {
+  ctrl: string;
+  cmd: string;
+  alt: string;
+  option: string;
+  shift: string;
+  win: string;
+  space: string;
+  enter: string;
+  delete: string;
+  escape: string;
+  tab: string;
+  backspace: string;
+  home: string;
+  end: string;
+  pageUp: string;
+  pageDown: string;
+  up: string;
+  down: string;
+  left: string;
+  right: string;
 }
 
 export interface ColumnFilterMessages {

@@ -301,8 +301,9 @@ export function DataGrid<T extends object>({
   const hotkeyOf = (action: ActionButton<T>) => actionHotkeys[actionIndexes.get(action) ?? -1];
 
   const isMac = useIsMac();
+  // RULE RCT-2
   const withHotkey = (label: string, combo: string | false | undefined) =>
-    combo ? `${label} (${formatHotkey(combo, isMac)})` : label;
+    combo ? `${label} (${formatHotkey(combo, isMac, m.hotkeyKeys)})` : label;
 
   // TODO-008: rebuilt on every render; the check also counts keys of actions that are not shown and misses custom-vs-custom clashes.
   const hotkeyConflicts = findDuplicateHotkeys([
