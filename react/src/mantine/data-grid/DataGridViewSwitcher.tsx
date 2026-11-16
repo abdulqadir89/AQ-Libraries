@@ -6,8 +6,19 @@ import type {
   CardDataGridProps,
   DataGridProps,
   DataGridViewSwitcherProps,
+  SortCondition,
 } from './DataGrid.types';
 
+function toSortConditions(expression?: string): SortCondition[] {
+  return (expression ?? '')
+    .split(';')
+    .map(part => part.split(',').map(piece => piece.trim()))
+    .filter(([property]) => !!property)
+    .map(([property, direction], priority) => ({ property, direction: direction === 'desc' ? 'desc' as const : 'asc' as const, priority }));
+}
+
+// The card grid starts from the table grid's initial state (search, sort, filter), as it was seeded, not from what the user has typed since;
+// an app that wants the live values keeps them itself and passes them as `initialState`.
 function toCardGridProps<T extends object>(
   tableProps: DataGridProps<T>,
   cardOverrides?: Partial<CardDataGridProps<T>>
@@ -38,6 +49,9 @@ function toCardGridProps<T extends object>(
     advancedFilter: tableProps.advancedFilter,
     filterBuilderHost: tableProps.filterBuilderHost,
     initialFilterExpression: tableProps.initialState?.filterExpression,
+    initialSearchText: tableProps.initialState?.searchText,
+    initialSortConditions: toSortConditions(tableProps.initialState?.sortExpression),
+    emptyStateText: tableProps.emptyStateText,
     bulkActions: tableProps.bulkActions,
     hotkeys: tableProps.hotkeys,
     ...cardOverrides,

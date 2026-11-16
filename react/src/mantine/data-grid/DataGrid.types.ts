@@ -308,6 +308,8 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   initialFilterConditions?: FilterCondition[];
   initialFilterOperator?: LogicalOperator;
   initialSortConditions?: SortCondition[];
+  // Search text the grid starts with.
+  initialSearchText?: string;
   onFilterExpressionChange?: (filterExpression: string) => void;
   // Uses the table grid's Filter and Sort buttons, chips and builder instead of the Options dialog (needs onFilterExpressionChange).
   advancedFilter?: boolean;

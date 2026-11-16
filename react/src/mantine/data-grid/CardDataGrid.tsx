@@ -24,7 +24,6 @@ import {
   TextInput,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
-import { useDebouncedValue } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
   IconAdjustmentsHorizontal,
@@ -202,6 +201,7 @@ export function CardDataGrid<T extends object>({
   initialFilterConditions = [],
   initialFilterOperator = 'and',
   initialSortConditions = [],
+  initialSearchText,
   onFilterExpressionChange,
   advancedFilter = false,
   filterBuilderHost,
@@ -224,8 +224,7 @@ export function CardDataGrid<T extends object>({
   const resolvedSearchPlaceholder = searchPlaceholder ?? m.searchPlaceholder;
   const resolvedCreateButtonText = createButtonText ?? m.create;
   const resolvedEmptyStateText = emptyStateText ?? m.noData;
-  const [searchText, setSearchText] = useState('');
-  const [debouncedSearchText] = useDebouncedValue(searchText, 500);
+  const [searchText, setSearchText] = useState(initialSearchText ?? '');
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [filterOperator, setFilterOperator] = useState<LogicalOperator>(initialFilterOperator);
   const [filterDrafts, setFilterDrafts] = useState<FilterDraft[]>(
@@ -240,12 +239,19 @@ export function CardDataGrid<T extends object>({
   const [internalSelection, setInternalSelection] = useState<string[]>(controlledSelectedRows);
 
   const onSearchRef = useRef(onSearch);
-  const isInitialMount = useRef(true);
-  const suppressNextSearch = useRef(false);
+  const lastSentSearch = useRef(initialSearchText ?? '');
+  const filterDraftCounter = useRef(0);
 
   useEffect(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
+
+  // One onSearch per search: what was just sent is remembered, so the debounce does not send it again.
+  // RULE RCT-27
+  const sendSearch = useCallback((text: string) => {
+    lastSentSearch.current = text;
+    onSearchRef.current?.(text);
+  }, []);
 
   useEffect(() => {
     setInternalSelection((previous) =>
@@ -255,17 +261,13 @@ export function CardDataGrid<T extends object>({
     );
   }, [controlledSelectedRows]);
 
+  // Text typed in the box is sent once typing pauses; text already sent (Enter, the clear button) is not sent again.
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (suppressNextSearch.current) {
-      suppressNextSearch.current = false;
-      return;
-    }
-    onSearchRef.current?.(debouncedSearchText);
-  }, [debouncedSearchText]);
+    const timer = setTimeout(() => {
+      if (searchText !== lastSentSearch.current) sendSearch(searchText);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchText, sendSearch]);
 
   const availableFilterColumns = useMemo(
     () => columns.filter((column) => column.filterable !== false),
@@ -345,8 +347,9 @@ export function CardDataGrid<T extends object>({
   );
 
   const handleRefresh = useCallback(() => {
-    suppressNextSearch.current = true;
+    // Refresh empties the box, so the parent is told the search is gone.
     setSearchText('');
+    if (lastSentSearch.current !== '') sendSearch('');
     // With advancedFilter the filter and sort belong to the parent, as in the table grid; refresh keeps them.
     if (!advancedFilter) {
       setFilterDrafts([]);
@@ -369,7 +372,7 @@ export function CardDataGrid<T extends object>({
     setFilterDrafts((prev) => [
       ...prev,
       {
-        id: `${String(firstColumn.key)}-${prev.length + 1}`,
+        id: `${String(firstColumn.key)}-new-${++filterDraftCounter.current}`,
         property: String(firstColumn.key),
         operator: getDefaultOperator(firstColumn.type),
         value: '',
@@ -579,7 +582,7 @@ export function CardDataGrid<T extends object>({
       if (column.type === 'date') {
         return (
           <DateInput
-            value={draft.value ? new Date(String(draft.value)) : null}
+            value={draft.value ? String(draft.value) : null}
             placeholder={m.pickDate}
             onChange={(value) => {
               handleFilterDraftChange(draft.id, (current) => ({
@@ -893,7 +896,7 @@ export function CardDataGrid<T extends object>({
                       color="gray"
                       onClick={() => {
                         setSearchText('');
-                        onSearchRef.current?.('');
+                        sendSearch('');
                       }}
                       title={m.clearSearch}
                     >

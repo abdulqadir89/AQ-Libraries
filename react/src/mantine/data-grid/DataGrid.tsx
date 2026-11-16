@@ -80,6 +80,7 @@ import type {
   FilterGroup,
   FilterBuilderHost,
   SpecialModeConfig,
+  SpecialModeButtonConfig,
 } from './DataGrid.types';
 
 export function DataGrid<T extends object>({
@@ -193,8 +194,9 @@ export function DataGrid<T extends object>({
 
       case 'special': {
         // In special mode: use specialModeConfig
-        const config = specialModeConfig?.[buttonKey as keyof SpecialModeConfig];
-        if (config && 'visible' in config) {
+        // RULE RCT-28
+        const config = specialModeConfig?.[buttonKey as keyof SpecialModeConfig] as SpecialModeButtonConfig | undefined;
+        if (config) {
           return {
             visible: config.visible !== false,
             disabled: config.disabled || false
@@ -318,6 +320,11 @@ export function DataGrid<T extends object>({
     }
   });
   const visibleActionCount = liveActions.filter(Boolean).length;
+
+  // An action disabled for every row (special mode, a fixed `disabled`) does nothing when its key is pressed, so the shortcuts dialog leaves it out.
+  // Only the built-in actions are judged: their disabled state comes from the mode, not from the row; a custom action's may depend on the row.
+  const isDisabledStatically = (action: ActionButton<T>, index: number) =>
+    index < defaultActions.length && getButtonConfig(action.key).disabled;
 
   // Two keys that can act at the same time on one combination are reported while building: the row keys and the keys of shown
   // actions share a scope, and so do create, refresh and search. The check only runs when its inputs change.
@@ -517,13 +524,16 @@ export function DataGrid<T extends object>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollAreaRect.width]);
 
+  const columnsRef = useRef(columns);
+  useEffect(() => { columnsRef.current = columns; });
+
   // Handle column resize move
   const handleResizeMove = useCallback((e: MouseEvent) => {
     if (!resizingColumn.current) return;
     
     const { key, startX, startWidth } = resizingColumn.current;
     const diff = e.clientX - startX;
-    const column = columns.find(col => col.key === key);
+    const column = columnsRef.current.find(col => col.key === key);
 
     if (!column) return;
 
@@ -544,7 +554,7 @@ export function DataGrid<T extends object>({
       ...prev,
       [key]: newWidth,
     }));
-  }, [columns]);
+  }, []);
 
   // Handle column resize end
   const handleResizeEnd = useCallback(() => {
@@ -588,11 +598,16 @@ export function DataGrid<T extends object>({
   // State for search debouncing
   const [debouncedSearchText] = useDebouncedValue(state.searchText, 500);
 
-  const isInitialMount = useRef(true);
-  const suppressNextSearch = useRef(false);
+  const lastSentSearch = useRef(initialState?.searchText ?? '');
 
   const onSearchRef = useRef(onSearch);
   useEffect(() => { onSearchRef.current = onSearch; });
+
+  // RULE RCT-27
+  const sendSearch = useCallback((text: string) => {
+    lastSentSearch.current = text;
+    onSearchRef.current?.(text);
+  }, []);
 
   const handleSearch = useCallback((value: string) => {
     setState(prev => ({ ...prev, searchText: value }));
@@ -600,26 +615,22 @@ export function DataGrid<T extends object>({
 
   const handleClearSearch = useCallback(() => {
     setState(prev => ({ ...prev, searchText: '' }));
-    onSearchRef.current?.('');
-  }, []);
+    sendSearch('');
+  }, [sendSearch]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      onSearchRef.current?.(state.searchText);
+      sendSearch(state.searchText);
     }
-  }, [state.searchText]);
+  }, [state.searchText, sendSearch]);
 
+  // Text typed in the box is sent once typing pauses; text already sent (Enter, the clear button) is not sent again.
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (suppressNextSearch.current) {
-      suppressNextSearch.current = false;
-      return;
-    }
-    onSearchRef.current?.(debouncedSearchText);
-  }, [debouncedSearchText]); // eslint-disable-line react-hooks/exhaustive-deps
+    const timer = setTimeout(() => {
+      if (state.searchText !== lastSentSearch.current) sendSearch(state.searchText);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [state.searchText, sendSearch]);
 
   const onStateChangeRef = useRef(onStateChange);
   useEffect(() => { onStateChangeRef.current = onStateChange; });
@@ -806,14 +817,14 @@ export function DataGrid<T extends object>({
       modals.openConfirmModal({
         title: action.confirm.title,
         children: <Text size="sm">{action.confirm.content}</Text>,
-        labels: { confirm: 'Confirm', cancel: 'Cancel' },
+        labels: { confirm: m.confirm, cancel: m.cancel },
         confirmProps: { color: action.color || 'blue' },
         onConfirm: execute,
       });
     } else {
       execute();
     }
-  }, [state.selectedRows, onSelectionChange]);
+  }, [state.selectedRows, onSelectionChange, m.confirm, m.cancel]);
 
   // Render action buttons
   const renderActions = useCallback((record: T) => {
@@ -1292,7 +1303,7 @@ export function DataGrid<T extends object>({
               title: m.shortcuts.onRow,
               items: [
                 ...rowKeyNames({ selectable, advancedFilter }).map(name => ({ label: m.shortcuts.names[name], combo: gridKeys[name] })),
-                ...finalActions.flatMap((action, index) => (liveActions[index] ? [{ label: action.label, combo: actionHotkeys[index] }] : [])),
+                ...finalActions.flatMap((action, index) => (liveActions[index] && !isDisabledStatically(action, index) ? [{ label: action.label, combo: actionHotkeys[index] }] : [])),
               ],
             },
             {
