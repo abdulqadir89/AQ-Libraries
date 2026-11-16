@@ -47,7 +47,7 @@ import { useGridHotkeys } from './GridHotkeysProvider';
 import { GridShortcutsDialog } from './GridShortcutsDialog';
 import { MODIFIER_KEYS, formatHotkey, isRowControl, isTextEntry, markGridActive, matchesHotkey, matchesWithNewTab, pageKeyNames, rowKeyNames, useIsMac } from './gridHotkeys';
 import { usePageKeys, usePendingPageFocus } from './useGridKeyboard';
-import { countConditions, emptyGroup, legacyConditions, parseFilter, pruneFilter, serializeFilter } from './filterTree';
+import { countConditions, emptyGroup, parseFilter, pruneFilter, serializeFilter } from './filterTree';
 import type {
   BulkAction,
   CardDataGridProps,
@@ -197,7 +197,6 @@ export function CardDataGrid<T extends object>({
   selectedRows,
   onSelectionChange,
   rowKey = 'id' as keyof T,
-  onFilterChange,
   initialFilterConditions = [],
   initialFilterOperator = 'and',
   initialSortConditions = [],
@@ -287,9 +286,8 @@ export function CardDataGrid<T extends object>({
     (next: FilterGroup) => {
       setFilter(next);
       onFilterExpressionChange?.(serializeFilter(next));
-      onFilterChange?.(legacyConditions(next), 'and');
     },
-    [onFilterChange, onFilterExpressionChange]
+    [onFilterExpressionChange]
   );
 
   const openBuilder = (tab: 'filter' | 'sort') => {
@@ -339,11 +337,10 @@ export function CardDataGrid<T extends object>({
 
   const applyStateToParent = useCallback(
     (nextFilters: FilterCondition[], nextOperator: LogicalOperator, nextSort: SortCondition[]) => {
-      onFilterChange?.(nextFilters, nextOperator);
       onFilterExpressionChange?.(FilterExpressionBuilder.buildFilterExpression(nextFilters, nextOperator));
       onSortChange?.(SortExpressionBuilder.buildSortExpression(nextSort));
     },
-    [onFilterChange, onFilterExpressionChange, onSortChange]
+    [onFilterExpressionChange, onSortChange]
   );
 
   const handleRefresh = useCallback(() => {

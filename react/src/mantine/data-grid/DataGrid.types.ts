@@ -138,18 +138,14 @@ export interface FormConfig {
 export interface DataGridInitialState {
   searchText?: string;
   sortExpression?: string;
-  // The whole filter as one expression (RCT-6). Takes precedence over columnFilters.
+  // The whole filter as one expression (RCT-6).
   filterExpression?: string;
-  // TODO-003: legacy per-column filters; remove when every consuming app seeds filterExpression.
-  columnFilters?: Record<string, string>;
 }
 
 export interface DataGridStateSnapshot {
   searchText: string;
   sortExpression: string;
   filterExpression: string;
-  // TODO-003: legacy per-column filters; remove when every consuming app reads filterExpression.
-  columnFilters: Record<string, string>;
   page?: number;
   pageSize?: number;
 }
@@ -196,8 +192,6 @@ export interface DataGridProps<T = Record<string, unknown>> {
   
   // Filter
   filterConfig?: FilterConfig;
-  // TODO-003: flat top-level conditions only; remove when every consuming app uses onFilterExpressionChange.
-  onFilterChange?: (conditions: FilterCondition[], operator?: LogicalOperator) => void;
   // Fires with the whole filter as one expression whenever it changes (RCT-6).
   onFilterExpressionChange?: (filterExpression: string) => void;
   // Shows the Filter and Sort buttons, the active-filter chips and the filter builder (needs onFilterExpressionChange).
@@ -304,7 +298,6 @@ export interface CardDataGridProps<T = Record<string, unknown>> {
   selectedRows?: string[];
   onSelectionChange?: (selectedRowKeys: string[]) => void;
   rowKey?: keyof T | ((record: T) => string);
-  onFilterChange?: (conditions: FilterCondition[], operator?: LogicalOperator) => void;
   initialFilterConditions?: FilterCondition[];
   initialFilterOperator?: LogicalOperator;
   initialSortConditions?: SortCondition[];

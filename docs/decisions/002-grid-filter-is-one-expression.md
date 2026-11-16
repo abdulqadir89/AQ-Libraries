@@ -18,4 +18,4 @@ Option 3. The server filter understands list paths (some element matches; the ne
 The expression is already what the server takes, the URL carries and a saved view would store. Making the UI speak it removes the translation layer instead of growing it, and list columns need no code of their own.
 
 ## Consequences
-Consuming grids move from `onFilterChange(conditions)` and `initialState.columnFilters` to `onFilterExpressionChange` and `initialState.filterExpression`; both old forms keep working until todo 003. A consumer that needs the builder in its own modal or drawer passes `filterBuilderHost`. A filter that mixed `&&` and `||` without brackets now means what precedence says, not "the last operator wins".
+Consuming grids move from `onFilterChange(conditions)` and `initialState.columnFilters` to `onFilterExpressionChange` and `initialState.filterExpression`; the old forms were removed once every consuming app had moved. A consumer that needs the builder in its own modal or drawer passes `filterBuilderHost`. A filter that mixed `&&` and `||` without brackets now means what precedence says, not "the last operator wins".
