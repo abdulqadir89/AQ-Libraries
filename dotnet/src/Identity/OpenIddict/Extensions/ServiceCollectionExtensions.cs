@@ -228,7 +228,10 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
-        services.AddSingleton(ReservedClaimPolicy.Create(options.ReservedServiceAccountClaims));
+        // Built from the bound options (not the registration-time object) so there is one source of truth, and
+        // reading them runs the options validator, which reports blank names with a clear message.
+        services.AddSingleton(sp => ReservedClaimPolicy.Create(
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AqIdentityOptions>>().Value.ReservedServiceAccountClaims));
         services.AddSingleton(options.Keys);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());

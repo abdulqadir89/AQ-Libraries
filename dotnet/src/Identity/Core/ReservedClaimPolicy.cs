@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace AQ.Identity.Core;
 
 /// <summary>
@@ -7,9 +9,7 @@ namespace AQ.Identity.Core;
 /// </summary>
 public sealed class ReservedClaimPolicy
 {
-    private readonly HashSet<string> _reserved;
-
-    private ReservedClaimPolicy(HashSet<string> reserved) => _reserved = reserved;
+    private ReservedClaimPolicy(FrozenSet<string> reserved) => Reserved = reserved;
 
     /// <summary>Base names plus <paramref name="extra"/> (case-insensitive); the base names cannot be removed.</summary>
     public static ReservedClaimPolicy Create(IEnumerable<string>? extra = null)
@@ -25,12 +25,14 @@ public sealed class ReservedClaimPolicy
             reserved.Add(name.Trim());
         }
 
-        return new ReservedClaimPolicy(reserved);
+        return new ReservedClaimPolicy(reserved.ToFrozenSet(StringComparer.OrdinalIgnoreCase));
     }
 
-    public IReadOnlySet<string> Reserved => _reserved;
+    /// <summary>The effective set; immutable, so it cannot be cast back and edited.</summary>
+    public IReadOnlySet<string> Reserved { get; }
 
-    public bool IsReserved(string claimType) => _reserved.Contains(claimType);
+    /// <summary>Case-insensitive and ignores surrounding whitespace, so " sub" cannot slip past the check.</summary>
+    public bool IsReserved(string claimType) => Reserved.Contains(claimType.Trim());
 
     /// <summary>Returns an error message when <paramref name="claimTypes"/> contains a reserved type, otherwise null.</summary>
     // RULE IDC-1
@@ -39,6 +41,6 @@ public sealed class ReservedClaimPolicy
         var reserved = claimTypes.FirstOrDefault(IsReserved);
         return reserved is null
             ? null
-            : $"Claim type '{reserved}' is reserved and cannot be set as a service account claim.";
+            : $"Claim type '{reserved.Trim()}' is reserved and cannot be set as a service account claim.";
     }
 }

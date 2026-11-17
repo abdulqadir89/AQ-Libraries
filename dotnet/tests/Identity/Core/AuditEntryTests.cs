@@ -136,6 +136,26 @@ public class ReservedClaimPolicyTests
         policy.Reserved.Should().Contain(PrincipalClaims.BaseReserved).And.Contain("app_internal_id");
     }
 
+    [Theory]
+    [InlineData(" sub")]
+    [InlineData("client_id ")]
+    [InlineData("\tprincipal_type")]
+    public void SurroundingWhitespace_DoesNotSlipPastTheCheck(string type)
+    {
+        ReservedClaimPolicy.Create().Validate([type]).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ReservedSet_CannotBeEditedThroughTheProperty()
+    {
+        var policy = ReservedClaimPolicy.Create();
+
+        policy.Reserved.Should().NotBeOfType<HashSet<string>>();
+        var act = () => ((ICollection<string>)policy.Reserved).Remove("sub");
+        act.Should().Throw<NotSupportedException>();
+        policy.IsReserved("sub").Should().BeTrue();
+    }
+
     [Fact]
     public void BlankRegisteredName_Throws()
     {
