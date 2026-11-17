@@ -32,7 +32,8 @@ public sealed class ReservedClaimPolicy
     public IReadOnlySet<string> Reserved { get; }
 
     /// <summary>Case-insensitive and ignores surrounding whitespace, so " sub" cannot slip past the check.</summary>
-    public bool IsReserved(string claimType) => Reserved.Contains(claimType.Trim());
+    public bool IsReserved(string? claimType) =>
+        !string.IsNullOrWhiteSpace(claimType) && Reserved.Contains(claimType.Trim());
 
     /// <summary>Returns an error message when <paramref name="claimTypes"/> contains a reserved type, otherwise null.</summary>
     // RULE IDC-1

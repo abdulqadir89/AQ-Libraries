@@ -145,6 +145,18 @@ public class ReservedClaimPolicyTests
         ReservedClaimPolicy.Create().Validate([type]).Should().NotBeNull();
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void NullOrBlankKey_IsNotReservedAndDoesNotThrow(string? type)
+    {
+        var policy = ReservedClaimPolicy.Create();
+
+        policy.IsReserved(type).Should().BeFalse();
+        policy.Validate([type!]).Should().BeNull();
+    }
+
     [Fact]
     public void ReservedSet_CannotBeEditedThroughTheProperty()
     {

@@ -72,7 +72,7 @@ public static class ServiceCollectionExtensions
                 o.Google = options.Google;
                 o.AdminUser = options.AdminUser;
                 o.Audiences = options.Audiences;
-                o.ReservedServiceAccountClaims = options.ReservedServiceAccountClaims;
+                o.ReservedServiceAccountClaims = [.. options.ReservedServiceAccountClaims];
             })
             .ValidateOnStart();
 
