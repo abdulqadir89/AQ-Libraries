@@ -103,22 +103,44 @@ public class AuditActorsTests
     }
 }
 
-public class PrincipalClaimsTests
+public class ReservedClaimPolicyTests
 {
     [Theory]
     [InlineData("sub")]
     [InlineData("principal_type")]
     [InlineData("client_id")]
-    [InlineData("els_internal_user_id")]
     [InlineData("SUB")]
-    public void ReservedTypes_AreRejected(string type)
+    public void BaseTypes_AreRejected_WithNoRegistration(string type)
     {
-        PrincipalClaims.ValidateServiceAccountClaimTypes([type]).Should().NotBeNull();
+        ReservedClaimPolicy.Create().Validate([type]).Should().NotBeNull();
     }
 
     [Fact]
     public void PermissionStyleClaims_AreAllowed()
     {
-        PrincipalClaims.ValidateServiceAccountClaimTypes(["els_system_permissions"]).Should().BeNull();
+        ReservedClaimPolicy.Create(["app_internal_id"]).Validate(["app_system_permissions"]).Should().BeNull();
+    }
+
+    [Fact]
+    public void AppClaim_IsAllowed_UntilRegistered()
+    {
+        ReservedClaimPolicy.Create().Validate(["app_internal_id"]).Should().BeNull();
+        ReservedClaimPolicy.Create(["app_internal_id"]).Validate(["APP_INTERNAL_ID"]).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RegisteredNames_NeverRemoveTheBaseSet()
+    {
+        var policy = ReservedClaimPolicy.Create(["app_internal_id"]);
+
+        policy.Reserved.Should().Contain(PrincipalClaims.BaseReserved).And.Contain("app_internal_id");
+    }
+
+    [Fact]
+    public void BlankRegisteredName_Throws()
+    {
+        var act = () => ReservedClaimPolicy.Create([" "]);
+
+        act.Should().Throw<ArgumentException>();
     }
 }

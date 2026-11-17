@@ -18,7 +18,8 @@ public class CreateClientResponse
 
 public class CreateClientEndpoint(
     IOpenIddictApplicationManager applicationManager,
-    IIdentityDbContext context)
+    IIdentityDbContext context,
+    ReservedClaimPolicy reservedClaims)
     : Endpoint<IdentityClientConfig, CreateClientResponse>
 {
     public override void Configure()
@@ -38,7 +39,7 @@ public class CreateClientEndpoint(
             ThrowError(redirectUriError);
         }
 
-        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(req.ServiceAccountClaims.Keys);
+        var claimError = reservedClaims.Validate(req.ServiceAccountClaims.Keys);
         if (claimError != null)
         {
             ThrowError(claimError);
@@ -60,7 +61,7 @@ public class CreateClientEndpoint(
             req.ClientSecret = generatedSecret;
         }
 
-        var descriptor = ClientDescriptorBuilder.Build(req);
+        var descriptor = ClientDescriptorBuilder.Build(req, reservedClaims);
         await applicationManager.CreateAsync(descriptor, ct);
 
         var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientCreated, AuditActors.Require(User));

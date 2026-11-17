@@ -1,3 +1,4 @@
+using AQ.Identity.Core;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 using AQ.Identity.OpenIddict.Principals;
@@ -14,15 +15,18 @@ public class ClientSeeder : IHostedService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ClientSeeder> _logger;
     private readonly IReadOnlyList<IdentityClientConfig> _clients;
+    private readonly ReservedClaimPolicy _reservedClaims;
 
     public ClientSeeder(
         IServiceProvider serviceProvider,
         ILogger<ClientSeeder> logger,
-        IReadOnlyList<IdentityClientConfig> clients)
+        IReadOnlyList<IdentityClientConfig> clients,
+        ReservedClaimPolicy reservedClaims)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _clients = clients;
+        _reservedClaims = reservedClaims;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -80,7 +84,7 @@ public class ClientSeeder : IHostedService
 
     private async Task CreateClientAsync(IdentityClientConfig config, IOpenIddictApplicationManager applicationManager, CancellationToken cancellationToken)
     {
-        var descriptor = ClientDescriptorBuilder.Build(config);
+        var descriptor = ClientDescriptorBuilder.Build(config, _reservedClaims);
         await applicationManager.CreateAsync(descriptor, cancellationToken);
     }
 
@@ -88,7 +92,7 @@ public class ClientSeeder : IHostedService
     {
         // Keep the client's principal id; a client created before principal ids existed gets one here.
         var principalId = await ServicePrincipalIds.ReadAsync(applicationManager, existingClient, cancellationToken);
-        var descriptor = ClientDescriptorBuilder.Build(config, principalId);
+        var descriptor = ClientDescriptorBuilder.Build(config, _reservedClaims, principalId);
         await applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
     }
 }

@@ -40,7 +40,7 @@ public class ClientSeederTests
 
     private ClientSeeder CreateSeeder(IReadOnlyList<IdentityClientConfig> clients)
     {
-        return new ClientSeeder(_serviceProvider, _logger, clients);
+        return new ClientSeeder(_serviceProvider, _logger, clients, AQ.Identity.Core.ReservedClaimPolicy.Create());
     }
 
     [Fact]

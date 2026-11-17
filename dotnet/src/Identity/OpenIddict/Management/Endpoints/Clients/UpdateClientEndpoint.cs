@@ -13,7 +13,8 @@ namespace AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 
 public class UpdateClientEndpoint(
     IOpenIddictApplicationManager applicationManager,
-    IIdentityDbContext context)
+    IIdentityDbContext context,
+    ReservedClaimPolicy reservedClaims)
     : Endpoint<IdentityClientConfig>
 {
     public override void Configure()
@@ -35,7 +36,7 @@ public class UpdateClientEndpoint(
             ThrowError(redirectUriError);
         }
 
-        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(req.ServiceAccountClaims.Keys);
+        var claimError = reservedClaims.Validate(req.ServiceAccountClaims.Keys);
         if (claimError != null)
         {
             ThrowError(claimError);
@@ -55,7 +56,7 @@ public class UpdateClientEndpoint(
             ThrowError("ClientId in body must match ClientId in URL");
         }
 
-        var descriptor = ClientDescriptorBuilder.Build(req, await ServicePrincipalIds.ReadAsync(applicationManager, existing, ct));
+        var descriptor = ClientDescriptorBuilder.Build(req, reservedClaims, await ServicePrincipalIds.ReadAsync(applicationManager, existing, ct));
         await applicationManager.UpdateAsync(existing, descriptor, ct);
 
         var auditEntry = AuditEntry.Log(AuditEntry.Actions.ClientUpdated, AuditActors.Require(User));

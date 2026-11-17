@@ -1,3 +1,4 @@
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Configuration;
@@ -71,6 +72,7 @@ public static class ServiceCollectionExtensions
                 o.Google = options.Google;
                 o.AdminUser = options.AdminUser;
                 o.Audiences = options.Audiences;
+                o.ReservedServiceAccountClaims = options.ReservedServiceAccountClaims;
             })
             .ValidateOnStart();
 
@@ -226,6 +228,7 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
+        services.AddSingleton(ReservedClaimPolicy.Create(options.ReservedServiceAccountClaims));
         services.AddSingleton(options.Keys);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());

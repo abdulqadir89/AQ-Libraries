@@ -22,4 +22,10 @@ public class AqIdentityOptions
     /// Empty = audience not checked.
     /// </summary>
     public List<string> Audiences { get; set; } = [];
+
+    /// <summary>
+    /// App-specific claim types a client's service-account claims may never set, added to the library's
+    /// base set (sub, principal_type, client_id). An app that has such a claim must list it here, otherwise it is settable.
+    /// </summary>
+    public List<string> ReservedServiceAccountClaims { get; set; } = [];
 }
