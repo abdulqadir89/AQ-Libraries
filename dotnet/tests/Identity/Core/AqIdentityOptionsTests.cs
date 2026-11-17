@@ -17,6 +17,35 @@ public class AqIdentityOptionsTests
     }
 
     [Fact]
+    public void ReservedServiceAccountClaims_DefaultsToEmpty()
+    {
+        new AqIdentityOptions().ReservedServiceAccountClaims.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validator_RejectsBlankReservedClaimName()
+    {
+        var validator = new AQ.Identity.Core.Configuration.Validation.AqIdentityOptionsValidator(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AQ.Identity.Core.Configuration.Validation.TokenLifetimeOptionsValidator>.Instance);
+
+        var result = validator.Validate(null, new AqIdentityOptions { ReservedServiceAccountClaims = [" "] });
+
+        result.Failed.Should().BeTrue();
+        result.Failures.Should().Contain(f => f.Contains("ReservedServiceAccountClaims"));
+    }
+
+    [Fact]
+    public void Validator_ToleratesANullReservedClaimList()
+    {
+        var validator = new AQ.Identity.Core.Configuration.Validation.AqIdentityOptionsValidator(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AQ.Identity.Core.Configuration.Validation.TokenLifetimeOptionsValidator>.Instance);
+
+        var act = () => validator.Validate(null, new AqIdentityOptions { ReservedServiceAccountClaims = null! });
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void LockoutDuration_DefaultIsCorrect()
     {
         // Arrange & Act

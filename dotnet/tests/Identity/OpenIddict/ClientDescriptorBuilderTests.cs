@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AQ.Identity.Core;
 using AQ.Identity.Core.Configuration;
 using AQ.Identity.OpenIddict.Management.Endpoints.Clients;
 using FluentAssertions;
@@ -8,6 +9,8 @@ namespace AQ.Identity.OpenIddict.Tests;
 
 public class ClientDescriptorBuilderTests
 {
+    private static readonly ReservedClaimPolicy Reserved = ReservedClaimPolicy.Create();
+
     [Theory]
     [InlineData("https://example.com/callback")]
     [InlineData("http://localhost:3000/callback")]
@@ -57,7 +60,7 @@ public class ClientDescriptorBuilderTests
             RedirectUris = ["http://evil.com/callback"],
         };
 
-        var act = () => ClientDescriptorBuilder.Build(config);
+        var act = () => ClientDescriptorBuilder.Build(config, Reserved);
 
         act.Should().Throw<ArgumentException>().WithMessage("*bad-client*");
     }
@@ -73,7 +76,7 @@ public class ClientDescriptorBuilderTests
             PostLogoutRedirectUris = ["http://evil.com/logout"],
         };
 
-        var act = () => ClientDescriptorBuilder.Build(config);
+        var act = () => ClientDescriptorBuilder.Build(config, Reserved);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -89,7 +92,7 @@ public class ClientDescriptorBuilderTests
             PostLogoutRedirectUris = ["https://example.com/logout"],
         };
 
-        var descriptor = ClientDescriptorBuilder.Build(config);
+        var descriptor = ClientDescriptorBuilder.Build(config, Reserved);
 
         descriptor.ClientId.Should().Be("good-client");
     }
@@ -121,7 +124,7 @@ public class ClientDescriptorBuilderTests
             DisplayName = "Web",
             BackchannelLogoutUri = "https://web.example.com/api/auth/backchannel-logout",
             BackchannelLogoutSessionRequired = true,
-        });
+        }, Reserved);
 
         var (uri, sessionRequired) = AQ.Identity.OpenIddict.Sessions.BackchannelLogout.ReadClientSettings(descriptor.Properties.ToImmutableDictionary());
         uri.Should().Be("https://web.example.com/api/auth/backchannel-logout");
@@ -141,7 +144,7 @@ public class ClientDescriptorBuilderTests
     [Fact]
     public void Build_ClientCredentials_AssignsPrincipalId()
     {
-        var descriptor = ClientDescriptorBuilder.Build(ServiceClient());
+        var descriptor = ClientDescriptorBuilder.Build(ServiceClient(), Reserved);
 
         descriptor.Properties.Should().ContainKey("principal_id");
         Guid.TryParse(descriptor.Properties["principal_id"].GetString(), out var id).Should().BeTrue();
@@ -153,7 +156,7 @@ public class ClientDescriptorBuilderTests
     {
         var existing = Guid.NewGuid();
 
-        var descriptor = ClientDescriptorBuilder.Build(ServiceClient(), existing);
+        var descriptor = ClientDescriptorBuilder.Build(ServiceClient(), Reserved, existing);
 
         descriptor.Properties["principal_id"].GetString().Should().Be(existing.ToString());
     }
@@ -161,7 +164,7 @@ public class ClientDescriptorBuilderTests
     [Fact]
     public void Build_AuthorizationCodeClient_HasNoPrincipalId()
     {
-        var descriptor = ClientDescriptorBuilder.Build(new IdentityClientConfig { ClientId = "web", DisplayName = "Web" });
+        var descriptor = ClientDescriptorBuilder.Build(new IdentityClientConfig { ClientId = "web", DisplayName = "Web" }, Reserved);
 
         descriptor.Properties.Should().NotContainKey("principal_id");
     }
@@ -170,10 +173,11 @@ public class ClientDescriptorBuilderTests
     [InlineData("sub")]
     [InlineData("principal_type")]
     [InlineData("client_id")]
-    [InlineData("els_internal_user_id")]
+    [InlineData("app_internal_id")]
     public void Build_RejectsReservedServiceAccountClaims(string claimType)
     {
-        var act = () => ClientDescriptorBuilder.Build(ServiceClient(new() { [claimType] = "x" }));
+        var act = () => ClientDescriptorBuilder.Build(
+            ServiceClient(new() { [claimType] = "x" }), ReservedClaimPolicy.Create(["app_internal_id"]));
 
         act.Should().Throw<ArgumentException>().WithMessage("*reserved*");
     }
@@ -181,7 +185,8 @@ public class ClientDescriptorBuilderTests
     [Fact]
     public void Build_AllowsPermissionClaims()
     {
-        var act = () => ClientDescriptorBuilder.Build(ServiceClient(new() { ["els_system_permissions"] = "1" }));
+        var act = () => ClientDescriptorBuilder.Build(
+            ServiceClient(new() { ["app_system_permissions"] = "1" }), Reserved);
 
         act.Should().NotThrow();
     }

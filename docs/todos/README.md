@@ -35,7 +35,7 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 
 | # | Todo | Status |
 |---|------|--------|
-| 001 | [Make the reserved service-account claim set configurable per app](001-reserved-claims-per-app.md) | 🔴 Open |
+| 001 | [Make the reserved service-account claim set configurable per app](001-reserved-claims-per-app.md) | 🟢 Done |
 | 002 | [Use native OpenIddict back-channel logout](002-native-backchannel-logout.md) | 🔴 Open |
 | 003 | [Remove the legacy column-filter compatibility](003-remove-legacy-filter-compat.md) | 🟢 Done |
 | 004 | [Let a hotkey combination name "+" and hold a space](004-hotkey-combo-grammar.md) | 🟢 Done |

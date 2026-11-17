@@ -343,7 +343,7 @@ Usage: [Data seeding README](../dotnet/src/DataSeeding/README.md).
 
 A config-driven OpenIddict identity provider split into Core (options, entities, abstractions), OpenIddict (server wiring, key management, admin API) and UI (Razor pages). An app registers it with `AddAqIdentity<TContext>` and `UseAqIdentity`, supplying its own DbContext and its OAuth clients. There is one identity deployment per consuming app and no tenant concept. Usage and integration notes: [Identity README](../dotnet/src/Identity/README.md) and [Identity UI README](../dotnet/src/Identity/UI/README.md).
 
-- **IDC-1** A service client's extra claims may not set the claims that say who the caller is (subject, principal type, client id, internal user id); seeding and the admin pages and endpoints refuse them.
+- **IDC-1** A service client's extra claims may not set the claims that say who the caller is (subject, principal type, client id, plus any names the app registers as reserved); seeding and the admin pages and endpoints refuse them.
 - **IDC-2** An audit entry records the actor separately from the person acted on, including the actor's kind (anonymous, human, service or system). Only an anonymous entry has no actor id.
 - **OID-1** Every client-credentials client has a stable principal id stored on the application, created with the client, kept across updates and secret resets, and assigned on first use to older clients without one. Concurrent first requests agree on one id.
 - **OID-2** A service token's subject is the client's principal id and it carries the principal type `service` and the client id; a person's token carries the principal type `human`.

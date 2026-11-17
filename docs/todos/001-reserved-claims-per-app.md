@@ -1,6 +1,6 @@
 # 001. Make the reserved service-account claim set configurable per app
 
-Status: Open
+Status: Done
 Date: 2026-10-18
 Location: `dotnet/src/Identity/Core/PrincipalClaims.cs`
 

@@ -68,9 +68,9 @@ public static class ClientDescriptorBuilder
     /// malformed URI in appsettings.json fails loudly instead of throwing deep inside
     /// OpenIddict or silently registering an unsafe redirect target.
     /// </summary>
-    public static OpenIddictApplicationDescriptor Build(IdentityClientConfig config, Guid? existingPrincipalId = null)
+    public static OpenIddictApplicationDescriptor Build(IdentityClientConfig config, ReservedClaimPolicy reservedClaims, Guid? existingPrincipalId = null)
     {
-        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(config.ServiceAccountClaims.Keys);
+        var claimError = reservedClaims.Validate(config.ServiceAccountClaims.Keys);
         if (claimError != null)
         {
             throw new ArgumentException($"Invalid service account claims for client '{config.ClientId}': {claimError}");

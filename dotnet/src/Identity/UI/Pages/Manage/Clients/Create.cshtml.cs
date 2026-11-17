@@ -17,7 +17,8 @@ namespace AQ.Identity.UI.Pages.Manage.Clients;
 public class CreateClientModel(
     IOpenIddictApplicationManager applicationManager,
     IOpenIddictScopeManager scopeManager,
-    IIdentityDbContext context) : PageModel
+    IIdentityDbContext context,
+    ReservedClaimPolicy reservedClaims) : PageModel
 {
     [BindProperty] public string ClientId { get; set; } = string.Empty;
     [BindProperty] public string DisplayName { get; set; } = string.Empty;
@@ -66,7 +67,7 @@ public class CreateClientModel(
         var generatedSecret = Type == "confidential" ? RandomNumberGenerator.GetHexString(64) : null;
 
         var config = BuildConfig(generatedSecret);
-        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(config.ServiceAccountClaims.Keys);
+        var claimError = reservedClaims.Validate(config.ServiceAccountClaims.Keys);
         if (claimError != null)
         {
             ModelState.AddModelError(nameof(ServiceAccountClaimsRaw), claimError);
@@ -89,7 +90,7 @@ public class CreateClientModel(
             return Page();
         }
 
-        var descriptor = ClientDescriptorBuilder.Build(config);
+        var descriptor = ClientDescriptorBuilder.Build(config, reservedClaims);
         await applicationManager.CreateAsync(descriptor, HttpContext.RequestAborted);
 
         context.AuditLog.Add(AuditEntry.Log(AuditEntry.Actions.ClientCreated, AuditActors.Require(User)));

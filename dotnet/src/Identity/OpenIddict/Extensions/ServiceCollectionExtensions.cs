@@ -1,3 +1,4 @@
+using AQ.Identity.Core;
 using AQ.Identity.Core.Abstractions;
 using AQ.Identity.Core.Auditing;
 using AQ.Identity.Core.Configuration;
@@ -71,6 +72,8 @@ public static class ServiceCollectionExtensions
                 o.Google = options.Google;
                 o.AdminUser = options.AdminUser;
                 o.Audiences = options.Audiences;
+                // Union, so names bound earlier (e.g. from configuration) are kept rather than overwritten
+                o.ReservedServiceAccountClaims = [.. (o.ReservedServiceAccountClaims ?? []).Union(options.ReservedServiceAccountClaims ?? [], StringComparer.OrdinalIgnoreCase)];
             })
             .ValidateOnStart();
 
@@ -226,6 +229,10 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IReadOnlyList<IdentityClientConfig>>(clients);
+        // Built from the bound options (not the registration-time object) so there is one source of truth, and
+        // reading them runs the options validator, which reports blank names with a clear message.
+        services.AddSingleton(sp => ReservedClaimPolicy.Create(
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AqIdentityOptions>>().Value.ReservedServiceAccountClaims));
         services.AddSingleton(options.Keys);
         services.AddScoped<SigningKeyManager>();
         services.AddScoped<ISigningKeyManager>(sp => sp.GetRequiredService<SigningKeyManager>());

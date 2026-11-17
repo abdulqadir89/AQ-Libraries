@@ -19,7 +19,8 @@ namespace AQ.Identity.UI.Pages.Manage.Clients;
 public class EditClientModel(
     IOpenIddictApplicationManager applicationManager,
     IOpenIddictScopeManager scopeManager,
-    IIdentityDbContext context) : PageModel
+    IIdentityDbContext context,
+    ReservedClaimPolicy reservedClaims) : PageModel
 {
     [BindProperty(SupportsGet = true)] public string ClientId { get; set; } = string.Empty;
     [BindProperty] public string DisplayName { get; set; } = string.Empty;
@@ -107,7 +108,7 @@ public class EditClientModel(
             return Page();
         }
 
-        var claimError = PrincipalClaims.ValidateServiceAccountClaimTypes(ParseKeyValues(ServiceAccountClaimsRaw).Keys);
+        var claimError = reservedClaims.Validate(ParseKeyValues(ServiceAccountClaimsRaw).Keys);
         if (claimError != null)
         {
             ModelState.AddModelError(nameof(ServiceAccountClaimsRaw), claimError);
@@ -130,7 +131,7 @@ public class EditClientModel(
             ServiceAccountClaims = ParseKeyValues(ServiceAccountClaimsRaw)
         };
 
-        var descriptor = ClientDescriptorBuilder.Build(config, await ServicePrincipalIds.ReadAsync(applicationManager, existing, HttpContext.RequestAborted));
+        var descriptor = ClientDescriptorBuilder.Build(config, reservedClaims, await ServicePrincipalIds.ReadAsync(applicationManager, existing, HttpContext.RequestAborted));
 
         // ClientDescriptorBuilder.Build() never sets ClientSecret when config.ClientSecret is
         // null/empty (see its config.ClientSecret guard), so a fresh descriptor here has no
