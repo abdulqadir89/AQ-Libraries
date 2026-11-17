@@ -73,7 +73,7 @@ public static class ServiceCollectionExtensions
                 o.AdminUser = options.AdminUser;
                 o.Audiences = options.Audiences;
                 // Union, so names bound earlier (e.g. from configuration) are kept rather than overwritten
-                o.ReservedServiceAccountClaims = [.. o.ReservedServiceAccountClaims.Union(options.ReservedServiceAccountClaims, StringComparer.OrdinalIgnoreCase)];
+                o.ReservedServiceAccountClaims = [.. (o.ReservedServiceAccountClaims ?? []).Union(options.ReservedServiceAccountClaims ?? [], StringComparer.OrdinalIgnoreCase)];
             })
             .ValidateOnStart();
 

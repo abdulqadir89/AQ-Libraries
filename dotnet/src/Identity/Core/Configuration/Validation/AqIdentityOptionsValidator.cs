@@ -27,7 +27,7 @@ public class AqIdentityOptionsValidator(ILogger<TokenLifetimeOptionsValidator> t
         var keyResult = KeyManagementOptionsValidator.Validate(options.Keys);
         if (keyResult.Failed) failures.AddRange(keyResult.Failures!);
 
-        if (options.ReservedServiceAccountClaims.Any(string.IsNullOrWhiteSpace))
+        if (options.ReservedServiceAccountClaims?.Any(string.IsNullOrWhiteSpace) == true)
         {
             failures.Add("ReservedServiceAccountClaims must not contain blank names.");
         }

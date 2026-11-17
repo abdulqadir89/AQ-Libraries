@@ -65,6 +65,17 @@ public class ReservedClaimPolicyRegistrationTests
     }
 
     [Fact]
+    public void NullListOnEitherSide_StillYieldsTheBaseSet()
+    {
+        using var provider = Build(afterRegistration: s =>
+            s.Configure<AqIdentityOptions>(o => o.ReservedServiceAccountClaims = null!));
+
+        var policy = provider.GetRequiredService<ReservedClaimPolicy>();
+
+        policy.IsReserved("sub").Should().BeTrue();
+    }
+
+    [Fact]
     public void BlankReservedName_FailsWithTheValidatorMessage()
     {
         using var provider = Build([" "]);
