@@ -13,10 +13,12 @@ public class ReservedClaimPolicyRegistrationTests
 {
     private static ServiceProvider Build(
         IEnumerable<string>? reserved = null,
-        Action<IServiceCollection>? afterRegistration = null)
+        Action<IServiceCollection>? afterRegistration = null,
+        Action<IServiceCollection>? beforeRegistration = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        beforeRegistration?.Invoke(services);
         services.AddDbContext<TestIdentityDbContext>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services.AddAqIdentity<TestIdentityDbContext>(
             new AqIdentityOptions
@@ -47,6 +49,19 @@ public class ReservedClaimPolicyRegistrationTests
             s.Configure<AqIdentityOptions>(o => o.ReservedServiceAccountClaims.Add("late_claim")));
 
         provider.GetRequiredService<ReservedClaimPolicy>().IsReserved("late_claim").Should().BeTrue();
+    }
+
+    [Fact]
+    public void NamesBoundBeforeRegistration_AreKept_NotOverwritten()
+    {
+        using var provider = Build(
+            ["registered_claim"],
+            beforeRegistration: s => s.Configure<AqIdentityOptions>(o => o.ReservedServiceAccountClaims.Add("bound_claim")));
+
+        var policy = provider.GetRequiredService<ReservedClaimPolicy>();
+
+        policy.IsReserved("bound_claim").Should().BeTrue();
+        policy.IsReserved("registered_claim").Should().BeTrue();
     }
 
     [Fact]

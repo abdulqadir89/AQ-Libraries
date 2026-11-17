@@ -72,7 +72,8 @@ public static class ServiceCollectionExtensions
                 o.Google = options.Google;
                 o.AdminUser = options.AdminUser;
                 o.Audiences = options.Audiences;
-                o.ReservedServiceAccountClaims = [.. options.ReservedServiceAccountClaims];
+                // Union, so names bound earlier (e.g. from configuration) are kept rather than overwritten
+                o.ReservedServiceAccountClaims = [.. o.ReservedServiceAccountClaims.Union(options.ReservedServiceAccountClaims, StringComparer.OrdinalIgnoreCase)];
             })
             .ValidateOnStart();
 
