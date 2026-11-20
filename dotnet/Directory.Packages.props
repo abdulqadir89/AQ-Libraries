@@ -3,42 +3,56 @@
     <!-- Central Package Management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <TargetFrameworks>net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <!-- Packages for .NET 10.0 -->
+  <!-- Framework-locked packages follow the TFM major: net10.0 -> 10.x, net11.0 -> 11.x -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <FwVer>10.0.13</FwVer>
+    <NpgsqlEfVer>10.0.3</NpgsqlEfVer>
+    <OpenIddictVer>7.7.2</OpenIddictVer>
+    <FastEndpointsVer>8.3.0</FastEndpointsVer>
+    <SerilogAspNetCoreVer>10.0.0</SerilogAspNetCoreVer>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <FwVer>11.0.0</FwVer>
+    <NpgsqlEfVer>11.0.0</NpgsqlEfVer>
+    <OpenIddictVer>7.9.0</OpenIddictVer>
+    <FastEndpointsVer>9.0.0</FastEndpointsVer>
+    <SerilogAspNetCoreVer>11.0.0</SerilogAspNetCoreVer>
+  </PropertyGroup>
+  <!-- Packages for .NET 10.0 and 11.0 -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(FwVer)" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(NpgsqlEfVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(FwVer)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(FwVer)" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(FwVer)" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(FwVer)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
   </ItemGroup>
   <!-- Identity packages -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
-    <PackageVersion Include="OpenIddict.AspNetCore" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.Abstractions" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.Server" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.Validation" Version="7.7.2" />
-    <PackageVersion Include="OpenIddict.Quartz" Version="7.7.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(FwVer)" />
+    <PackageVersion Include="OpenIddict.AspNetCore" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.Abstractions" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.Server" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.Validation" Version="$(OpenIddictVer)" />
+    <PackageVersion Include="OpenIddict.Quartz" Version="$(OpenIddictVer)" />
     <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="QRCoder" Version="1.8.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="$(FwVer)" />
   </ItemGroup>
   <!-- Common packages (version independent) -->
   <ItemGroup>
@@ -46,8 +60,8 @@
     <PackageVersion Include="Markdig" Version="1.4.2" />
     <PackageVersion Include="HtmlSanitizer" Version="9.2.1039" />
     <PackageVersion Include="ReverseMarkdown" Version="6.3.0" />
-    <PackageVersion Include="FastEndpoints" Version="8.3.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="FastEndpoints" Version="$(FastEndpointsVer)" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="$(SerilogAspNetCoreVer)" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
