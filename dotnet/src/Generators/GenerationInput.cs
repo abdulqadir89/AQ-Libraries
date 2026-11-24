@@ -1,3 +1,4 @@
+using AQ.Generators.Attachments;
 using AQ.Generators.Commenting;
 using AQ.Generators.Snapshots;
 using AQ.Generators.Tagging;
@@ -11,5 +12,6 @@ namespace AQ.Generators
         EquatableArray<ClassModel> Snapshottable,
         EquatableArray<VersionGroupModel> VersionGroups,
         EquatableArray<TaggableModel> Taggables,
-        EquatableArray<CommentableModel> Commentables);
+        EquatableArray<CommentableModel> Commentables,
+        EquatableArray<AttachableModel> Attachables);
 }

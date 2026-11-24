@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using AQ.Generators.Attachments;
 using AQ.Generators.Commenting;
 using AQ.Generators.Snapshots;
 using AQ.Generators.Tagging;
@@ -16,7 +17,8 @@ namespace AQ.Generators.EntityData
                 || input.Snapshottable.Length > 0
                 || input.VersionGroups.Length > 0
                 || input.Taggables.Any(t => t.Diagnostics.Length == 0)
-                || input.Commentables.Any(t => t.Diagnostics.Length == 0);
+                || input.Commentables.Any(t => t.Diagnostics.Length == 0)
+                || input.Attachables.Any(t => t.Diagnostics.Length == 0);
         }
 
         public static string Emit(GenerationInput input)
@@ -42,6 +44,7 @@ namespace AQ.Generators.EntityData
             SnapshotEmitter.AppendRegistrations(builder, input);
             TaggableEmitter.AppendRegistrations(builder, input);
             CommentableEmitter.AppendRegistrations(builder, input);
+            AttachableEmitter.AppendRegistrations(builder, input);
 
             builder.Append("        }\n");
 

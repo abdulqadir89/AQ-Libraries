@@ -146,6 +146,8 @@ The save pipeline, the audit log, snapshot storage and pruning, version groups, 
 - **EFC-30** A tag link added through a tracked record's collection is inserted: links are never edited, so one the change tracker finds as modified is treated as new unless its row already exists, in which case it is left as it is.
 - **EFC-31** All comments of one comment type live in one shared table keyed by record type. A reply points to the comment it answers by a link that does not itself cascade, so deleting the record removes a comment and its replies together, while a comment is only ever soft-deleted.
 - **EFC-32** Each comment class has a required link to its record, and deleting the record deletes its comments.
+- **EFC-35** All attachments of one attachment type live in one shared table keyed by record type. A record has one file of a given name, also while that file is pending.
+- **EFC-36** Each attachment class has an optional link to its record (empty while pending), and deleting the record deletes its attachments, except for a record that opts out with `CascadeDelete = false` (SQL Server allows one cascade path to the shared table, so a record whose child records are attachable too opts out and the app removes its attachments first).
 - **EFC-33** Votes on comments live in one table. A voter has at most one vote per comment, and deleting a comment, through its record, deletes its votes.
 - **EFC-34** A save whose only modified properties on an entity are revision-neutral leaves that entity's revision, update time, updater and snapshot alone, so it neither makes an open edit form stale nor counts as an edit. It still compares against the revision it loaded when the type uses a revision concurrency token (CON-3), so it cannot overwrite a newer edit. A save that also changes any other property, touches the revision (CON-5) or changes an owned part (EFC-4) raises the revision as usual.
 - **CON-3** An entity type can opt in to making its revision a database concurrency token: an update or delete then only goes through when the row still has the revision the entity was loaded with, otherwise the save throws a concurrency exception. For a type in an inheritance hierarchy the token goes on the hierarchy's root. Other entity types are unaffected.
@@ -163,7 +165,7 @@ Provider packages translate the search operators that plain LINQ cannot express.
 
 ## Source generators <!-- projects: AQ.Generators -->
 
-A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, the members of version-grouped and taggable classes, and the comment classes of commentable ones.
+A Roslyn incremental generator, referenced as an analyzer, that writes the snapshot classes and their registrations, the members of version-grouped and taggable classes, the comment classes of commentable ones and the attachment classes of attachable ones.
 
 - **GEN-1** A class marked snapshottable gets a generated snapshot class, named after the class or the name given, and a registration so the save pipeline can create snapshots of it. The registration carries the link back to the entity and the retention limits set on the attribute (number kept, age in days).
 - **GEN-2** A class marked as a version group gets generated group and version members and the version-group interface. It must be a partial, non-generic, top-level entity class that does not already declare the members the generator adds, otherwise the build fails with `AQGEN002`.
@@ -176,6 +178,8 @@ A Roslyn incremental generator, referenced as an analyzer, that writes the snaps
 - **GEN-9** Two taggable classes ending up with the same name fail the build with `AQGEN006`. Adding a tag id the class already has is a no-op.
 - **GEN-10** A class marked commentable gets a generated comment class (named after the class or the name given) that derives from the given comment type, carries a required link to the record, creates comments and replies, and has query helpers and a registration. The class must be a non-generic top-level entity class (it need not be partial); the comment type must derive from the comment base, not be sealed, have an accessible parameterless constructor and not declare the members the generator adds; the name must be a valid identifier and not clash with an existing type, and the maximum reply depth cannot be negative, otherwise the build fails with `AQGEN002`.
 - **GEN-11** Two commentable classes ending up with the same name fail the build with `AQGEN007`.
+- **GEN-12** A class marked attachable gets a generated attachment class (named after the class or the name given) that derives from the given attachment type, carries an optional link to the record, creates linked and pending attachments, replaces a file, and has query helpers, its limits and a registration. The class must be a non-generic top-level entity class (it need not be partial); the attachment type must derive from the attachment base, not be sealed, have an accessible parameterless constructor and not declare the members the generator adds; the name must be a valid identifier and not clash with an existing type; the limits cannot be negative and an extension is lower case with a leading dot, otherwise the build fails with `AQGEN002`.
+- **GEN-13** Two attachable classes ending up with the same name fail the build with `AQGEN007`.
 
 ## Utilities <!-- projects: AQ.Utilities -->
 
@@ -274,9 +278,11 @@ Threaded comments on any entity, independent of periodic review and verification
 - **REF-2** The short-code generator draws from a Crockford base32 alphabet (no I, L, O, U) with a cryptographic random source and needs a length above zero.
 - **REF-3** Counter-based references need database access this library does not own; the app subclasses the sequential generator and supplies the next value.
 
-### Attachment limits
+### Attachments
 
-- **ATT-1** An entity type can declare a count limit, a file size limit and the allowed content kinds; a limit of 0 or no declaration means "use the app's global default".
+- **ATT-1** An attachable class declares a count limit, a file size limit, the allowed content kinds and types, and the allowed file extensions; a limit of 0 or an empty list means none. A new attachment of a file above the size limit, with a content type or extension that is not allowed is refused. The count needs the database, so the app asks `EnsureCountAllowed` with the number it already holds.
+- **ATT-2** A file name is not empty, at most 260 characters and holds no path separator or control character.
+- **ATT-3** A file uploaded before its record exists is pending and has no link, only the id of the record it waits for. It links only to the record with that id, and then stops being pending.
 
 ### Entity tags
 
