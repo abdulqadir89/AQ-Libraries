@@ -1,7 +1,7 @@
 namespace AQ.Utilities.Attachments;
 
 /// <summary>
-/// Reusable MIME type groupings for composing <see cref="AttachmentLimitAttribute.ContentTypes"/>.
+/// Reusable MIME type groupings for composing <see cref="AttachableAttribute.ExtraContentTypes"/>.
 /// </summary>
 public static class AttachmentContentTypes
 {

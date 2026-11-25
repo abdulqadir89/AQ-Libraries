@@ -1,4 +1,5 @@
 using AQ.Actors;
+using AQ.EntityFramework.Attachments;
 using AQ.EntityFramework.Auditing;
 using AQ.EntityFramework.Commenting;
 using AQ.EntityFramework.Extensions;
@@ -26,6 +27,8 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Memo> Memos => Set<Memo>();
     public DbSet<MemoComment> MemoComments => Set<MemoComment>();
+    public DbSet<Binder> Binders => Set<Binder>();
+    public DbSet<BinderAttachment> BinderAttachments => Set<BinderAttachment>();
     public DbSet<Sheet> Sheets => Set<Sheet>();
     public DbSet<SheetComment> SheetComments => Set<SheetComment>();
     public DbSet<TestVote> TestVotes => Set<TestVote>();
@@ -62,6 +65,7 @@ public sealed class PipelineTestContext(DbContextOptions<PipelineTestContext> op
         modelBuilder.ApplyVersionGroups();
         modelBuilder.ApplyEntityTags<TestTag>();
         modelBuilder.ApplyEntityComments<TestComment>();
+        modelBuilder.ApplyEntityAttachments<TestAttachment>();
         modelBuilder.ApplyCommentVotes<TestVote, TestComment>();
     }
 }

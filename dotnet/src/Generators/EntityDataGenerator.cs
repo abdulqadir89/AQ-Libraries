@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using AQ.Generators.Attachments;
 using AQ.Generators.Commenting;
 using AQ.Generators.EntityData;
 using AQ.Generators.Snapshots;
@@ -41,6 +42,11 @@ namespace AQ.Generators
                 .Collect()
                 .Select(static (items, _) => items.ToEquatableArray());
 
+            var attachables = context.SyntaxProvider
+                .ForAttributeWithMetadataName(AttachingNames.AttachableAttribute, static (node, _) => node is ClassDeclarationSyntax, static (ctx, ct) => AttachableParser.Parse(ctx, ct))
+                .Collect()
+                .Select(static (items, _) => items.ToEquatableArray());
+
             var assemblyName = context.CompilationProvider.Select(static (compilation, _) => compilation.AssemblyName ?? "Assembly");
 
             var input = assemblyName
@@ -49,7 +55,8 @@ namespace AQ.Generators
                 .Combine(versionGroups)
                 .Combine(taggables)
                 .Combine(commentables)
-                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left.Left.Left, pair.Left.Left.Left.Left.Right, pair.Left.Left.Left.Right, pair.Left.Left.Right, pair.Left.Right, pair.Right))
+                .Combine(attachables)
+                .Select(static (pair, _) => new GenerationInput(pair.Left.Left.Left.Left.Left.Left, pair.Left.Left.Left.Left.Left.Right, pair.Left.Left.Left.Left.Right, pair.Left.Left.Left.Right, pair.Left.Left.Right, pair.Left.Right, pair.Right))
                 .WithTrackingName("Input");
 
             context.RegisterSourceOutput(input, static (spc, model) => Execute(spc, model));
@@ -61,7 +68,8 @@ namespace AQ.Generators
                 .Concat(input.Snapshottable.SelectMany(c => c.Diagnostics))
                 .Concat(input.VersionGroups.SelectMany(c => c.Diagnostics))
                 .Concat(input.Taggables.SelectMany(c => c.Diagnostics))
-                .Concat(input.Commentables.SelectMany(c => c.Diagnostics)))
+                .Concat(input.Commentables.SelectMany(c => c.Diagnostics))
+                .Concat(input.Attachables.SelectMany(c => c.Diagnostics)))
             {
                 context.ReportDiagnostic(diagnostic.ToDiagnostic());
             }
@@ -69,6 +77,7 @@ namespace AQ.Generators
             SnapshotEmitter.ReportDuplicateNames(context, input);
             TaggableEmitter.ReportDuplicateNames(context, input);
             CommentableEmitter.ReportDuplicateNames(context, input);
+            AttachableEmitter.ReportDuplicateNames(context, input);
 
             if (!RegistrationsEmitter.HasOutput(input))
             {
@@ -81,6 +90,7 @@ namespace AQ.Generators
             VersionGroupEmitter.AddSources(context, input);
             TaggableEmitter.AddSources(context, input);
             CommentableEmitter.AddSources(context, input);
+            AttachableEmitter.AddSources(context, input);
         }
     }
 }

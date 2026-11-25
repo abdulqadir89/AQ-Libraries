@@ -44,6 +44,19 @@ namespace AQ.Generators
             return 0;
         }
 
+        public static long GetLong(AttributeData attribute, string name)
+        {
+            foreach (var pair in attribute.NamedArguments)
+            {
+                if (pair.Key == name)
+                {
+                    return pair.Value.Value is long value ? value : 0;
+                }
+            }
+
+            return 0;
+        }
+
         public static string[] GetStrings(AttributeData attribute, string name)
         {
             foreach (var pair in attribute.NamedArguments)

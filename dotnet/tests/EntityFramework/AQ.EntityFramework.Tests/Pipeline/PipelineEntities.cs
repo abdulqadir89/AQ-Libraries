@@ -1,5 +1,6 @@
 using AQ.Entities;
 using AQ.Events.Domain;
+using AQ.Utilities.Attachments;
 using AQ.Utilities.Commenting;
 using AQ.Utilities.References;
 using AQ.Utilities.PeriodicReview;
@@ -154,4 +155,18 @@ public class Memo : Entity<TestUser>
     public string Title { get; private set; } = "";
 
     public static Memo Create(string title) => new() { Title = title };
+}
+
+public abstract class TestAttachment : Attachment<TestUser>
+{
+}
+
+[Attachable(typeof(TestAttachment), MaxCount = 2, MaxFileSizeBytes = 1000, AllowedExtensions = new[] { ".pdf" })]
+public class Binder : Entity<TestUser>
+{
+    private Binder() { }
+
+    public string Title { get; private set; } = "";
+
+    public static Binder Create(string title) => new() { Title = title };
 }
