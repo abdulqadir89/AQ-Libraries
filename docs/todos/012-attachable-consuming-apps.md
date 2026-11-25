@@ -1,6 +1,6 @@
 # 012. Move consuming apps to generated attachments before this reaches main
 
-Status: Open
+Status: Done
 Date: 2026-11-24
 Location: `dotnet/src/Utilities/Attachments`, `dotnet/src/Generators/Attachments`
 

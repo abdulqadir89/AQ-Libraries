@@ -1,6 +1,5 @@
 namespace AQ.Utilities.Attachments;
 
-// TODO-012: replaces AttachmentLimitAttribute, IHasAttachments and PendingAttachment; consuming apps must migrate before this reaches main
 /// <summary>Marks an entity class as open to file attachments of <paramref name="attachmentType"/>; the generator adds an attachment class linked to it, query helpers and a registration.</summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class AttachableAttribute(Type attachmentType) : Attribute

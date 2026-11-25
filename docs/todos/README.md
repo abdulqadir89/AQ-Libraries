@@ -46,4 +46,4 @@ Legend: 🔴 Open · 🟡 In progress · 🟠 Under consideration · 🟢 Done �
 | 009 | [Settle what Enter opens and how a link action is run](009-enter-open-and-link-actions.md) | 🟢 Done |
 | 010 | [Add keyboard navigation and hotkeys to the card grid](010-card-grid-keyboard.md) | 🟢 Done |
 | 011 | [Show the shortcuts in a dialog and handle layouts where "/" needs Shift](011-hotkey-help-and-layouts.md) | 🟢 Done |
-| 012 | [Move consuming apps to generated attachments before this reaches main](012-attachable-consuming-apps.md) | 🔴 Open |
+| 012 | [Move consuming apps to generated attachments before this reaches main](012-attachable-consuming-apps.md) | 🟢 Done |
