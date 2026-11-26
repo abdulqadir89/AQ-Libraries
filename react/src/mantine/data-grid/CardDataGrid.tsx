@@ -567,9 +567,10 @@ export function CardDataGrid<T extends object>({
             placeholder={m.enumValue}
             value={draft.value ? String(draft.value) : ''}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              const next = event.currentTarget.value; // read before the updater runs: currentTarget is null by then
               handleFilterDraftChange(draft.id, (current) => ({
                 ...current,
-                value: event.currentTarget.value,
+                value: next,
               }));
             }}
           />
@@ -597,9 +598,10 @@ export function CardDataGrid<T extends object>({
           placeholder={m.enumValue}
           value={draft.value ? String(draft.value) : ''}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            const next = event.currentTarget.value; // read before the updater runs: currentTarget is null by then
             handleFilterDraftChange(draft.id, (current) => ({
               ...current,
-              value: event.currentTarget.value,
+              value: next,
             }));
           }}
         />
@@ -1138,9 +1140,10 @@ export function CardDataGrid<T extends object>({
                         label={m.secondValue}
                         value={draft.secondValue ? String(draft.secondValue) : ''}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          const next = event.currentTarget.value; // read before the updater runs: currentTarget is null by then
                           handleFilterDraftChange(draft.id, (current) => ({
                             ...current,
-                            secondValue: event.currentTarget.value,
+                            secondValue: next,
                           }));
                         }}
                       />
