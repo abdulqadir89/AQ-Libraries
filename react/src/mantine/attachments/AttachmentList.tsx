@@ -44,7 +44,8 @@ export interface AttachmentListProps {
   canDelete?: boolean;
   refreshKey?: number;
   onFetchList: (entityType: string, entityId: string, category?: string) => Promise<AttachmentDto[]>;
-  onDelete: (entityType: string, entityId: string, category: string, fileName: string) => Promise<void>;
+  /** `attachmentId` is the file's id: names may repeat, so apps that store files by id delete by it. */
+  onDelete: (entityType: string, entityId: string, category: string, fileName: string, attachmentId: string) => Promise<void>;
   fetchAuthenticated: (url: string) => Promise<Response>;
   onError: (err: unknown) => void;
   onCountChange?: (count: number) => void;
@@ -176,6 +177,7 @@ export function AttachmentList({
             attachment.entityId!,
             attachment.category!,
             attachment.fileName!,
+            attachment.id!,
           );
           void load();
         } catch (err) {
